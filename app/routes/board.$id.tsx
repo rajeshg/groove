@@ -10,12 +10,15 @@ import {
   createColumn,
   updateColumnName,
   updateColumnColor,
+  updateColumnExpanded,
   updateColumnOrder,
+  deleteColumn,
   getBoardData,
   upsertItem,
   updateBoardName,
   deleteCard,
   getItem,
+  getHomeData,
 } from "./queries";
 import { Board } from "./board/board";
 import {
@@ -25,6 +28,7 @@ import {
   createColumnSchema,
   updateColumnSchema,
   moveColumnSchema,
+  deleteColumnSchema,
   moveItemSchema,
   tryParseFormData,
   formDataToObject,
@@ -45,7 +49,9 @@ export async function loader({
   let board = await getBoardData(id, accountId);
   if (!board) throw notFound();
 
-  return { board };
+  let allBoards = await getHomeData(accountId);
+
+  return { board, allBoards };
 }
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
@@ -65,12 +71,15 @@ export async function action({
   request: Request;
   params: Record<string, string>;
 }) {
+  console.log("Board action called, method:", request.method);
   let accountId = await requireAuthCookie(request);
   let boardId = Number(params.id);
   invariant(boardId, "Missing boardId");
 
   let formData = await request.formData();
   let intent = formData.get("intent");
+
+  console.log("Board action: intent =", intent, "from POST");
 
   if (!intent) throw badRequest("Missing intent");
 
@@ -123,7 +132,7 @@ export async function action({
       const result = tryParseFormData(formData, updateColumnSchema);
       if (!result.success) throw badRequest(result.error);
 
-      const { columnId, name, color } = result.data;
+      const { columnId, name, color, isExpanded } = result.data;
 
       if (name) {
         await updateColumnName(columnId, name, accountId);
@@ -132,12 +141,26 @@ export async function action({
       if (color) {
         await updateColumnColor(columnId, color, accountId);
       }
+
+      if (isExpanded !== undefined) {
+        const isExpandedBool = isExpanded === '1';
+        await updateColumnExpanded(columnId, isExpandedBool, accountId);
+      }
       break;
     }
     case INTENTS.moveColumn: {
       const result = tryParseFormData(formData, moveColumnSchema);
       if (!result.success) throw badRequest(result.error);
       await updateColumnOrder(result.data.id, result.data.order, accountId);
+      break;
+    }
+    case INTENTS.deleteColumn: {
+      const result = tryParseFormData(formData, deleteColumnSchema);
+      console.log("[DELETE_COLUMN] validation result:", result);
+      if (!result.success) throw badRequest(result.error);
+      console.log("[DELETE_COLUMN] Deleting column ID:", result.data.columnId);
+      await deleteColumn(result.data.columnId, boardId, accountId);
+      console.log("[DELETE_COLUMN] Column deleted successfully");
       break;
     }
     default: {

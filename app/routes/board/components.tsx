@@ -68,10 +68,21 @@ export function EditableText({
   const submitEdit = () => {
     const newValue = inputRef.current?.value || "";
     if (newValue.trim() !== "" && newValue !== value) {
-      fetcher.submit(
-        { [fieldName]: newValue },
-        { method: "post" }
-      );
+      // Get the form element that contains all the hidden fields
+      const form = editContainerRef.current?.closest("form");
+      if (form) {
+        // Create a new FormData from the form which includes all hidden fields
+        const formData = new FormData(form);
+        // Update the field value
+        formData.set(fieldName, newValue);
+        fetcher.submit(formData, { method: "post" });
+      } else {
+        // Fallback: just submit the field if no form found
+        fetcher.submit(
+          { [fieldName]: newValue },
+          { method: "post" }
+        );
+      }
     }
     setEdit(false);
   };

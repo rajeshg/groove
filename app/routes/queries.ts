@@ -19,28 +19,31 @@ export async function createBoard(userId: string, name: string, color: string) {
           id: userId,
         },
       },
-      columns: {
-        create: [
-          {
-            name: "Not Now",
-            color: DEFAULT_COLUMN_COLORS.notNow,
-            order: 1,
-            id: `col-not-now-${Date.now()}-1`,
-          },
-          {
-            name: "May be?",
-            color: DEFAULT_COLUMN_COLORS.mayBe,
-            order: 2,
-            id: `col-maybe-${Date.now()}-2`,
-          },
-          {
-            name: "Done",
-            color: DEFAULT_COLUMN_COLORS.done,
-            order: 3,
-            id: `col-done-${Date.now()}-3`,
-          },
-        ],
-      },
+       columns: {
+         create: [
+           {
+             name: "Not Now",
+             color: DEFAULT_COLUMN_COLORS.notNow,
+             order: 1,
+             id: `col-not-now-${Date.now()}-1`,
+             isDefault: true,
+           },
+           {
+             name: "May be?",
+             color: DEFAULT_COLUMN_COLORS.mayBe,
+             order: 2,
+             id: `col-maybe-${Date.now()}-2`,
+             isDefault: true,
+           },
+           {
+             name: "Done",
+             color: DEFAULT_COLUMN_COLORS.done,
+             order: 3,
+             id: `col-done-${Date.now()}-3`,
+             isDefault: true,
+           },
+         ],
+       },
     },
   });
 }
@@ -129,6 +132,17 @@ export async function updateColumnColor(
   });
 }
 
+export async function updateColumnExpanded(
+  id: string,
+  isExpanded: boolean,
+  accountId: string
+) {
+  return prisma.column.update({
+    where: { id, Board: { accountId } },
+    data: { isExpanded },
+  });
+}
+
 export async function updateColumnOrder(
   id: string,
   order: number,
@@ -155,6 +169,49 @@ export async function createColumn(
       boardId,
       name,
       order: columnCount + 1,
+      isExpanded: true,
     },
+  });
+}
+
+export async function deleteColumn(
+  columnId: string,
+  boardId: number,
+  accountId: string
+) {
+  // Get the column to check if it's default
+  const column = await prisma.column.findUnique({
+    where: { id: columnId },
+  });
+
+  if (!column) {
+    throw new Error("Column not found");
+  }
+
+  if (column.isDefault) {
+    throw new Error("Cannot delete default column");
+  }
+
+  // Find the "May be?" column (default column) to move items to
+  const mayBeColumn = await prisma.column.findFirst({
+    where: {
+      boardId,
+      isDefault: true,
+    },
+  });
+
+  if (!mayBeColumn) {
+    throw new Error("Default column not found");
+  }
+
+  // Move all items from the deleted column to the May be column
+  await prisma.item.updateMany({
+    where: { columnId },
+    data: { columnId: mayBeColumn.id },
+  });
+
+  // Delete the column
+  return prisma.column.delete({
+    where: { id: columnId },
   });
 }

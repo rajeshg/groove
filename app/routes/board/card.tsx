@@ -33,7 +33,7 @@ export function Card({
   let deleteFetcher = useFetcher();
   let editFetcher = useFetcher();
 
-   let [acceptDrop, setAcceptDrop] = useState<"none" | "top" | "bottom">("none");
+  let [acceptDrop, setAcceptDrop] = useState<"none" | "top" | "bottom">("none");
   let [isDragging, setIsDragging] = useState(false);
   let [editMode, setEditMode] = useState<"none" | "title" | "content">("none");
   let contentInputRef = useRef<HTMLTextAreaElement>(null);
@@ -43,50 +43,48 @@ export function Card({
   let contentDisplayRef = useRef<HTMLDivElement>(null);
   let dragLeaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-   const submitEdit = (field: "title" | "content") => {
-     if (field === "title") {
-       const titleValue = titleInputRef.current?.value?.trim() || "";
-       if (titleValue === title) return false; // Don't submit if unchanged
-       if (titleValue === "") return false; // Don't submit empty titles
-       editFetcher.submit(
-         {
-           intent: INTENTS.updateItem,
-           id,
-           columnId,
-           title: titleValue,
-           order: String(order),
-           content: content || "",
-         },
-         { method: "post" }
-       );
-       return true;
-     } else {
-       const contentValue = contentInputRef.current?.value || "";
-       if (contentValue === (content || "")) return false; // Don't submit if unchanged (allow empty content)
-       editFetcher.submit(
-         {
-           intent: INTENTS.updateItem,
-           id,
-           columnId,
-           title,
-           order: String(order),
-           content: contentValue,
-         },
-         { method: "post" }
-       );
-       return true;
-     }
-   };
+  const submitEdit = (field: "title" | "content") => {
+    if (field === "title") {
+      const titleValue = titleInputRef.current?.value?.trim() || "";
+      if (titleValue === title) return false;
+      if (titleValue === "") return false;
+      editFetcher.submit(
+        {
+          intent: INTENTS.updateItem,
+          id,
+          columnId,
+          title: titleValue,
+          order: String(order),
+          content: content || "",
+        },
+        { method: "post" }
+      );
+      return true;
+    } else {
+      const contentValue = contentInputRef.current?.value || "";
+      if (contentValue === (content || "")) return false;
+      editFetcher.submit(
+        {
+          intent: INTENTS.updateItem,
+          id,
+          columnId,
+          title,
+          order: String(order),
+          content: contentValue,
+        },
+        { method: "post" }
+      );
+      return true;
+    }
+  };
 
   const handleClickOutside = (e: React.FocusEvent<HTMLDivElement>) => {
-    // Only submit if clicking outside the edit container and we're in edit mode
     if (editMode !== "none" && editContainerRef.current && !editContainerRef.current.contains(e.relatedTarget as Node)) {
       submitEdit(editMode as "title" | "content");
       setEditMode("none");
     }
   };
 
-  // Global drag end handler to ensure cleanup
   useEffect(() => {
     const handleGlobalDragEnd = () => {
       setAcceptDrop("none");
@@ -102,11 +100,11 @@ export function Card({
   }, []);
 
   return deleteFetcher.state !== "idle" ? null : (
-    <li data-card-id={id}
+    <li
+      data-card-id={id}
       onDragEnter={(event) => {
         if (event.dataTransfer.types.includes(CONTENT_TYPES.card)) {
           event.preventDefault();
-          // Clear any pending leave timeout
           if (dragLeaveTimeoutRef.current) {
             clearTimeout(dragLeaveTimeoutRef.current);
             dragLeaveTimeoutRef.current = null;
@@ -116,7 +114,6 @@ export function Card({
       onDragOver={(event) => {
         if (event.dataTransfer.types.includes(CONTENT_TYPES.card)) {
           event.preventDefault();
-          // Don't stop propagation so parent elements can handle global drag state
           let rect = event.currentTarget.getBoundingClientRect();
           let midpoint = (rect.top + rect.bottom) / 2;
           setAcceptDrop(event.clientY <= midpoint ? "top" : "bottom");
@@ -124,167 +121,162 @@ export function Card({
       }}
       onDragLeave={(event) => {
         if (event.dataTransfer.types.includes(CONTENT_TYPES.card)) {
-          // Short delay to prevent flickering when moving between child elements
           dragLeaveTimeoutRef.current = setTimeout(() => {
             setAcceptDrop("none");
           }, 10);
         }
       }}
-       onDrop={(event) => {
-         event.stopPropagation();
+      onDrop={(event) => {
+        event.stopPropagation();
 
-          let transfer = JSON.parse(
-            event.dataTransfer.getData(CONTENT_TYPES.card)
-          );
-          invariant(transfer.id, "missing cardId");
+        let transfer = JSON.parse(
+          event.dataTransfer.getData(CONTENT_TYPES.card)
+        );
+        invariant(transfer.id, "missing cardId");
 
-          let droppedOrder = acceptDrop === "top" ? previousOrder : nextOrder;
-          let moveOrder = (droppedOrder + order) / 2;
+        let droppedOrder = acceptDrop === "top" ? previousOrder : nextOrder;
+        let moveOrder = (droppedOrder + order) / 2;
 
-         submit(
-           { 
-             intent: INTENTS.moveItem,
-             id: transfer.id,
-             columnId: columnId,
-             order: moveOrder,
-           } as unknown as ItemMutation,
-           {
-             method: "post",
-             navigate: false,
-             fetcherKey: `card:${transfer.id}`,
-           }
-         );
+        submit(
+          {
+            intent: INTENTS.moveItem,
+            id: transfer.id,
+            columnId: columnId,
+            order: moveOrder,
+          } as unknown as ItemMutation,
+          {
+            method: "post",
+            navigate: false,
+            fetcherKey: `card:${transfer.id}`,
+          }
+        );
 
-         setAcceptDrop("none");
-       }}
+        setAcceptDrop("none");
+      }}
+      className={
+        "-mb-[1px] last:mb-0 px-3 py-2 transition-all duration-100 " +
+        (acceptDrop === "top"
+          ? "pt-4 pb-0 border-t-2 border-t-blue-400"
+          : acceptDrop === "bottom"
+            ? "pt-0 pb-4 border-b-2 border-b-blue-400"
+            : "")
+      }
+    >
+      <div
+        draggable
         className={
-          "-mb-[1px] last:mb-0 px-2 py-1 transition-all duration-100 " +
-          (acceptDrop === "top"
-            ? "pt-3 pb-0 border-t-2 border-t-blue-400"
-            : acceptDrop === "bottom"
-              ? "pt-0 pb-3 border-b-2 border-b-blue-400"
-              : "")
+          "bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded w-full py-2 px-3 relative group hover:shadow-md dark:hover:shadow-lg transition-all duration-150 " +
+          (isDragging ? "opacity-60 shadow-lg dark:shadow-xl scale-95" : "shadow-sm dark:shadow-sm")
         }
-        style={{ borderTopColor: columnColor }}
+        onDragStart={(event) => {
+          setIsDragging(true);
+          event.dataTransfer.effectAllowed = "move";
+          event.dataTransfer.setData(
+            CONTENT_TYPES.card,
+            JSON.stringify({ id, title })
+          );
+        }}
+        onDragEnd={() => {
+          setIsDragging(false);
+          setAcceptDrop("none");
+          if (dragLeaveTimeoutRef.current) {
+            clearTimeout(dragLeaveTimeoutRef.current);
+            dragLeaveTimeoutRef.current = null;
+          }
+        }}
       >
-         <div
-           draggable
-            className={
-              "bg-white border border-slate-200 text-sm rounded-lg w-full py-2 px-3 relative group hover:shadow-sm transition-all duration-200 " +
-              (isDragging ? "opacity-60 shadow-md scale-98" : "shadow-xs")
-            }
-           onDragStart={(event) => {
-             setIsDragging(true);
-             event.dataTransfer.effectAllowed = "move";
-             event.dataTransfer.setData(
-               CONTENT_TYPES.card,
-               JSON.stringify({ id, title })
-             );
-             // Add visual feedback
-             event.dataTransfer.setDragImage(event.currentTarget, event.currentTarget.clientWidth / 2, 10);
-           }}
-           onDragEnd={() => {
-             setIsDragging(false);
-             setAcceptDrop("none");
-             if (dragLeaveTimeoutRef.current) {
-               clearTimeout(dragLeaveTimeoutRef.current);
-               dragLeaveTimeoutRef.current = null;
-             }
-           }}
-         >
-           {editMode === "title" ? (
-             <div ref={editContainerRef} onBlur={handleClickOutside}>
-               <input
-                 ref={titleInputRef}
-                 type="text"
-                 defaultValue={title}
-                 placeholder="Card title..."
-                 className="block w-full rounded border border-blue-400 px-2 py-1 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                 autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      submitEdit("title");
-                    } else if (e.key === "Escape") {
-                      flushSync(() => {
-                        setEditMode("none");
-                      });
-                      titleDisplayRef.current?.focus();
-                    }
-                  }}
-               />
-             </div>
-           ) : (
-              <h3
-                ref={titleDisplayRef}
-                onClick={() => setEditMode("title")}
-                className="font-semibold text-slate-900 text-xs mb-1 cursor-text hover:bg-slate-100 rounded px-1 py-0.5 transition-colors"
-              >
-                {title}
-              </h3>
-           )}
-           
-           {editMode === "content" ? (
-             <div ref={editContainerRef} onBlur={handleClickOutside}>
-               <textarea
-                 ref={contentInputRef}
-                 defaultValue={content || ""}
-                 placeholder="Add description... (Ctrl+Enter for new line)"
-                 className="block w-full rounded border border-blue-400 px-2 py-1 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                 rows={2}
-                 autoFocus
-                 onKeyDown={(e) => {
-                   if (e.key === "Enter" && !e.ctrlKey) {
-                     e.preventDefault();
-                     submitEdit("content");
-                   } else if (e.key === "Enter" && e.ctrlKey) {
-                     // Allow Ctrl+Enter to add a new line
-                     e.preventDefault();
-                     const textarea = contentInputRef.current;
-                     if (textarea) {
-                       const start = textarea.selectionStart;
-                       const end = textarea.selectionEnd;
-                       const value = textarea.value;
-                       textarea.value = value.substring(0, start) + "\n" + value.substring(end);
-                       textarea.selectionStart = textarea.selectionEnd = start + 1;
-                     }
-                    } else if (e.key === "Escape") {
-                      flushSync(() => {
-                        setEditMode("none");
-                      });
-                      contentDisplayRef.current?.focus();
-                    }
-                 }}
-               />
-             </div>
-           ) : (
-              <div
-                ref={contentDisplayRef}
-                onClick={() => setEditMode("content")}
-                className="min-h-10 text-xs text-slate-600 leading-relaxed cursor-text hover:bg-slate-50 rounded px-1 py-1 transition-colors whitespace-pre-wrap break-words"
-              >
-               {content ? (
-                 content
-               ) : (
-                 <span className="italic text-slate-400">Click to add description...</span>
-               )}
-             </div>
-           )}
-         
-         <deleteFetcher.Form method="post" className="absolute top-2 right-2">
-           <input type="hidden" name="intent" value={INTENTS.deleteCard} />
-           <input type="hidden" name="itemId" value={id} />
-           <button
-             aria-label="Delete card"
-             className="text-slate-400 opacity-0 group-hover:opacity-100 hover:text-red-600 transition-all"
-             type="submit"
-             onClick={(event) => {
-               event.stopPropagation();
-             }}
-           >
-             <Icon name="trash" />
-           </button>
-         </deleteFetcher.Form>
-       </div>
+        {editMode === "title" ? (
+          <div ref={editContainerRef} onBlur={handleClickOutside}>
+            <input
+              ref={titleInputRef}
+              type="text"
+              defaultValue={title}
+              placeholder="Card title..."
+              className="block w-full rounded border border-blue-400 dark:border-blue-500 px-2 py-1 text-sm font-semibold text-slate-900 dark:text-slate-50 dark:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  submitEdit("title");
+                } else if (e.key === "Escape") {
+                  flushSync(() => {
+                    setEditMode("none");
+                  });
+                  titleDisplayRef.current?.focus();
+                }
+              }}
+            />
+          </div>
+        ) : (
+          <h3
+            ref={titleDisplayRef}
+            onClick={() => setEditMode("title")}
+            className="font-semibold text-slate-900 dark:text-slate-50 text-sm mb-1 cursor-text hover:bg-slate-100 dark:hover:bg-slate-600 rounded px-1 py-0.5 transition-colors"
+          >
+            {title}
+          </h3>
+        )}
+
+        {editMode === "content" ? (
+          <div ref={editContainerRef} onBlur={handleClickOutside}>
+            <textarea
+              ref={contentInputRef}
+              defaultValue={content || ""}
+              placeholder="Add description..."
+              className="block w-full rounded border border-blue-400 dark:border-blue-500 px-2 py-1 text-xs text-slate-700 dark:text-slate-200 dark:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              rows={2}
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.ctrlKey) {
+                  e.preventDefault();
+                  submitEdit("content");
+                } else if (e.key === "Enter" && e.ctrlKey) {
+                  e.preventDefault();
+                  const textarea = contentInputRef.current;
+                  if (textarea) {
+                    const start = textarea.selectionStart;
+                    const end = textarea.selectionEnd;
+                    const value = textarea.value;
+                    textarea.value = value.substring(0, start) + "\n" + value.substring(end);
+                    textarea.selectionStart = textarea.selectionEnd = start + 1;
+                  }
+                } else if (e.key === "Escape") {
+                  flushSync(() => {
+                    setEditMode("none");
+                  });
+                  contentDisplayRef.current?.focus();
+                }
+              }}
+            />
+          </div>
+        ) : (
+          <div
+            ref={contentDisplayRef}
+            onClick={() => setEditMode("content")}
+            className="min-h-8 text-xs text-slate-600 dark:text-slate-300 leading-relaxed cursor-text hover:bg-slate-100 dark:hover:bg-slate-600 rounded px-1 py-1 transition-colors whitespace-pre-wrap break-words"
+          >
+            {content ? (
+              content
+            ) : (
+              <span className="italic text-slate-400 dark:text-slate-500">Click to add description...</span>
+            )}
+          </div>
+        )}
+
+        <deleteFetcher.Form method="post" className="absolute top-2 right-2">
+          <input type="hidden" name="intent" value={INTENTS.deleteCard} />
+          <input type="hidden" name="itemId" value={id} />
+          <button
+            aria-label="Delete card"
+            className="text-slate-400 dark:text-slate-500 opacity-0 group-hover:opacity-100 hover:text-red-600 dark:hover:text-red-400 transition-all"
+            type="submit"
+            onClick={(event) => {
+              event.stopPropagation();
+            }}
+          >
+            <Icon name="trash" />
+          </button>
+        </deleteFetcher.Form>
+      </div>
     </li>
   );
 }

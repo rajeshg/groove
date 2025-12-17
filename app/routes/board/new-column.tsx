@@ -24,7 +24,7 @@ export function NewColumn({
     <Form
       method="post"
       navigate={false}
-      className="p-2 flex-shrink-0 flex flex-col gap-5 overflow-hidden max-h-full w-80 border rounded-xl shadow bg-slate-100"
+      className="p-3 flex-shrink-0 flex flex-col gap-3 overflow-hidden max-h-full w-72 sm:w-80 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm bg-white dark:bg-slate-800"
       onSubmit={(event) => {
         event.preventDefault();
         let formData = new FormData(event.currentTarget);
@@ -52,9 +52,10 @@ export function NewColumn({
         ref={inputRef}
         type="text"
         name="name"
-        className="border border-slate-400 w-full rounded-lg py-1 px-2 font-medium text-black"
+        placeholder="Column name..."
+        className="border border-slate-300 dark:border-slate-600 w-full rounded px-2 py-1 font-bold text-slate-900 dark:text-slate-50 dark:bg-slate-700 text-sm"
       />
-      <div className="flex justify-between">
+      <div className="flex justify-between gap-2">
         <SaveButton>Save Column</SaveButton>
         <CancelButton onClick={() => setEditing(false)}>Cancel</CancelButton>
       </div>
@@ -68,11 +69,11 @@ export function NewColumn({
         onAdd();
       }}
       aria-label="Add new column"
-       className="flex-shrink-0 flex justify-center items-center h-16 w-16 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors shadow-sm hover:shadow-md"
-     >
-       <div className="text-slate-500">
-         <Icon name="plus" size="xl" />
-       </div>
+      className="flex-shrink-0 flex justify-center items-center h-auto px-3 py-3 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg transition-colors shadow-sm hover:shadow-md w-72 sm:w-80"
+    >
+      <div className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400">
+        <Icon name="plus" size="md" />
+      </div>
     </button>
   );
 }

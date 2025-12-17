@@ -14,26 +14,17 @@ export const loginSchema = z.object({
 
 export type LoginInput = z.infer<typeof loginSchema>;
 
-export const signupSchema = z
-  .object({
-    email: z
-      .string()
-      .min(1, "Email is required")
-      .email("Please enter a valid email address"),
-    password: z
-      .string()
-      .min(1, "Password is required")
-      .min(8, "Password must be at least 8 characters")
-      .regex(/[A-Z]/, "Password must contain an uppercase letter")
-      .regex(/[a-z]/, "Password must contain a lowercase letter")
-      .regex(/[0-9]/, "Password must contain a number")
-      .regex(/[!@#$%^&*]/, "Password must contain a special character (!@#$%^&*)"),
-    confirmPassword: z.string().min(1, "Please confirm your password"),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
+export const signupSchema = z.object({
+  email: z
+    .string()
+    .min(1, "Email is required")
+    .email("Please enter a valid email address"),
+  password: z
+    .string()
+    .min(1, "Password is required")
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[^A-Za-z0-9]/, "Password must contain a special character"),
+});
 
 export type SignupInput = z.infer<typeof signupSchema>;
 
@@ -111,6 +102,7 @@ export const updateColumnSchema = z.object({
   columnId: z.string().min(1, "Invalid column ID"),
   name: z.string().min(1, "Column name is required").max(255, "Column name is too long").optional(),
   color: z.string().regex(/^#[0-9a-f]{6}$/i, "Invalid color format").optional(),
+  isExpanded: z.enum(["0", "1"]).optional(),
 });
 
 export type UpdateColumnInput = z.infer<typeof updateColumnSchema>;
@@ -122,6 +114,13 @@ export const moveColumnSchema = z.object({
 });
 
 export type MoveColumnInput = z.infer<typeof moveColumnSchema>;
+
+export const deleteColumnSchema = z.object({
+  intent: z.literal("deleteColumn"),
+  columnId: z.string().min(1, "Invalid column ID"),
+});
+
+export type DeleteColumnInput = z.infer<typeof deleteColumnSchema>;
 
 // ============================================================================
 // Helper Functions

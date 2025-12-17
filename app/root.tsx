@@ -10,8 +10,8 @@ import {
 } from "react-router";
 
 import "./app.css";
-import { LoginIcon, LogoutIcon } from "./icons/icons";
 import { getAuthFromRequest } from "./auth/auth";
+import { ThemeProvider, useTheme } from "./context/theme";
 
 export const links = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -53,78 +53,70 @@ export default function App() {
   let userId = useLoaderData<typeof loader>();
 
   return (
-    <div className="h-screen bg-slate-100 text-slate-900">
-      <div className="h-full flex flex-col min-h-0">
-        <div className="bg-slate-900 border-b border-slate-800 flex items-center justify-between py-4 px-8 box-border">
-          <Link to="/home" className="block leading-3 w-1/3">
-            <div className="font-black text-2xl text-white">Trellix</div>
-            <div className="text-slate-500">a Remix Demo</div>
+    <ThemeProvider>
+      <AppContent userId={userId} />
+    </ThemeProvider>
+  );
+}
+
+function AppContent({ userId }: { userId: any }) {
+  const { theme, toggleTheme } = useTheme();
+
+  const getThemeIcon = () => {
+    if (theme === "light") return "🌙";
+    if (theme === "dark") return "☀️";
+    return "🖥️"; // system preference
+  };
+
+  return (
+    <div className="h-screen bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 flex flex-col">
+      {/* Header */}
+      <div className="flex-shrink-0 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+        <div className="flex items-center justify-between h-16 px-6">
+          {/* Logo/Brand */}
+          <Link to="/home" className="font-bold text-xl hover:opacity-80 transition-opacity">
+            Trellix
           </Link>
-          <div className="flex items-center gap-6">
-            <IconLink
-              href="https://www.youtube.com/watch?v=RTHzZVbTl6c&list=PLXoynULbYuED9b2k5LS44v9TQjfXifwNu&pp=gAQBiAQB"
-              icon="/yt_icon_mono_dark.png"
-              label="Videos"
-            />
-            <IconLink
-              href="https://github.com/remix-run/example-trellix"
-              label="Source"
-              icon="/github-mark-white.png"
-            />
-            <IconLink
-              href="https://remix.run/docs/en/main"
-              icon="/r.png"
-              label="Docs"
-            />
-          </div>
-          <div className="w-1/3 flex justify-end">
+
+          {/* Auth and theme controls on the right */}
+          <div className="flex items-center gap-2">
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+              title={`Theme: ${theme === "system" ? "System" : theme === "light" ? "Light" : "Dark"}`}
+              aria-label="Toggle theme"
+            >
+              <span className="text-lg">{getThemeIcon()}</span>
+            </button>
+
+            {/* Auth divider */}
+            <div className="w-px h-6 bg-slate-200 dark:bg-slate-700"></div>
+
+            {/* Auth controls */}
             {userId ? (
               <form method="post" action="/logout">
-                <button className="block text-center">
-                  <LogoutIcon />
-                  <br />
-                  <span className="text-slate-500 text-xs uppercase font-bold">
-                    Log out
-                  </span>
+                <button className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-700">
+                  Log out
                 </button>
               </form>
             ) : (
-              <Link to="/login" className="block text-center">
-                <LoginIcon />
-                <br />
-                <span className="text-slate-500 text-xs uppercase font-bold">
-                  Log in
-                </span>
+              <Link
+                to="/login"
+                className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-700"
+              >
+                Log in
               </Link>
             )}
           </div>
         </div>
+      </div>
 
-        <div className="flex-grow min-h-0 h-full">
-          <Outlet />
-        </div>
+      {/* Main content */}
+      <div className="flex-grow min-h-0 h-full">
+        <Outlet />
       </div>
     </div>
-  );
-}
-
-function IconLink({
-  icon,
-  href,
-  label,
-}: {
-  icon: string;
-  href: string;
-  label: string;
-}) {
-  return (
-    <a
-      href={href}
-      className="text-slate-500 text-xs uppercase font-bold text-center"
-    >
-      <img src={icon} aria-hidden className="inline-block h-8" />
-      <span className="block mt-2">{label}</span>
-    </a>
   );
 }
 
