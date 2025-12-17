@@ -5,8 +5,8 @@ import { redirectIfLoggedInLoader, setAuthOnResponse } from "../auth/auth";
 import { Label, Input } from "../components/input";
 import { Button } from "../components/button";
 
-import { validate } from "./signup.validate";
 import { createAccount } from "./signup.queries";
+import { signupSchema, tryParseFormData } from "./validation";
 
 export const loader = redirectIfLoggedInLoader;
 
@@ -17,18 +17,15 @@ export const meta = () => {
 export async function action({ request }: { request: Request }) {
   let formData = await request.formData();
 
-  let email = String(formData.get("email") || "");
-  let password = String(formData.get("password") || "");
-
-  let errors = await validate(email, password);
-  if (errors) {
-    return new Response(JSON.stringify({ ok: false, errors }), {
+  const result = tryParseFormData(formData, signupSchema);
+  if (!result.success) {
+    return new Response(JSON.stringify({ ok: false, errors: { general: result.error } }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
     });
   }
 
-  let user = await createAccount(email, password);
+  let user = await createAccount(result.data.email, result.data.password);
   return setAuthOnResponse(redirect("/home"), user.id);
 }
 

@@ -1,12 +1,13 @@
 import { redirect } from "react-router";
 import { Form, Link, useActionData } from "react-router";
+import { z } from "zod";
 
 import { redirectIfLoggedInLoader, setAuthOnResponse } from "../auth/auth";
 import { Button } from "../components/button";
 import { Input, Label } from "../components/input";
 
-import { validate } from "./login.validate";
 import { login } from "./login.queries";
+import { loginSchema, tryParseFormData } from "./validation";
 
 export const loader = redirectIfLoggedInLoader;
 
@@ -16,18 +17,16 @@ export const meta = () => {
 
 export async function action({ request }: { request: Request }) {
   let formData = await request.formData();
-  let email = String(formData.get("email") || "");
-  let password = String(formData.get("password") || "");
 
-  let errors = validate(email, password);
-  if (errors) {
-    return new Response(JSON.stringify({ ok: false, errors }), {
+  const result = tryParseFormData(formData, loginSchema);
+  if (!result.success) {
+    return new Response(JSON.stringify({ ok: false, errors: { general: result.error } }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
     });
   }
 
-  let userId = await login(email, password);
+  let userId = await login(result.data.email, result.data.password);
   if (userId === false) {
     return new Response(
       JSON.stringify({

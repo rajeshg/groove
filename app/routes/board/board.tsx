@@ -1,22 +1,24 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import invariant from "tiny-invariant";
-import { useFetchers, useLoaderData } from "react-router";
+import { useFetchers, useLoaderData, useSubmit } from "react-router";
 
 import type { LoaderData } from "../../+types/board.$id";
-import { INTENTS, type RenderedItem } from "../types";
+import { INTENTS, type RenderedItem, CONTENT_TYPES } from "../types";
 import { Column } from "./column";
 import { NewColumn } from "./new-column";
 import { EditableText } from "./components";
 
 export function Board() {
   let { board } = useLoaderData<LoaderData>();
+  let submit = useSubmit();
+  let [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
 
   let itemsById = new Map(board.items.map((item) => [item.id, item]));
 
   let pendingItems = usePendingItems();
 
   // merge pending items and existing items
-  for (let pendingItem of pendingItems) {
+  for (const pendingItem of pendingItems) {
     let item = itemsById.get(pendingItem.id);
     let merged: any = item
       ? { ...item, ...pendingItem }
@@ -29,18 +31,18 @@ export function Board() {
   type Column =
     | (typeof board.columns)[number]
     | (typeof optAddingColumns)[number];
-  type ColumnWithItems = Column & { items: typeof board.items };
-  let columns = new Map<string, ColumnWithItems>();
+  type ColumnWithItems = (Column & { items: typeof board.items }) | (Column & { items: typeof board.items; order: number });
+  let columns = new Map<string, any>();
   for (let column of [...board.columns, ...optAddingColumns]) {
-    columns.set(column.id, { ...column, items: [] });
+    columns.set(column.id, { ...column, items: [], order: (column as any).order || 0 });
   }
 
   // add items to their columns
-  for (let item of itemsById.values()) {
-    let columnId = item.columnId;
+  for (const item of itemsById.values()) {
+    let columnId = (item as any).columnId;
     let column = columns.get(columnId);
     invariant(column, "missing column");
-    column.items.push(item);
+    column.items.push(item as any);
   }
 
   // scroll right when new columns are added
@@ -50,6 +52,9 @@ export function Board() {
     scrollContainerRef.current.scrollLeft =
       scrollContainerRef.current.scrollWidth;
   }
+
+  // Get sorted columns for rendering
+  const columnArray = [...columns.values()].sort((a, b) => (a.order || 0) - (b.order || 0));
 
   return (
     <div
@@ -72,15 +77,70 @@ export function Board() {
       </h1>
 
        <div className="flex flex-grow min-h-0 h-full items-start gap-4 px-8 pb-4">
-         {[...columns.values()].map((col) => {
+         {columnArray.map((col, index) => {
            return (
-             <Column
+             <div
                key={col.id}
-               name={col.name}
-               columnId={col.id}
-               items={col.items}
-               color={(col as any).color || "#94a3b8"}
-             />
+               draggable
+               className={`cursor-grab active:cursor-grabbing ${draggedColumnId === col.id ? "opacity-50" : ""}`}
+               onDragStart={(e) => {
+                 setDraggedColumnId(col.id);
+                 e.dataTransfer.effectAllowed = "move";
+                 e.dataTransfer.setData(CONTENT_TYPES.column, JSON.stringify({ id: col.id }));
+               }}
+               onDragEnd={() => {
+                 setDraggedColumnId(null);
+               }}
+               onDragOver={(e) => {
+                 if (e.dataTransfer.types.includes(CONTENT_TYPES.column)) {
+                   e.preventDefault();
+                   e.dataTransfer.dropEffect = "move";
+                 }
+               }}
+               onDrop={(e) => {
+                 e.preventDefault();
+                 const transfer = JSON.parse(e.dataTransfer.getData(CONTENT_TYPES.column));
+                 const draggedId = transfer.id;
+
+                 if (draggedId === col.id) {
+                   setDraggedColumnId(null);
+                   return;
+                 }
+
+                 // Calculate new order
+                 const draggedCol = columnArray.find((c) => c.id === draggedId);
+                 if (!draggedCol) return;
+
+                 const draggedOrder = draggedCol.order || 0;
+                 const targetOrder = col.order || 0;
+
+                 // Calculate the new order for the dragged column
+                 const newOrder = (draggedOrder + targetOrder) / 2;
+
+                 // Submit the move
+                 submit(
+                   {
+                     intent: INTENTS.moveColumn,
+                     id: draggedId,
+                     order: String(newOrder),
+                   },
+                   {
+                     method: "post",
+                     navigate: false,
+                     fetcherKey: `column:${draggedId}`,
+                   }
+                 );
+
+                 setDraggedColumnId(null);
+               }}
+             >
+               <Column
+                 name={col.name}
+                 columnId={col.id}
+                 items={col.items}
+                 color={(col as any).color || "#94a3b8"}
+               />
+             </div>
            );
          })}
 

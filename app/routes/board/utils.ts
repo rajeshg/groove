@@ -1,22 +1,13 @@
 import invariant from "tiny-invariant";
 import type { ItemMutation } from "../types";
-import { ItemMutationFields } from "../types";
+import { itemMutationSchema, formDataToObject } from "../validation";
 
+/**
+ * Parse FormData into an ItemMutation using Zod validation
+ * @deprecated Use validation.ts schemas directly in board.$id.tsx
+ */
 export function parseItemMutation(formData: FormData): ItemMutation {
-  let id = ItemMutationFields.id.type(formData.get("id"));
-  invariant(id, "Missing item id");
-
-  let columnId = ItemMutationFields.columnId.type(formData.get("columnId"));
-  invariant(columnId, "Missing column id");
-
-  let order = ItemMutationFields.order.type(formData.get("order"));
-  invariant(typeof order === "number", "Missing order");
-
-  let title = ItemMutationFields.title.type(formData.get("title"));
-  invariant(title, "Missing title");
-
-  let content = formData.get("content");
-  let contentValue = content ? String(content).trim() : null;
-
-  return { id, columnId, order, title, content: contentValue };
+  const obj = formDataToObject(formData);
+  return itemMutationSchema.parse(obj);
 }
+

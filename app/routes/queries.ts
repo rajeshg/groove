@@ -120,6 +120,17 @@ export async function updateColumnColor(
   });
 }
 
+export async function updateColumnOrder(
+  id: string,
+  order: number,
+  accountId: string
+) {
+  return prisma.column.update({
+    where: { id, Board: { accountId } },
+    data: { order },
+  });
+}
+
 export async function createColumn(
   boardId: number,
   name: string,

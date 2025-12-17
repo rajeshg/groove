@@ -1,21 +1,32 @@
 import { type MetaFunction } from "react-router";
 import invariant from "tiny-invariant";
+import { z } from "zod";
 
 import { badRequest, notFound } from "../http/bad-request";
 import { requireAuthCookie } from "../auth/auth";
 
-import { parseItemMutation } from "./board/utils";
 import { INTENTS } from "./types";
 import {
   createColumn,
   updateColumnName,
   updateColumnColor,
+  updateColumnOrder,
   getBoardData,
   upsertItem,
   updateBoardName,
   deleteCard,
 } from "./queries";
 import { Board } from "./board/board";
+import {
+  updateBoardNameSchema,
+  itemMutationSchema,
+  deleteCardSchema,
+  createColumnSchema,
+  updateColumnSchema,
+  moveColumnSchema,
+  tryParseFormData,
+  formDataToObject,
+} from "./validation";
 
 export async function loader({
   request,
@@ -63,41 +74,50 @@ export async function action({
 
   switch (intent) {
     case INTENTS.deleteCard: {
-      let id = String(formData.get("itemId") || "");
-      await deleteCard(id, accountId);
+      const result = tryParseFormData(formData, deleteCardSchema);
+      if (!result.success) throw badRequest(result.error);
+      await deleteCard(result.data.itemId, accountId);
       break;
     }
     case INTENTS.updateBoardName: {
-      let name = String(formData.get("name") || "");
-      invariant(name, "Missing name");
-      await updateBoardName(boardId, name, accountId);
+      const result = tryParseFormData(formData, updateBoardNameSchema);
+      if (!result.success) throw badRequest(result.error);
+      await updateBoardName(boardId, result.data.name, accountId);
       break;
     }
     case INTENTS.moveItem:
     case INTENTS.createItem:
     case INTENTS.updateItem: {
-      let mutation = parseItemMutation(formData);
-      await upsertItem({ ...mutation, boardId }, accountId);
+      const result = tryParseFormData(formData, itemMutationSchema);
+      if (!result.success) throw badRequest(result.error);
+      await upsertItem({ ...result.data, boardId }, accountId);
       break;
     }
     case INTENTS.createColumn: {
-      let { name, id } = Object.fromEntries(formData);
-      invariant(name, "Missing name");
-      invariant(id, "Missing id");
-      await createColumn(boardId, String(name), String(id), accountId);
+      const result = tryParseFormData(formData, createColumnSchema);
+      if (!result.success) throw badRequest(result.error);
+      await createColumn(boardId, result.data.name, result.data.id, accountId);
       break;
     }
     case INTENTS.updateColumn: {
-      let { name, columnId, color } = Object.fromEntries(formData);
-      if (!columnId) throw badRequest("Missing columnId");
-      
-      if (name && String(name).trim()) {
-        await updateColumnName(String(columnId), String(name), accountId);
+      const result = tryParseFormData(formData, updateColumnSchema);
+      if (!result.success) throw badRequest(result.error);
+
+      const { columnId, name, color } = result.data;
+
+      if (name) {
+        await updateColumnName(columnId, name, accountId);
       }
-      
+
       if (color) {
-        await updateColumnColor(String(columnId), String(color), accountId);
+        await updateColumnColor(columnId, color, accountId);
       }
+      break;
+    }
+    case INTENTS.moveColumn: {
+      const result = tryParseFormData(formData, moveColumnSchema);
+      if (!result.success) throw badRequest(result.error);
+      await updateColumnOrder(result.data.id, result.data.order, accountId);
       break;
     }
     default: {
