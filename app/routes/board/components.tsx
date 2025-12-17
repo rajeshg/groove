@@ -43,6 +43,7 @@ export function EditableText({
   inputLabel,
   buttonClassName,
   buttonLabel,
+  placeholder,
 }: {
   children: React.ReactNode;
   fieldName: string;
@@ -51,26 +52,40 @@ export function EditableText({
   inputLabel: string;
   buttonClassName: string;
   buttonLabel: string;
+  placeholder?: string;
 }) {
   let fetcher = useFetcher();
   let [edit, setEdit] = useState(false);
   let inputRef = useRef<HTMLInputElement>(null);
   let buttonRef = useRef<HTMLButtonElement>(null);
+  let editContainerRef = useRef<HTMLDivElement>(null);
 
   // optimistic update
   if (fetcher.formData?.has(fieldName)) {
     value = String(fetcher.formData.get("name"));
   }
 
+  const submitEdit = () => {
+    const newValue = inputRef.current?.value || "";
+    if (newValue.trim() !== "" && newValue !== value) {
+      fetcher.submit(
+        { [fieldName]: newValue },
+        { method: "post" }
+      );
+    }
+    setEdit(false);
+  };
+
+  const handleClickOutside = (e: React.FocusEvent<HTMLDivElement>) => {
+    if (edit && editContainerRef.current && !editContainerRef.current.contains(e.relatedTarget as Node)) {
+      submitEdit();
+    }
+  };
+
   return edit ? (
-    <fetcher.Form
-      method="post"
-      onSubmit={() => {
-        flushSync(() => {
-          setEdit(false);
-        });
-        buttonRef.current?.focus();
-      }}
+    <div
+      ref={editContainerRef}
+      onBlur={handleClickOutside}
     >
       {children}
       <input
@@ -81,25 +96,20 @@ export function EditableText({
         name={fieldName}
         defaultValue={value}
         className={inputClassName}
+        placeholder={placeholder}
+        autoFocus
         onKeyDown={(event) => {
-          if (event.key === "Escape") {
+          if (event.key === "Enter") {
+            submitEdit();
+          } else if (event.key === "Escape") {
             flushSync(() => {
               setEdit(false);
             });
             buttonRef.current?.focus();
           }
         }}
-        onBlur={(event) => {
-          if (
-            inputRef.current?.value !== value &&
-            inputRef.current?.value.trim() !== ""
-          ) {
-            fetcher.submit(event.currentTarget);
-          }
-          setEdit(false);
-        }}
       />
-    </fetcher.Form>
+    </div>
   ) : (
     <button
       aria-label={buttonLabel}

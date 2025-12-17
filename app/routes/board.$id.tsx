@@ -5,7 +5,7 @@ import { z } from "zod";
 import { badRequest, notFound } from "../http/bad-request";
 import { requireAuthCookie } from "../auth/auth";
 
-import { INTENTS } from "./types";
+import { INTENTS, type ItemMutation } from "./types";
 import {
   createColumn,
   updateColumnName,
@@ -15,6 +15,7 @@ import {
   upsertItem,
   updateBoardName,
   deleteCard,
+  getItem,
 } from "./queries";
 import { Board } from "./board/board";
 import {
@@ -24,6 +25,7 @@ import {
   createColumnSchema,
   updateColumnSchema,
   moveColumnSchema,
+  moveItemSchema,
   tryParseFormData,
   formDataToObject,
 } from "./validation";
@@ -85,14 +87,32 @@ export async function action({
       await updateBoardName(boardId, result.data.name, accountId);
       break;
     }
-    case INTENTS.moveItem:
-    case INTENTS.createItem:
-    case INTENTS.updateItem: {
-      const result = tryParseFormData(formData, itemMutationSchema);
-      if (!result.success) throw badRequest(result.error);
-      await upsertItem({ ...result.data, boardId }, accountId);
-      break;
-    }
+      case INTENTS.moveItem: {
+        const result = tryParseFormData(formData, moveItemSchema);
+        if (!result.success) throw badRequest(result.error);
+        
+        // For move operations, fetch existing item and update only columnId and order
+        const existingItem = await getItem(result.data.id, accountId);
+        if (!existingItem) throw badRequest("Item not found");
+        
+        // Upsert with existing data but new position
+        await upsertItem({
+          id: existingItem.id,
+          columnId: result.data.columnId,
+          title: existingItem.title,
+          order: result.data.order,
+          content: existingItem.content,
+          boardId,
+        }, accountId);
+        break;
+      }
+     case INTENTS.createItem:
+     case INTENTS.updateItem: {
+       const result = tryParseFormData(formData, itemMutationSchema);
+       if (!result.success) throw badRequest(result.error);
+       await upsertItem({ ...result.data, boardId }, accountId);
+       break;
+     }
     case INTENTS.createColumn: {
       const result = tryParseFormData(formData, createColumnSchema);
       if (!result.success) throw badRequest(result.error);

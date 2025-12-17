@@ -91,6 +91,7 @@ export function Column({ name, columnId, items, color = "#94a3b8" }: ColumnProps
             buttonLabel={`Edit column "${name}" name`}
             inputClassName="border border-slate-400 flex-1 rounded-lg py-1 px-2 font-medium text-black"
             buttonClassName="block rounded-lg text-left flex-1 border border-transparent py-1 px-2 font-medium text-slate-600"
+            placeholder="Column name..."
           >
             <input type="hidden" name="intent" value={INTENTS.updateColumn} />
             <input type="hidden" name="columnId" value={columnId} />

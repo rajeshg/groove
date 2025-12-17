@@ -82,6 +82,15 @@ export async function updateBoardName(
   });
 }
 
+export async function getItem(id: string, accountId: string) {
+  return prisma.item.findUnique({
+    where: {
+      id,
+      Board: { accountId },
+    },
+  });
+}
+
 export function upsertItem(
   mutation: ItemMutation & { boardId: number },
   accountId: string

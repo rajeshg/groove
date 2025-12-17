@@ -70,6 +70,7 @@ export function Board() {
           buttonClassName="mx-8 my-4 text-2xl font-medium block rounded-lg text-left border border-transparent py-1 px-2 text-slate-800"
           buttonLabel={`Edit board "${board.name}" name`}
           inputLabel="Edit board name"
+          placeholder="Board name..."
         >
           <input type="hidden" name="intent" value={INTENTS.updateBoardName} />
           <input type="hidden" name="id" value={board.id} />

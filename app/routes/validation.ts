@@ -78,7 +78,11 @@ export type UpdateItemInput = z.infer<typeof updateItemSchema>;
 
 export const moveItemSchema = z.object({
   intent: z.literal("moveItem"),
-  ...itemMutationSchema.shape,
+  id: z.string().min(1, "Invalid item ID"),
+  columnId: z.string().min(1, "Invalid column ID"),
+  title: z.string().optional(),
+  order: z.coerce.number("Order must be a number").finite("Order must be a valid number"),
+  content: z.string().nullable().default(null),
 });
 
 export type MoveItemInput = z.infer<typeof moveItemSchema>;
