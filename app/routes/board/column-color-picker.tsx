@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useFetcher } from "react-router";
+import { createPortal } from "react-dom";
 import { COLOR_PRESETS } from "../../constants/colors";
 import { INTENTS } from "../types";
 
@@ -15,15 +16,27 @@ export function ColumnColorPicker({
   currentColor,
 }: ColumnColorPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const pickerRef = useRef<HTMLDivElement>(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const fetcher = useFetcher();
+
+  // Position dropdown when opening
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + 4,
+        left: rect.left,
+      });
+    }
+  }, [isOpen]);
 
   // Close picker when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
-        pickerRef.current &&
-        !pickerRef.current.contains(event.target as Node)
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
       ) {
         setIsOpen(false);
       }
@@ -49,8 +62,9 @@ export function ColumnColorPicker({
   };
 
   return (
-    <div className="relative" ref={pickerRef}>
+    <>
       <button
+        ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         className="w-8 h-8 rounded-lg border-2 border-slate-300 hover:border-slate-400 transition-colors cursor-pointer"
         style={{ backgroundColor: currentColor }}
@@ -58,8 +72,14 @@ export function ColumnColorPicker({
         aria-label={`Change color for column ${columnName}`}
       />
 
-      {isOpen && (
-        <div className="absolute top-10 left-0 z-50 bg-white rounded-lg shadow-lg p-3 border border-slate-200">
+      {isOpen && createPortal(
+        <div
+          className="fixed z-50 bg-white rounded-lg shadow-lg p-3 border border-slate-200"
+          style={{
+            top: dropdownPosition.top,
+            left: dropdownPosition.left,
+          }}
+        >
           <p className="text-xs font-semibold text-slate-700 mb-2 text-center">
             Colors
           </p>
@@ -79,8 +99,9 @@ export function ColumnColorPicker({
               />
             ))}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
 }
