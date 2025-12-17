@@ -178,8 +178,10 @@ export function Card({
              event.dataTransfer.effectAllowed = "move";
              event.dataTransfer.setData(
                CONTENT_TYPES.card,
-               JSON.stringify({ id })
+               JSON.stringify({ id, title })
              );
+             // Add visual feedback
+             event.dataTransfer.setDragImage(event.currentTarget, event.currentTarget.clientWidth / 2, 10);
            }}
            onDragEnd={() => {
              setIsDragging(false);

@@ -80,13 +80,6 @@ export function Board() {
 
         <div
           className="flex flex-grow min-h-0 h-full items-start gap-4 px-8 pb-4"
-          onDragStart={(e) => {
-            // Track when card dragging starts
-            if (e.target instanceof HTMLElement && e.target.closest('[data-card-id]')) {
-              const cardId = e.target.closest('[data-card-id]')?.getAttribute('data-card-id');
-              if (cardId) setDraggedCardId(cardId);
-            }
-          }}
           onDragEnd={() => {
             // Reset all drag states when any drag ends
             setDraggedCardId(null);
@@ -95,24 +88,29 @@ export function Board() {
         >
          {columnArray.map((col, index) => {
            return (
-             <div
-               key={col.id}
-               draggable
-               className={`cursor-grab active:cursor-grabbing ${draggedColumnId === col.id ? "opacity-50" : ""}`}
-               onDragStart={(e) => {
-                 setDraggedColumnId(col.id);
-                 e.dataTransfer.effectAllowed = "move";
-                 e.dataTransfer.setData(CONTENT_TYPES.column, JSON.stringify({ id: col.id }));
-               }}
-               onDragEnd={() => {
-                 setDraggedColumnId(null);
-               }}
-               onDragOver={(e) => {
-                 if (e.dataTransfer.types.includes(CONTENT_TYPES.column)) {
-                   e.preventDefault();
-                   e.dataTransfer.dropEffect = "move";
-                 }
-               }}
+              <div
+                key={col.id}
+                draggable
+                className={`cursor-grab active:cursor-grabbing transition-all duration-200 relative group ${
+                  draggedColumnId === col.id ? "opacity-50 rotate-1 scale-95 shadow-lg" : ""
+                }`}
+                title="Drag to reorder column"
+                onDragStart={(e) => {
+                  setDraggedColumnId(col.id);
+                  e.dataTransfer.effectAllowed = "move";
+                  e.dataTransfer.setData(CONTENT_TYPES.column, JSON.stringify({ id: col.id, name: col.name }));
+                  // Add visual feedback
+                  e.dataTransfer.setDragImage(e.currentTarget, e.currentTarget.clientWidth / 2, 20);
+                }}
+                onDragEnd={() => {
+                  setDraggedColumnId(null);
+                }}
+                onDragOver={(e) => {
+                  if (e.dataTransfer.types.includes(CONTENT_TYPES.column)) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                  }
+                }}
                onDrop={(e) => {
                  e.preventDefault();
                  const transfer = JSON.parse(e.dataTransfer.getData(CONTENT_TYPES.column));
@@ -149,13 +147,19 @@ export function Board() {
 
                  setDraggedColumnId(null);
                }}
-             >
-               <Column
-                 name={col.name}
-                 columnId={col.id}
-                 items={col.items}
-                 color={(col as any).color || "#94a3b8"}
-               />
+              >
+                {/* Drag handle indicator */}
+                <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
+                  <div className="bg-slate-700 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap">
+                    ⇅ Drag to reorder
+                  </div>
+                </div>
+                <Column
+                  name={col.name}
+                  columnId={col.id}
+                  items={col.items}
+                  color={(col as any).color || "#94a3b8"}
+                />
              </div>
            );
          })}
