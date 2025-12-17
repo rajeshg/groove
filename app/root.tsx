@@ -5,12 +5,15 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLoaderData,
+  Link,
 } from "react-router";
 
-import type { Route } from "./+types/root";
 import "./app.css";
+import { LoginIcon, LogoutIcon } from "./icons/icons";
+import { getAuthFromRequest } from "./auth/auth";
 
-export const links: Route.LinksFunction = () => [
+export const links = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   {
     rel: "preconnect",
@@ -22,6 +25,11 @@ export const links: Route.LinksFunction = () => [
     href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
   },
 ];
+
+export async function loader({ request }: { request: Request }) {
+  let auth = await getAuthFromRequest(request);
+  return auth;
+}
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -42,10 +50,85 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  let userId = useLoaderData<typeof loader>();
+
+  return (
+    <div className="h-screen bg-slate-100 text-slate-900">
+      <div className="h-full flex flex-col min-h-0">
+        <div className="bg-slate-900 border-b border-slate-800 flex items-center justify-between py-4 px-8 box-border">
+          <Link to="/home" className="block leading-3 w-1/3">
+            <div className="font-black text-2xl text-white">Trellix</div>
+            <div className="text-slate-500">a Remix Demo</div>
+          </Link>
+          <div className="flex items-center gap-6">
+            <IconLink
+              href="https://www.youtube.com/watch?v=RTHzZVbTl6c&list=PLXoynULbYuED9b2k5LS44v9TQjfXifwNu&pp=gAQBiAQB"
+              icon="/yt_icon_mono_dark.png"
+              label="Videos"
+            />
+            <IconLink
+              href="https://github.com/remix-run/example-trellix"
+              label="Source"
+              icon="/github-mark-white.png"
+            />
+            <IconLink
+              href="https://remix.run/docs/en/main"
+              icon="/r.png"
+              label="Docs"
+            />
+          </div>
+          <div className="w-1/3 flex justify-end">
+            {userId ? (
+              <form method="post" action="/logout">
+                <button className="block text-center">
+                  <LogoutIcon />
+                  <br />
+                  <span className="text-slate-500 text-xs uppercase font-bold">
+                    Log out
+                  </span>
+                </button>
+              </form>
+            ) : (
+              <Link to="/login" className="block text-center">
+                <LoginIcon />
+                <br />
+                <span className="text-slate-500 text-xs uppercase font-bold">
+                  Log in
+                </span>
+              </Link>
+            )}
+          </div>
+        </div>
+
+        <div className="flex-grow min-h-0 h-full">
+          <Outlet />
+        </div>
+      </div>
+    </div>
+  );
 }
 
-export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+function IconLink({
+  icon,
+  href,
+  label,
+}: {
+  icon: string;
+  href: string;
+  label: string;
+}) {
+  return (
+    <a
+      href={href}
+      className="text-slate-500 text-xs uppercase font-bold text-center"
+    >
+      <img src={icon} aria-hidden className="inline-block h-8" />
+      <span className="block mt-2">{label}</span>
+    </a>
+  );
+}
+
+export function ErrorBoundary({ error }: { error: unknown }) {
   let message = "Oops!";
   let details = "An unexpected error occurred.";
   let stack: string | undefined;
