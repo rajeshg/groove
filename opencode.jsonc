@@ -1,4 +1,3 @@
 {
-  "plugin": ["opencode-elf@latest"],
   "$schema": "https://opencode.ai/config.json",
 }

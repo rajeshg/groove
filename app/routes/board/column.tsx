@@ -41,32 +41,38 @@ export function Column({ name, columnId, items, color = "#94a3b8" }: ColumnProps
         "flex-shrink-0 flex flex-col overflow-hidden max-h-full w-80 border border-slate-400 rounded-xl shadow-md transition-all duration-200 " +
         (acceptDrop ? `outline outline-4 outline-red-500 bg-red-50 shadow-lg scale-105` : `bg-slate-50`)
       }
-      onDragOver={(event) => {
-        if (
-          items.length === 0 &&
-          event.dataTransfer.types.includes(CONTENT_TYPES.card)
-        ) {
-          event.preventDefault();
-          setAcceptDrop(true);
-        }
-      }}
-      onDragLeave={() => {
-        setAcceptDrop(false);
-      }}
-      onDrop={(event) => {
-        let transfer = JSON.parse(
-          event.dataTransfer.getData(CONTENT_TYPES.card)
-        );
-        invariant(transfer.id, "missing transfer.id");
-        invariant(transfer.title, "missing transfer.title");
+       onDragOver={(event) => {
+         // Only accept card drops, not column drops
+         if (event.dataTransfer.types.includes(CONTENT_TYPES.card)) {
+           if (items.length === 0) {
+             event.preventDefault();
+             setAcceptDrop(true);
+           }
+         }
+         // Ignore column drops on the empty column drop zone
+       }}
+       onDragLeave={() => {
+         setAcceptDrop(false);
+       }}
+       onDrop={(event) => {
+         // Only handle card drops
+         if (!event.dataTransfer.types.includes(CONTENT_TYPES.card)) {
+           return;
+         }
 
-         let mutation: ItemMutation = {
-           order: 1,
-           columnId: columnId,
-           id: transfer.id,
-           title: transfer.title,
-           content: null,
-         };
+         let transfer = JSON.parse(
+           event.dataTransfer.getData(CONTENT_TYPES.card)
+         );
+         invariant(transfer.id, "missing transfer.id");
+         invariant(transfer.title, "missing transfer.title");
+
+          let mutation: ItemMutation = {
+            order: 1,
+            columnId: columnId,
+            id: transfer.id,
+            title: transfer.title,
+            content: null,
+          };
 
         submit(
           { ...mutation, intent: INTENTS.moveItem },

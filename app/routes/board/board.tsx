@@ -90,63 +90,91 @@ export function Board() {
            return (
               <div
                 key={col.id}
-                draggable
                 className={`cursor-grab active:cursor-grabbing transition-all duration-200 relative group ${
                   draggedColumnId === col.id ? "opacity-50 rotate-1 scale-95 shadow-lg" : ""
                 }`}
                 title="Drag to reorder column"
+                draggable="true"
                 onDragStart={(e) => {
+                  // Only start drag if clicking on the column header area, not nested elements
                   setDraggedColumnId(col.id);
-                  e.dataTransfer.effectAllowed = "move";
-                  e.dataTransfer.setData(CONTENT_TYPES.column, JSON.stringify({ id: col.id, name: col.name }));
-                  // Add visual feedback
-                  e.dataTransfer.setDragImage(e.currentTarget, e.currentTarget.clientWidth / 2, 20);
+                  e.dataTransfer!.effectAllowed = "move";
+                  e.dataTransfer!.setData(CONTENT_TYPES.column, JSON.stringify({ id: col.id, name: col.name }));
                 }}
                 onDragEnd={() => {
                   setDraggedColumnId(null);
                 }}
                 onDragOver={(e) => {
+                  // Check if this is a column drag
                   if (e.dataTransfer.types.includes(CONTENT_TYPES.column)) {
                     e.preventDefault();
+                    e.stopPropagation();
                     e.dataTransfer.dropEffect = "move";
                   }
                 }}
-               onDrop={(e) => {
-                 e.preventDefault();
-                 const transfer = JSON.parse(e.dataTransfer.getData(CONTENT_TYPES.column));
-                 const draggedId = transfer.id;
+                onDrop={(e) => {
+                  // Only handle column drops
+                  if (!e.dataTransfer.types.includes(CONTENT_TYPES.column)) {
+                    return;
+                  }
+                  
+                  e.preventDefault();
+                  e.stopPropagation();
+                  
+                  try {
+                    const transfer = JSON.parse(e.dataTransfer.getData(CONTENT_TYPES.column));
+                    const draggedId = transfer.id;
 
-                 if (draggedId === col.id) {
-                   setDraggedColumnId(null);
-                   return;
-                 }
+                    if (draggedId === col.id) {
+                      setDraggedColumnId(null);
+                      return;
+                    }
 
-                 // Calculate new order
-                 const draggedCol = columnArray.find((c) => c.id === draggedId);
-                 if (!draggedCol) return;
+                    // Calculate new order - use cursor position to determine left/right
+                    const draggedCol = columnArray.find((c) => c.id === draggedId);
+                    if (!draggedCol) return;
 
-                 const draggedOrder = draggedCol.order || 0;
-                 const targetOrder = col.order || 0;
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const isDroppedLeft = e.clientX < rect.left + rect.width / 2;
+                    
+                    let newOrder: number;
+                    if (isDroppedLeft) {
+                      // Dropped to the left - insert before this column
+                      const prevCol = columnArray[columnArray.indexOf(col) - 1];
+                      if (prevCol) {
+                        newOrder = ((prevCol.order || 0) + (col.order || 0)) / 2;
+                      } else {
+                        newOrder = (col.order || 0) - 1;
+                      }
+                    } else {
+                      // Dropped to the right - insert after this column
+                      const nextCol = columnArray[columnArray.indexOf(col) + 1];
+                      if (nextCol) {
+                        newOrder = ((col.order || 0) + (nextCol.order || 0)) / 2;
+                      } else {
+                        newOrder = (col.order || 0) + 1;
+                      }
+                    }
 
-                 // Calculate the new order for the dragged column
-                 const newOrder = (draggedOrder + targetOrder) / 2;
+                    // Submit the move
+                    submit(
+                      {
+                        intent: INTENTS.moveColumn,
+                        id: draggedId,
+                        order: String(newOrder),
+                      },
+                      {
+                        method: "post",
+                        navigate: false,
+                        fetcherKey: `column:${draggedId}`,
+                      }
+                    );
 
-                 // Submit the move
-                 submit(
-                   {
-                     intent: INTENTS.moveColumn,
-                     id: draggedId,
-                     order: String(newOrder),
-                   },
-                   {
-                     method: "post",
-                     navigate: false,
-                     fetcherKey: `column:${draggedId}`,
-                   }
-                 );
-
-                 setDraggedColumnId(null);
-               }}
+                    setDraggedColumnId(null);
+                  } catch (error) {
+                    console.error("Error handling column drop:", error);
+                  }
+                }}
               >
                 {/* Drag handle indicator */}
                 <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
