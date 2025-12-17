@@ -264,6 +264,8 @@ export function Board() {
                       isDefault={(col as any).isDefault || false}
                       isExpanded={true}
                       onToggle={() => handleColumnToggle(col.id)}
+                      boardName={board.name}
+                      boardId={board.id}
                     />
                   </div>
                 ) : (

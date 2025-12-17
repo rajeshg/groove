@@ -17,6 +17,8 @@ interface CardProps {
   order: number;
   nextOrder: number;
   previousOrder: number;
+  boardName: string;
+  boardId: number;
 }
 
 export function Card({
@@ -28,6 +30,8 @@ export function Card({
   order,
   nextOrder,
   previousOrder,
+  boardName,
+  boardId,
 }: CardProps) {
   let submit = useSubmit();
   let deleteFetcher = useFetcher();

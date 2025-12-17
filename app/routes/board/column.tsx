@@ -24,9 +24,21 @@ interface ColumnProps {
   isDefault?: boolean;
   isExpanded?: boolean;
   onToggle?: () => void;
+  boardName: string; // Board name for cards
+  boardId: number; // Board ID number for cards
 }
 
-export function Column({ name, columnId, items, color = "#94a3b8", isDefault = false, isExpanded = true, onToggle }: ColumnProps) {
+export function Column({
+  name,
+  columnId,
+  items,
+  color = "#94a3b8",
+  isDefault = false,
+  isExpanded = true,
+  onToggle,
+  boardName,
+  boardId,
+}: ColumnProps) {
   let submit = useSubmit();
 
   let [acceptDrop, setAcceptDrop] = useState(false);
@@ -154,12 +166,12 @@ export function Column({ name, columnId, items, color = "#94a3b8", isDefault = f
                content={item.content}
                id={item.id}
                order={item.order}
+               nextOrder={nextOrder}
+               previousOrder={previousOrder}
                columnId={columnId}
                columnColor={color}
-               previousOrder={items[index - 1] ? items[index - 1].order : 0}
-               nextOrder={
-                 items[index + 1] ? items[index + 1].order : item.order + 1
-               }
+               boardName={boardName}
+               boardId={boardId}
              />
            ))}
        </ul>
