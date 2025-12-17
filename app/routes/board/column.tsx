@@ -102,9 +102,12 @@ export function Column({ name, columnId, items, color = "#94a3b8", isDefault = f
               inputClassName="border border-slate-300 dark:border-slate-500 flex-1 rounded px-2 py-1 font-bold text-slate-900 dark:text-slate-50 dark:bg-slate-700 text-sm"
               buttonClassName="block rounded text-left flex-1 border border-transparent py-1 px-2 font-bold text-slate-900 dark:text-slate-50 text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
               placeholder="Column name..."
+              hiddenFields={{
+                intent: INTENTS.updateColumn,
+                columnId: columnId,
+              }}
             >
-              <input type="hidden" name="intent" value={INTENTS.updateColumn} />
-              <input type="hidden" name="columnId" value={columnId} />
+              <></>
             </EditableText>
           ) : (
             <button

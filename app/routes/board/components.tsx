@@ -44,6 +44,7 @@ export function EditableText({
   buttonClassName,
   buttonLabel,
   placeholder,
+  hiddenFields = {},
 }: {
   children: React.ReactNode;
   fieldName: string;
@@ -53,6 +54,7 @@ export function EditableText({
   buttonClassName: string;
   buttonLabel: string;
   placeholder?: string;
+  hiddenFields?: Record<string, string>;
 }) {
   let fetcher = useFetcher();
   let [edit, setEdit] = useState(false);
@@ -68,21 +70,12 @@ export function EditableText({
   const submitEdit = () => {
     const newValue = inputRef.current?.value || "";
     if (newValue.trim() !== "" && newValue !== value) {
-      // Get the form element that contains all the hidden fields
-      const form = editContainerRef.current?.closest("form");
-      if (form) {
-        // Create a new FormData from the form which includes all hidden fields
-        const formData = new FormData(form);
-        // Update the field value
-        formData.set(fieldName, newValue);
-        fetcher.submit(formData, { method: "post" });
-      } else {
-        // Fallback: just submit the field if no form found
-        fetcher.submit(
-          { [fieldName]: newValue },
-          { method: "post" }
-        );
-      }
+      // Include the hidden fields in the submission
+      const formDataObj: Record<string, string> = {
+        [fieldName]: newValue,
+        ...hiddenFields,
+      };
+      fetcher.submit(formDataObj, { method: "post" });
     }
     setEdit(false);
   };

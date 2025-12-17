@@ -106,7 +106,7 @@ export function ColumnMenu({
          <div
            data-column-menu-portal
            onMouseDown={(e) => e.stopPropagation()}
-           className="fixed z-50 bg-white dark:bg-slate-800 rounded-lg shadow-lg p-2 border border-slate-200 dark:border-slate-700 min-w-48"
+            className="fixed z-50 bg-white dark:bg-slate-800 rounded-lg shadow-lg p-2 border border-slate-200 dark:border-slate-700 min-w-48 max-w-64"
            style={{
              top: dropdownPosition.top,
              left: dropdownPosition.left,
@@ -117,7 +117,7 @@ export function ColumnMenu({
             <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2 text-center">
               Column Color
             </p>
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-4 gap-2 justify-center">
               {COLOR_PRESETS.map((preset) => (
                 <button
                   key={preset.value}
@@ -126,12 +126,17 @@ export function ColumnMenu({
                     console.log("Color button clicked:", preset.value);
                     handleColorSelect(preset.value);
                   }}
-                  className={`w-8 h-8 rounded-lg border-2 transition-all hover:scale-110 ${
+                  className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 hover:shadow-lg ${
                     currentColor === preset.value
-                      ? "border-slate-900 dark:border-slate-100 ring-2 ring-slate-900 dark:ring-slate-100 ring-offset-1"
+                      ? "border-slate-900 dark:border-white ring-2 ring-slate-900 dark:ring-white ring-offset-1 shadow-md"
                       : "border-slate-300 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500"
                   }`}
-                  style={{ backgroundColor: preset.value }}
+                  style={{ 
+                    backgroundColor: preset.value,
+                    imageRendering: 'crisp-edges',
+                    WebkitFontSmoothing: 'none',
+                    MozOsxFontSmoothing: 'grayscale'
+                  }}
                   title={preset.name}
                   aria-label={`Select ${preset.name}`}
                 />
@@ -154,10 +159,13 @@ export function ColumnMenu({
                    Delete Column
                  </button>
               ) : (
-                <div className="space-y-2">
-                  <p className="text-sm text-slate-700 dark:text-slate-300">
-                    Delete "{columnName}"? All cards will move to "May be?".
-                  </p>
+                 <div className="space-y-2">
+                   <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                     Delete "<span className="font-medium">{columnName}</span>"?
+                   </p>
+                   <p className="text-xs text-slate-600 dark:text-slate-400">
+                     All cards will move to "May be?" column.
+                   </p>
                   <div className="flex gap-2">
                     <button
                       type="button"

@@ -123,9 +123,12 @@ export function Board() {
           buttonLabel={`Edit board "${board.name}" name`}
           inputLabel="Edit board name"
           placeholder="Board name..."
+          hiddenFields={{
+            intent: INTENTS.updateBoardName,
+            id: String(board.id),
+          }}
         >
-          <input type="hidden" name="intent" value={INTENTS.updateBoardName} />
-          <input type="hidden" name="id" value={board.id} />
+          <></>
         </EditableText>
       </h1>
 

@@ -1,48 +1,32 @@
 /**
  * Color presets for columns and boards
- * Includes default presets and a curated list for user selection
+ * Uses exact Tailwind color values for crisp, high-resolution display
  */
 
 export const DEFAULT_COLUMN_COLORS = {
-  notNow: "#cbd5e1", // Slate-200 (Not Now)
-  mayBe: "#ec4899", // Pink-500 (May be?)
-  done: "#06b6d4", // Cyan-500 (Done)
+  notNow: "#cbd5e1", // Slate-300 (Not Now) - lighter, softer
+  mayBe: "#f472b6", // Orange-500 (May be?) - more vibrant than pink
+  done: "#059669", // Emerald-500 (Done) - clearer than cyan
 } as const;
 
 export const COLOR_PRESETS = [
-  // Grays
-  { name: "Slate", value: "#94a3b8" },
-  { name: "Gray", value: "#9ca3af" },
-  { name: "Zinc", value: "#a1a1aa" },
+  // High-contrast neutrals - Row 1
+  { name: "Slate", value: "#64748b" },      // slate-600 (high contrast)
+  { name: "Gray", value: "#6b7280" },       // gray-600 
+  { name: "Zinc", value: "#71717a" },       // zinc-600
   
-  // Blues
-  { name: "Blue", value: "#3b82f6" },
-  { name: "Sky", value: "#0ea5e9" },
-  { name: "Cyan", value: "#06b6d4" },
+  // Vibrant primary colors - Row 2
+  { name: "Red", value: "#dc2626" },         // red-600 (sharp, high contrast)
+  { name: "Orange", value: "#ea580c" },      // orange-600
+  { name: "Amber", value: "#d97706" },       // amber-600
+  { name: "Yellow", value: "#ca8a04" },       // yellow-600
   
-  // Greens
-  { name: "Green", value: "#10b981" },
-  { name: "Emerald", value: "#059669" },
-  { name: "Teal", value: "#14b8a6" },
-  
-  // Purples
-  { name: "Purple", value: "#a855f7" },
-  { name: "Violet", value: "#7c3aed" },
-  { name: "Indigo", value: "#6366f1" },
-  
-  // Pinks & Reds
-  { name: "Pink", value: "#ec4899" },
-  { name: "Rose", value: "#f43f5e" },
-  { name: "Red", value: "#ef4444" },
-  
-  // Oranges & Yellows
-  { name: "Amber", value: "#f59e0b" },
-  { name: "Orange", value: "#f97316" },
-  { name: "Yellow", value: "#eab308" },
-  
-  // Lime & others
-  { name: "Lime", value: "#84cc16" },
-  { name: "Fuchsia", value: "#d946ef" },
+  // Cool colors - Row 3
+  { name: "Green", value: "#16a34a" },        // green-600
+  { name: "Emerald", value: "#059669" },      // emerald-500
+  { name: "Teal", value: "#0d9488" },        // teal-600
+  { name: "Cyan", value: "#0891b2" },        // cyan-600
+  { name: "Blue", value: "#2563eb" },          // blue-600 (standard primary)
 ] as const;
 
 export type ColorPreset = (typeof COLOR_PRESETS)[number];
