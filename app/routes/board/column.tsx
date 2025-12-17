@@ -130,16 +130,14 @@ export function Column({ name, columnId, items, color = "#94a3b8" }: ColumnProps
            ))}
        </ul>
 
-       {items.length === 0 && (
-         <div className={`flex items-center justify-center flex-grow text-slate-300 transition-all duration-200 ${
-           acceptDrop ? 'bg-blue-50 bg-opacity-50' : ''
+       {items.length === 0 && !edit && (
+         <div className={`py-8 text-center text-slate-300 transition-all duration-200 ${
+           acceptDrop ? 'bg-blue-50' : ''
          }`}>
-           <div className="text-center">
-             <div className={`text-xs font-medium transition-opacity duration-200 ${
-               acceptDrop ? 'opacity-100' : 'opacity-50'
-             }`}>
-               {acceptDrop ? 'Drop here' : 'Empty'}
-             </div>
+           <div className={`text-xs font-medium transition-opacity duration-200 ${
+             acceptDrop ? 'opacity-100' : 'opacity-40'
+           }`}>
+             {acceptDrop ? 'Drop here' : ''}
            </div>
          </div>
        )}
