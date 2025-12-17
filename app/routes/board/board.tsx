@@ -90,9 +90,9 @@ export function Board() {
            return (
               <div
                 key={col.id}
-                className={`cursor-grab active:cursor-grabbing transition-all duration-200 relative group ${
-                  draggedColumnId === col.id ? "opacity-50 rotate-1 scale-95 shadow-lg" : ""
-                }`}
+                 className={`cursor-grab active:cursor-grabbing transition-all duration-200 relative group ${
+                   draggedColumnId === col.id ? "shadow-xl scale-105" : ""
+                 }`}
                 title="Drag to reorder column"
                 draggable="true"
                 onDragStart={(e) => {
@@ -176,12 +176,12 @@ export function Board() {
                   }
                 }}
               >
-                {/* Drag handle indicator */}
-                <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
-                  <div className="bg-slate-700 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap">
-                    ⇅ Drag to reorder
-                  </div>
-                </div>
+                 {/* Subtle drag indicator dot */}
+                 <div className="absolute left-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-40 transition-opacity duration-200">
+                   <div className="w-1 h-1 bg-slate-400 rounded-full"></div>
+                   <div className="w-1 h-1 bg-slate-400 rounded-full mt-1"></div>
+                   <div className="w-1 h-1 bg-slate-400 rounded-full mt-1"></div>
+                 </div>
                 <Column
                   name={col.name}
                   columnId={col.id}

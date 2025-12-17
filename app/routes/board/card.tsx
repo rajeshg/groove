@@ -158,21 +158,21 @@ export function Card({
          setAcceptDrop("none");
        }}
         className={
-          "border-t-4 border-b-2 -mb-[2px] last:mb-0 cursor-grab active:cursor-grabbing px-2 py-1 transition-colors duration-150 " +
+          "-mb-[1px] last:mb-0 px-2 py-1 transition-all duration-100 " +
           (acceptDrop === "top"
-            ? "border-t-4 border-b-4 border-t-red-500 border-b-red-500 bg-red-50"
+            ? "pt-3 pb-0 border-t-2 border-t-blue-400"
             : acceptDrop === "bottom"
-              ? "border-t-4 border-b-4 border-t-red-500 border-b-red-500 bg-red-50"
-              : "border-b-transparent")
+              ? "pt-0 pb-3 border-b-2 border-b-blue-400"
+              : "")
         }
-        style={{ borderTopColor: acceptDrop !== "none" ? "#ef4444" : columnColor }}
+        style={{ borderTopColor: columnColor }}
       >
          <div
            draggable
-           className={
-             "bg-white shadow shadow-slate-300 border border-slate-200 text-sm rounded-lg w-full py-2 px-3 relative group hover:shadow-md transition-all duration-200 " +
-             (isDragging ? "opacity-50 rotate-2 scale-95 shadow-lg" : "")
-           }
+            className={
+              "bg-white border border-slate-200 text-sm rounded-lg w-full py-2 px-3 relative group hover:shadow-sm transition-all duration-200 " +
+              (isDragging ? "opacity-60 shadow-md scale-98" : "shadow-xs")
+            }
            onDragStart={(event) => {
              setIsDragging(true);
              event.dataTransfer.effectAllowed = "move";
