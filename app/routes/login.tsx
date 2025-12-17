@@ -53,7 +53,7 @@ export default function Signup() {
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <h2
           id="login-header"
-          className="mt-6 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900"
+          className="mt-6 text-center text-2xl font-bold leading-9 tracking-tight text-slate-900"
         >
           Log in
         </h2>
@@ -66,7 +66,7 @@ export default function Signup() {
               <Label htmlFor="email">
                 Email address{" "}
                 {actionResult?.errors?.email && (
-                  <span id="email-error" className="text-brand-red">
+                  <span id="email-error" className="text-red-600 font-semibold">
                     {actionResult.errors.email}
                   </span>
                 )}
@@ -88,7 +88,7 @@ export default function Signup() {
               <Label htmlFor="password">
                 Password{" "}
                 {actionResult?.errors?.password && (
-                  <span id="password-error" className="text-brand-red">
+                  <span id="password-error" className="text-red-600 font-semibold">
                     {actionResult.errors.password}
                   </span>
                 )}
@@ -108,7 +108,7 @@ export default function Signup() {
             </div>
             <div className="text-sm text-slate-500">
               Don't have an account?{" "}
-              <Link className="underline" to="/signup">
+              <Link className="text-blue-600 hover:text-blue-700 underline" to="/signup">
                 Sign up
               </Link>
               .

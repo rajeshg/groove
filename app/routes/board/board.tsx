@@ -18,7 +18,7 @@ export function Board() {
   // merge pending items and existing items
   for (let pendingItem of pendingItems) {
     let item = itemsById.get(pendingItem.id);
-    let merged = item
+    let merged: any = item
       ? { ...item, ...pendingItem }
       : { ...pendingItem, boardId: board.id };
     itemsById.set(pendingItem.id, merged);
@@ -71,17 +71,18 @@ export function Board() {
         </EditableText>
       </h1>
 
-      <div className="flex flex-grow min-h-0 h-full items-start gap-4 px-8 pb-4">
-        {[...columns.values()].map((col) => {
-          return (
-            <Column
-              key={col.id}
-              name={col.name}
-              columnId={col.id}
-              items={col.items}
-            />
-          );
-        })}
+       <div className="flex flex-grow min-h-0 h-full items-start gap-4 px-8 pb-4">
+         {[...columns.values()].map((col) => {
+           return (
+             <Column
+               key={col.id}
+               name={col.name}
+               columnId={col.id}
+               items={col.items}
+               color={(col as any).color || "#94a3b8"}
+             />
+           );
+         })}
 
         <NewColumn
           boardId={board.id}

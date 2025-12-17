@@ -3,6 +3,7 @@ import { useSubmit } from "react-router";
 import invariant from "tiny-invariant";
 
 import { Icon } from "../../icons/icons";
+import { ColumnColorPicker } from "./column-color-picker";
 
 import {
   type ItemMutation,
@@ -19,9 +20,10 @@ interface ColumnProps {
   name: string;
   columnId: string;
   items: RenderedItem[];
+  color?: string;
 }
 
-export function Column({ name, columnId, items }: ColumnProps) {
+export function Column({ name, columnId, items, color = "#94a3b8" }: ColumnProps) {
   let submit = useSubmit();
 
   let [acceptDrop, setAcceptDrop] = useState(false);
@@ -36,8 +38,8 @@ export function Column({ name, columnId, items }: ColumnProps) {
   return (
     <div
       className={
-        "flex-shrink-0 flex flex-col overflow-hidden max-h-full w-80 border-slate-400 rounded-xl shadow-sm shadow-slate-400 bg-slate-100 " +
-        (acceptDrop ? `outline outline-2 outline-brand-red` : ``)
+        "flex-shrink-0 flex flex-col overflow-hidden max-h-full w-80 border border-slate-400 rounded-xl shadow-md bg-slate-50 " +
+        (acceptDrop ? `outline outline-2 outline-red-500` : ``)
       }
       onDragOver={(event) => {
         if (
@@ -58,12 +60,13 @@ export function Column({ name, columnId, items }: ColumnProps) {
         invariant(transfer.id, "missing transfer.id");
         invariant(transfer.title, "missing transfer.title");
 
-        let mutation: ItemMutation = {
-          order: 1,
-          columnId: columnId,
-          id: transfer.id,
-          title: transfer.title,
-        };
+         let mutation: ItemMutation = {
+           order: 1,
+           columnId: columnId,
+           id: transfer.id,
+           title: transfer.title,
+           content: null,
+         };
 
         submit(
           { ...mutation, intent: INTENTS.moveItem },
@@ -79,37 +82,45 @@ export function Column({ name, columnId, items }: ColumnProps) {
         setAcceptDrop(false);
       }}
     >
-      <div className="p-2">
-        <EditableText
-          fieldName="name"
-          value={name}
-          inputLabel="Edit column name"
-          buttonLabel={`Edit column "${name}" name`}
-          inputClassName="border border-slate-400 w-full rounded-lg py-1 px-2 font-medium text-black"
-          buttonClassName="block rounded-lg text-left w-full border border-transparent py-1 px-2 font-medium text-slate-600"
-        >
-          <input type="hidden" name="intent" value={INTENTS.updateColumn} />
-          <input type="hidden" name="columnId" value={columnId} />
-        </EditableText>
+      <div className="p-2 border-b-2 bg-white" style={{ borderColor: color }}>
+        <div className="flex items-center justify-between gap-2">
+          <EditableText
+            fieldName="name"
+            value={name}
+            inputLabel="Edit column name"
+            buttonLabel={`Edit column "${name}" name`}
+            inputClassName="border border-slate-400 flex-1 rounded-lg py-1 px-2 font-medium text-black"
+            buttonClassName="block rounded-lg text-left flex-1 border border-transparent py-1 px-2 font-medium text-slate-600"
+          >
+            <input type="hidden" name="intent" value={INTENTS.updateColumn} />
+            <input type="hidden" name="columnId" value={columnId} />
+          </EditableText>
+          <ColumnColorPicker
+            columnId={columnId}
+            columnName={name}
+            currentColor={color}
+          />
+        </div>
       </div>
 
       <ul ref={listRef} className="flex-grow overflow-auto min-h-[2px]">
-        {items
-          .sort((a, b) => a.order - b.order)
-          .map((item, index, items) => (
-            <Card
-              key={item.id}
-              title={item.title}
-              content={item.content}
-              id={item.id}
-              order={item.order}
-              columnId={columnId}
-              previousOrder={items[index - 1] ? items[index - 1].order : 0}
-              nextOrder={
-                items[index + 1] ? items[index + 1].order : item.order + 1
-              }
-            />
-          ))}
+         {items
+           .sort((a, b) => a.order - b.order)
+           .map((item, index, items) => (
+             <Card
+               key={item.id}
+               title={item.title}
+               content={item.content}
+               id={item.id}
+               order={item.order}
+               columnId={columnId}
+               columnColor={color}
+               previousOrder={items[index - 1] ? items[index - 1].order : 0}
+               nextOrder={
+                 items[index + 1] ? items[index + 1].order : item.order + 1
+               }
+             />
+           ))}
       </ul>
       {edit ? (
         <NewCard

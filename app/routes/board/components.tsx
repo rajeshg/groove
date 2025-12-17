@@ -15,7 +15,7 @@ export let SaveButton = forwardRef<
       // https://bugs.webkit.org/show_bug.cgi?id=22261
       tabIndex={0}
       {...props}
-      className="text-sm rounded-lg text-left p-2 font-medium text-white bg-brand-blue"
+      className="text-sm rounded-lg text-left p-2 font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
     />
   );
 });

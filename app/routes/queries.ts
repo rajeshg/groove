@@ -1,4 +1,5 @@
 import { prisma } from "../db/prisma";
+import { DEFAULT_COLUMN_COLORS } from "../constants/colors";
 
 import type { ItemMutation } from "./types";
 
@@ -17,6 +18,28 @@ export async function createBoard(userId: string, name: string, color: string) {
         connect: {
           id: userId,
         },
+      },
+      columns: {
+        create: [
+          {
+            name: "Not Now",
+            color: DEFAULT_COLUMN_COLORS.notNow,
+            order: 1,
+            id: `col-not-now-${Date.now()}-1`,
+          },
+          {
+            name: "May be?",
+            color: DEFAULT_COLUMN_COLORS.mayBe,
+            order: 2,
+            id: `col-maybe-${Date.now()}-2`,
+          },
+          {
+            name: "Done",
+            color: DEFAULT_COLUMN_COLORS.done,
+            order: 3,
+            id: `col-done-${Date.now()}-3`,
+          },
+        ],
       },
     },
   });
@@ -83,6 +106,17 @@ export async function updateColumnName(
   return prisma.column.update({
     where: { id, Board: { accountId } },
     data: { name },
+  });
+}
+
+export async function updateColumnColor(
+  id: string,
+  color: string,
+  accountId: string
+) {
+  return prisma.column.update({
+    where: { id, Board: { accountId } },
+    data: { color },
   });
 }
 

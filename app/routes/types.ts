@@ -15,6 +15,7 @@ export const INTENTS = {
   createColumn: "newColumn" as const,
   updateColumn: "updateColumn" as const,
   createItem: "createItem" as const,
+  updateItem: "updateItem" as const,
   moveItem: "moveItem" as const,
   moveColumn: "moveColumn" as const,
   updateBoardName: "updateBoardName" as const,
@@ -28,6 +29,7 @@ export const ItemMutationFields = {
   columnId: { type: String, name: "columnId" },
   order: { type: Number, name: "order" },
   title: { type: String, name: "title" },
+  content: { type: String, name: "content" },
 } as const;
 
 export type ItemMutation = MutationFromFields<typeof ItemMutationFields>;
@@ -41,5 +43,5 @@ type ConstructorToType<T> = T extends typeof String
     : never;
 
 export type MutationFromFields<T extends Record<string, any>> = {
-  [K in keyof T]: ConstructorToType<T[K]["type"]>;
+  [K in keyof T]: K extends "content" ? string | null : ConstructorToType<T[K]["type"]>;
 };

@@ -4,13 +4,71 @@
   --font-sans:
     "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
     "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  
+  --color-brand-blue: #2563eb;
+  --color-brand-blue-dark: #1d4ed8;
+  --color-brand-red: #dc2626;
+  --color-brand-red-dark: #b91c1c;
 }
 
 html,
 body {
-  @apply bg-white dark:bg-gray-950;
+  @apply bg-slate-50 dark:bg-gray-950;
 
   @media (prefers-color-scheme: dark) {
     color-scheme: dark;
   }
+}
+
+/* Design System */
+:root {
+  --color-primary: #2563eb;
+  --color-primary-dark: #1d4ed8;
+  --color-danger: #dc2626;
+  --color-danger-dark: #b91c1c;
+  --color-text-primary: #1f2937;
+  --color-text-secondary: #6b7280;
+  --color-border: #e5e7eb;
+  --color-bg-hover: #f9fafb;
+}
+
+/* Custom utility classes for common patterns */
+.btn-primary {
+  @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-semibold text-white transition-colors;
+  background-color: var(--color-primary);
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary-dark);
+}
+
+.btn-primary:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors;
+}
+
+.btn-danger {
+  @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-semibold text-white transition-colors;
+  background-color: var(--color-danger);
+}
+
+.btn-danger:hover {
+  background-color: var(--color-danger-dark);
+}
+
+.btn-sm {
+  @apply px-2 py-1 text-sm;
+}
+
+.input-base {
+  @apply block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 placeholder:text-slate-400 transition-all;
+  @apply focus:outline-none focus:ring-2 focus:ring-offset-0;
+  @apply focus:ring-blue-500 focus:border-transparent;
+}
+
+.label-base {
+  @apply block text-sm font-medium text-slate-700 mb-1;
 }

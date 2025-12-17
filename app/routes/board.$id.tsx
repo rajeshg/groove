@@ -9,6 +9,7 @@ import { INTENTS } from "./types";
 import {
   createColumn,
   updateColumnName,
+  updateColumnColor,
   getBoardData,
   upsertItem,
   updateBoardName,
@@ -73,7 +74,8 @@ export async function action({
       break;
     }
     case INTENTS.moveItem:
-    case INTENTS.createItem: {
+    case INTENTS.createItem:
+    case INTENTS.updateItem: {
       let mutation = parseItemMutation(formData);
       await upsertItem({ ...mutation, boardId }, accountId);
       break;
@@ -86,9 +88,16 @@ export async function action({
       break;
     }
     case INTENTS.updateColumn: {
-      let { name, columnId } = Object.fromEntries(formData);
-      if (!name || !columnId) throw badRequest("Missing name or columnId");
-      await updateColumnName(String(columnId), String(name), accountId);
+      let { name, columnId, color } = Object.fromEntries(formData);
+      if (!columnId) throw badRequest("Missing columnId");
+      
+      if (name && String(name).trim()) {
+        await updateColumnName(String(columnId), String(name), accountId);
+      }
+      
+      if (color) {
+        await updateColumnColor(String(columnId), String(color), accountId);
+      }
       break;
     }
     default: {

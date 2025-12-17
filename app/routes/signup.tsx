@@ -43,7 +43,7 @@ export default function Signup() {
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <h2
           id="signup-header"
-          className="mt-6 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900"
+          className="mt-6 text-center text-2xl font-bold leading-9 tracking-tight text-slate-900"
         >
           Sign up
         </h2>
@@ -56,7 +56,7 @@ export default function Signup() {
               <Label htmlFor="email">
                 Email address{" "}
                 {actionResult?.errors?.email && (
-                  <span id="email-error" className="text-brand-red">
+                  <span id="email-error" className="text-red-600 font-semibold">
                     {actionResult.errors.email}
                   </span>
                 )}
@@ -78,7 +78,7 @@ export default function Signup() {
               <Label htmlFor="password">
                 Password{" "}
                 {actionResult?.errors?.password && (
-                  <span id="password-error" className="text-brand-red">
+                  <span id="password-error" className="text-red-600 font-semibold">
                     {actionResult.errors.password}
                   </span>
                 )}
@@ -93,11 +93,11 @@ export default function Signup() {
               />
             </div>
 
-            <Button type="submit">Sign in</Button>
+            <Button type="submit">Sign up</Button>
 
             <div className="text-sm text-slate-500">
               Already have an account?{" "}
-              <Link className="underline" to="/login">
+              <Link className="text-blue-600 hover:text-blue-700 underline" to="/login">
                 Log in
               </Link>
               .
@@ -105,14 +105,14 @@ export default function Signup() {
           </Form>
         </div>
         <div className="mt-8 space-y-2 mx-2">
-          <h3 className="font-bold text-black">Privacy Notice</h3>
-          <p>
+          <h3 className="font-bold text-slate-900">Privacy Notice</h3>
+          <p className="text-slate-700">
             We won't use your email address for anything other than
             authenticating with this demo application. This app doesn't send
             email anyway, so you can put whatever fake email address you want.
           </p>
-          <h3 className="font-bold text-black">Terms of Service</h3>
-          <p>
+          <h3 className="font-bold text-slate-900">Terms of Service</h3>
+          <p className="text-slate-700">
             This is a demo app, there are no terms of service. Don't be
             surprised if your data dissappears.
           </p>
