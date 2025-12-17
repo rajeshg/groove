@@ -12,6 +12,7 @@ export function Board() {
   let { board } = useLoaderData<LoaderData>();
   let submit = useSubmit();
   let [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
+  let [draggedCardId, setDraggedCardId] = useState<string | null>(null);
 
   let itemsById = new Map(board.items.map((item) => [item.id, item]));
 
@@ -77,7 +78,21 @@ export function Board() {
         </EditableText>
       </h1>
 
-       <div className="flex flex-grow min-h-0 h-full items-start gap-4 px-8 pb-4">
+        <div
+          className="flex flex-grow min-h-0 h-full items-start gap-4 px-8 pb-4"
+          onDragStart={(e) => {
+            // Track when card dragging starts
+            if (e.target instanceof HTMLElement && e.target.closest('[data-card-id]')) {
+              const cardId = e.target.closest('[data-card-id]')?.getAttribute('data-card-id');
+              if (cardId) setDraggedCardId(cardId);
+            }
+          }}
+          onDragEnd={() => {
+            // Reset all drag states when any drag ends
+            setDraggedCardId(null);
+            setDraggedColumnId(null);
+          }}
+        >
          {columnArray.map((col, index) => {
            return (
              <div

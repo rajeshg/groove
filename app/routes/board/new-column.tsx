@@ -68,9 +68,11 @@ export function NewColumn({
         onAdd();
       }}
       aria-label="Add new column"
-      className="flex-shrink-0 flex justify-center h-16 w-16 bg-black hover:bg-white bg-opacity-10 hover:bg-opacity-5 rounded-xl"
-    >
-      <Icon name="plus" size="xl" />
+       className="flex-shrink-0 flex justify-center items-center h-16 w-16 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors shadow-sm hover:shadow-md"
+     >
+       <div className="text-slate-500">
+         <Icon name="plus" size="xl" />
+       </div>
     </button>
   );
 }

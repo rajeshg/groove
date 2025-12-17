@@ -38,8 +38,8 @@ export function Column({ name, columnId, items, color = "#94a3b8" }: ColumnProps
   return (
     <div
       className={
-        "flex-shrink-0 flex flex-col overflow-hidden max-h-full w-80 border border-slate-400 rounded-xl shadow-md bg-slate-50 " +
-        (acceptDrop ? `outline outline-2 outline-red-500` : ``)
+        "flex-shrink-0 flex flex-col overflow-hidden max-h-full w-80 border border-slate-400 rounded-xl shadow-md transition-all duration-200 " +
+        (acceptDrop ? `outline outline-4 outline-red-500 bg-red-50 shadow-lg scale-105` : `bg-slate-50`)
       }
       onDragOver={(event) => {
         if (
@@ -122,8 +122,21 @@ export function Column({ name, columnId, items, color = "#94a3b8" }: ColumnProps
                }
              />
            ))}
-      </ul>
-      {edit ? (
+       </ul>
+
+       {items.length === 0 && (
+         <div className={`flex items-center justify-center p-8 text-slate-400 transition-opacity duration-200 ${
+           acceptDrop ? 'opacity-0' : 'opacity-100'
+         }`}>
+           <div className="text-center">
+             <div className="text-2xl mb-2">📝</div>
+             <div className="text-sm font-medium">Drop cards here</div>
+             <div className="text-xs text-slate-500">Drag cards from other columns</div>
+           </div>
+         </div>
+       )}
+
+       {edit ? (
         <NewCard
           columnId={columnId}
           nextOrder={items.length === 0 ? 1 : items[items.length - 1].order + 1}

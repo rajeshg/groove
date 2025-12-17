@@ -1,6 +1,6 @@
 import invariant from "tiny-invariant";
 import { useFetcher, useSubmit } from "react-router";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { flushSync } from "react-dom";
 
 import { Icon } from "../../icons/icons";
@@ -34,12 +34,14 @@ export function Card({
   let editFetcher = useFetcher();
 
    let [acceptDrop, setAcceptDrop] = useState<"none" | "top" | "bottom">("none");
-   let [editMode, setEditMode] = useState<"none" | "title" | "content">("none");
-   let contentInputRef = useRef<HTMLTextAreaElement>(null);
-   let titleInputRef = useRef<HTMLInputElement>(null);
-   let editContainerRef = useRef<HTMLDivElement>(null);
-   let titleDisplayRef = useRef<HTMLHeadingElement>(null);
-   let contentDisplayRef = useRef<HTMLDivElement>(null);
+  let [isDragging, setIsDragging] = useState(false);
+  let [editMode, setEditMode] = useState<"none" | "title" | "content">("none");
+  let contentInputRef = useRef<HTMLTextAreaElement>(null);
+  let titleInputRef = useRef<HTMLInputElement>(null);
+  let editContainerRef = useRef<HTMLDivElement>(null);
+  let titleDisplayRef = useRef<HTMLHeadingElement>(null);
+  let contentDisplayRef = useRef<HTMLDivElement>(null);
+  let dragLeaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
    const submitEdit = (field: "title" | "content") => {
      if (field === "title") {
@@ -76,27 +78,57 @@ export function Card({
      }
    };
 
-    const handleClickOutside = (e: React.FocusEvent<HTMLDivElement>) => {
-      // Only submit if clicking outside the edit container and we're in edit mode
-      if (editMode !== "none" && editContainerRef.current && !editContainerRef.current.contains(e.relatedTarget as Node)) {
-        submitEdit(editMode as "title" | "content");
-        setEditMode("none");
+  const handleClickOutside = (e: React.FocusEvent<HTMLDivElement>) => {
+    // Only submit if clicking outside the edit container and we're in edit mode
+    if (editMode !== "none" && editContainerRef.current && !editContainerRef.current.contains(e.relatedTarget as Node)) {
+      submitEdit(editMode as "title" | "content");
+      setEditMode("none");
+    }
+  };
+
+  // Global drag end handler to ensure cleanup
+  useEffect(() => {
+    const handleGlobalDragEnd = () => {
+      setAcceptDrop("none");
+      setIsDragging(false);
+      if (dragLeaveTimeoutRef.current) {
+        clearTimeout(dragLeaveTimeoutRef.current);
+        dragLeaveTimeoutRef.current = null;
       }
     };
 
+    document.addEventListener('dragend', handleGlobalDragEnd);
+    return () => document.removeEventListener('dragend', handleGlobalDragEnd);
+  }, []);
+
   return deleteFetcher.state !== "idle" ? null : (
-    <li
+    <li data-card-id={id}
+      onDragEnter={(event) => {
+        if (event.dataTransfer.types.includes(CONTENT_TYPES.card)) {
+          event.preventDefault();
+          // Clear any pending leave timeout
+          if (dragLeaveTimeoutRef.current) {
+            clearTimeout(dragLeaveTimeoutRef.current);
+            dragLeaveTimeoutRef.current = null;
+          }
+        }
+      }}
       onDragOver={(event) => {
         if (event.dataTransfer.types.includes(CONTENT_TYPES.card)) {
           event.preventDefault();
-          event.stopPropagation();
+          // Don't stop propagation so parent elements can handle global drag state
           let rect = event.currentTarget.getBoundingClientRect();
           let midpoint = (rect.top + rect.bottom) / 2;
           setAcceptDrop(event.clientY <= midpoint ? "top" : "bottom");
         }
       }}
-      onDragLeave={() => {
-        setAcceptDrop("none");
+      onDragLeave={(event) => {
+        if (event.dataTransfer.types.includes(CONTENT_TYPES.card)) {
+          // Short delay to prevent flickering when moving between child elements
+          dragLeaveTimeoutRef.current = setTimeout(() => {
+            setAcceptDrop("none");
+          }, 10);
+        }
       }}
        onDrop={(event) => {
          event.stopPropagation();
@@ -125,27 +157,39 @@ export function Card({
 
          setAcceptDrop("none");
        }}
-       className={
-         "border-t-4 border-b-2 -mb-[2px] last:mb-0 cursor-grab active:cursor-grabbing px-2 py-1 " +
-         (acceptDrop === "top"
-           ? "border-b-red-500 border-b-transparent"
-           : acceptDrop === "bottom"
-             ? "border-b-red-500 border-b-transparent"
-             : "border-b-transparent")
-       }
-       style={{ borderTopColor: columnColor }}
-     >
-        <div
-          draggable
-          className="bg-white shadow shadow-slate-300 border border-slate-200 text-sm rounded-lg w-full py-2 px-3 relative group hover:shadow-md transition-shadow"
-          onDragStart={(event) => {
-            event.dataTransfer.effectAllowed = "move";
-            event.dataTransfer.setData(
-              CONTENT_TYPES.card,
-              JSON.stringify({ id })
-            );
-          }}
-        >
+        className={
+          "border-t-4 border-b-2 -mb-[2px] last:mb-0 cursor-grab active:cursor-grabbing px-2 py-1 transition-colors duration-150 " +
+          (acceptDrop === "top"
+            ? "border-t-4 border-b-4 border-t-red-500 border-b-red-500 bg-red-50"
+            : acceptDrop === "bottom"
+              ? "border-t-4 border-b-4 border-t-red-500 border-b-red-500 bg-red-50"
+              : "border-b-transparent")
+        }
+        style={{ borderTopColor: acceptDrop !== "none" ? "#ef4444" : columnColor }}
+      >
+         <div
+           draggable
+           className={
+             "bg-white shadow shadow-slate-300 border border-slate-200 text-sm rounded-lg w-full py-2 px-3 relative group hover:shadow-md transition-all duration-200 " +
+             (isDragging ? "opacity-50 rotate-2 scale-95 shadow-lg" : "")
+           }
+           onDragStart={(event) => {
+             setIsDragging(true);
+             event.dataTransfer.effectAllowed = "move";
+             event.dataTransfer.setData(
+               CONTENT_TYPES.card,
+               JSON.stringify({ id })
+             );
+           }}
+           onDragEnd={() => {
+             setIsDragging(false);
+             setAcceptDrop("none");
+             if (dragLeaveTimeoutRef.current) {
+               clearTimeout(dragLeaveTimeoutRef.current);
+               dragLeaveTimeoutRef.current = null;
+             }
+           }}
+         >
            {editMode === "title" ? (
              <div ref={editContainerRef} onBlur={handleClickOutside}>
                <input
