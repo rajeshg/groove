@@ -218,9 +218,16 @@ export function Card({
           >
             {title}
           </h3>
-        )}
+         )}
 
-        {editMode === "content" ? (
+         {/* Board name and ID - similar to board.webp */}
+         <div className="text-xs text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-1">
+           <span className="font-medium">{boardName}</span>
+           <span className="text-slate-400 dark:text-slate-500">•</span>
+           <span className="font-mono text-slate-500 dark:text-slate-400">{boardId}</span>
+         </div>
+
+         {editMode === "content" ? (
           <div ref={editContainerRef} onBlur={handleClickOutside}>
             <textarea
               ref={contentInputRef}
