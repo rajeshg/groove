@@ -159,21 +159,26 @@ export function Column({
       <ul ref={listRef} className="flex-grow overflow-auto min-h-[2px]">
          {items
            .sort((a, b) => a.order - b.order)
-           .map((item, index, items) => (
-             <Card
-               key={item.id}
-               title={item.title}
-               content={item.content}
-               id={item.id}
-               order={item.order}
-               nextOrder={nextOrder}
-               previousOrder={previousOrder}
-               columnId={columnId}
-               columnColor={color}
-               boardName={boardName}
-               boardId={boardId}
-             />
-           ))}
+           .map((item, index, sortedItems) => {
+             const previousOrder = index > 0 ? sortedItems[index - 1].order : 0;
+             const nextOrder = index < sortedItems.length - 1 ? sortedItems[index + 1].order : item.order + 1;
+
+             return (
+               <Card
+                 key={item.id}
+                 title={item.title}
+                 content={item.content}
+                 id={item.id}
+                 order={item.order}
+                 nextOrder={nextOrder}
+                 previousOrder={previousOrder}
+                 columnId={columnId}
+                 columnColor={color}
+                 boardName={boardName}
+                 boardId={boardId}
+               />
+             );
+           })}
        </ul>
 
        {items.length === 0 && !edit && (
