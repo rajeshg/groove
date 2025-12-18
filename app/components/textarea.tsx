@@ -10,7 +10,7 @@ export let Textarea = forwardRef<
       const len = e.target.value.length;
       e.target.setSelectionRange(len, len);
     }
-    
+
     // Call the original onFocus handler if provided
     onFocus?.(e);
   };

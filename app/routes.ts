@@ -7,6 +7,7 @@ export default [
   route("signup", "routes/signup.tsx"),
   route("logout", "routes/logout.tsx"),
   route("board/:id", "routes/board.$id.tsx"),
+  route("board/:id/members", "routes/board.$id.members.tsx"),
   route("card/:cardId", "routes/card.$cardId.tsx"),
   route("profile", "routes/profile.tsx"),
   route("me/assigned", "routes/me.assigned.tsx"),

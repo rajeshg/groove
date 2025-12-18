@@ -1,12 +1,20 @@
 import { useRef, useState, useEffect, useMemo } from "react";
 import invariant from "tiny-invariant";
-import { useFetchers, useLoaderData, useSubmit } from "react-router";
+import { useFetchers, useSubmit } from "react-router";
 
-import type { LoaderData } from "../../+types/board.$id";
-import { INTENTS, type RenderedItem, CONTENT_TYPES } from "../types";
-import type { Board, Column as ColumnType, Item } from "@prisma/client";
+import {
+  INTENTS,
+  type RenderedItem,
+  type RenderedAssignee,
+  CONTENT_TYPES,
+} from "../types";
+import type { Column as ColumnType, Item } from "@prisma/client";
+import { getBoardData } from "../queries";
 
-type ColumnWithItems = ColumnType & { items: Item[]; order: number };
+type ColumnWithItems = ColumnType & {
+  items: Array<Item & { Assignee: RenderedAssignee | null }>;
+  order: number;
+};
 import { Column } from "./column";
 import { NewColumn } from "./new-column";
 import { BoardHeader } from "./board-header";
@@ -18,14 +26,20 @@ const COLUMN_WIDTH_COLLAPSED = 40; // pixels
 const PROGRESS_MAX_HEIGHT = 300; // pixels
 const PROGRESS_INCREMENT = PROGRESS_MAX_HEIGHT / MAX_VISIBLE_CARDS; // pixels per card
 
-export function Board() {
-  let { board } = useLoaderData<LoaderData>();
+type BoardData = NonNullable<Awaited<ReturnType<typeof getBoardData>>>;
+
+interface BoardProps {
+  board: BoardData;
+}
+
+export default function Board({ board }: BoardProps) {
   let submit = useSubmit();
   let [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
   let [expandedColumnIds, setExpandedColumnIds] = useState<Set<string>>(
     new Set()
   );
   let [searchTerm, setSearchTerm] = useState("");
+  let addCardCallbackRef = useRef<(() => void) | null>(null);
 
   const handleColumnToggle = (columnId: string) => {
     const willBeExpanded = !expandedColumnIds.has(columnId);
@@ -63,8 +77,8 @@ export function Board() {
   // Initialize expanded columns from database on mount
   useEffect(() => {
     const expandedFromDB = board.columns
-      .filter((col) => (col as ColumnType).isExpanded !== false)
-      .map((col) => col.id);
+      .filter((col: ColumnType) => col.isExpanded !== false)
+      .map((col: ColumnType) => col.id);
 
     setExpandedColumnIds(new Set(expandedFromDB));
     // Also save to localStorage for quick access
@@ -74,14 +88,50 @@ export function Board() {
     );
   }, [board.columns, board.id]);
 
-  let itemsById = new Map(board.items.map((item) => [item.id, item]));
+  // Handle 'c' key to open "add a card" dialog on the first expanded column
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only trigger on 'c' key, not when typing in input fields
+      if (
+        e.key === "c" &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.shiftKey &&
+        !(e.target instanceof HTMLInputElement) &&
+        !(e.target instanceof HTMLTextAreaElement) &&
+        !(
+          e.target instanceof HTMLDivElement &&
+          (e.target as HTMLElement).closest('[role="textbox"]')
+        )
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        // Find the "May be?" column and trigger its callback
+        const maybeColumn = document.querySelector(".column-may-be");
+        if (maybeColumn && addCardCallbackRef.current) {
+          addCardCallbackRef.current();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  let itemsById = new Map(board.items.map((item: Item) => [item.id, item]));
 
   let pendingItems = usePendingItems();
 
   // merge pending items and existing items
   for (const pendingItem of pendingItems) {
     let item = itemsById.get(pendingItem.id);
-    let merged = item ? ({ ...item, ...pendingItem } as unknown as Item) : ({ ...pendingItem, boardId: board.id, _count: { comments: 0 } } as unknown as Item);
+    let merged = item
+      ? ({ ...item, ...pendingItem } as unknown as Item)
+      : ({
+          ...pendingItem,
+          boardId: board.id,
+          _count: { comments: 0 },
+        } as unknown as Item);
     itemsById.set(pendingItem.id, merged);
   }
 
@@ -98,10 +148,10 @@ export function Board() {
 
   // add items to their columns
   for (const item of itemsById.values()) {
-    let columnId = item.columnId;
+    let columnId = (item as RenderedItem).columnId;
     let column = columns.get(columnId) as ColumnWithItems;
     invariant(column, "missing column");
-    column.items.push(item);
+    column.items.push(item as Item & { Assignee: RenderedAssignee | null });
   }
 
   // scroll right when new columns are added
@@ -171,7 +221,12 @@ export function Board() {
             return (
               <div
                 key={col.id}
-                className={`transition-all duration-300 ease-out relative self-stretch ${
+                data-column-name={col.name}
+                data-expanded={isExpanded ? "true" : "false"}
+                className={`transition-all duration-300 ease-out relative self-stretch column-${col.name
+                  .toLowerCase()
+                  .replace(/[^a-z0-9]+/g, "-")
+                  .replace(/^-|-$/g, "")} ${
                   isExpanded ? "w-[24rem]" : "w-10"
                 } ${draggedColumnId === col.id ? "shadow-xl scale-105 opacity-50" : ""}`}
                 title={
@@ -281,13 +336,26 @@ export function Board() {
                       name={col.name}
                       columnId={col.id}
                       items={col.items}
-                      color={(col as unknown as { color?: string }).color || "#94a3b8"}
-                      isDefault={(col as unknown as { isDefault?: boolean }).isDefault || false}
+                      color={
+                        (col as unknown as { color?: string }).color ||
+                        "#94a3b8"
+                      }
+                      isDefault={
+                        (col as unknown as { isDefault?: boolean }).isDefault ||
+                        false
+                      }
                       isExpanded={true}
                       onToggle={() => handleColumnToggle(col.id)}
                       boardName={board.name}
                       boardId={board.id}
                       className="h-full"
+                      onAddCardKeydown={
+                        col.name === "May be?"
+                          ? (callback) => {
+                              addCardCallbackRef.current = callback;
+                            }
+                          : undefined
+                      }
                     />
                   </div>
                 ) : (
@@ -297,7 +365,9 @@ export function Board() {
                     className="column-collapsed"
                     style={
                       {
-                        color: (col as unknown as { color?: string }).color || "#94a3b8",
+                        color:
+                          (col as unknown as { color?: string }).color ||
+                          "#94a3b8",
                         "--collapse-height": `${COLUMN_WIDTH_COLLAPSED + Math.min(col.items.length, MAX_VISIBLE_CARDS) * PROGRESS_INCREMENT}px`,
                       } as Record<string, unknown>
                     }
@@ -380,10 +450,12 @@ function usePendingItems() {
         columnId,
         content: null,
         createdBy: null,
-        assignedTo: null,
+        assigneeId: null,
+        Assignee: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         lastActiveAt: new Date(),
+        boardId: 0,
       };
       return item;
     });

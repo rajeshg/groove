@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from "react";
 import { Icon } from "../../icons/icons";
 import { CardMeta } from "./card-meta";
 
-import type { ItemMutation } from "../types";
+import type { ItemMutation, RenderedAssignee } from "../types";
 import { INTENTS, CONTENT_TYPES } from "../types";
 
 interface CardProps {
@@ -20,11 +20,15 @@ interface CardProps {
   boardName: string;
   boardId: number;
   createdBy: string | null;
-  assignedTo: string | null;
+  createdByUser?: {
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+  } | null;
+  assignee: RenderedAssignee | null;
   createdAt: Date;
   lastActiveAt: Date;
   commentCount?: number;
-  userId?: string;
 }
 
 export function Card({
@@ -39,11 +43,11 @@ export function Card({
   boardName,
   boardId: _boardId,
   createdBy,
-  assignedTo,
+  createdByUser,
+  assignee,
   createdAt,
   lastActiveAt,
   commentCount = 0,
-  userId,
 }: CardProps) {
   let submit = useSubmit();
   let deleteFetcher = useFetcher();
@@ -179,20 +183,32 @@ export function Card({
         {/* Card metadata section */}
         <CardMeta
           createdBy={createdBy}
-          assignedTo={assignedTo}
+          createdByUser={createdByUser || null}
+          assignee={assignee}
           createdAt={createdAt}
           lastActiveAt={lastActiveAt}
           columnColor={columnColor}
-          userId={userId}
         />
 
         {/* Comment count badge */}
         {commentCount > 0 && (
           <div className="flex items-center gap-1 mt-2 text-xs text-slate-500 dark:text-slate-400">
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+            <svg
+              className="w-3 h-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
+              />
             </svg>
-            <span>{commentCount} {commentCount === 1 ? 'comment' : 'comments'}</span>
+            <span>
+              {commentCount} {commentCount === 1 ? "comment" : "comments"}
+            </span>
           </div>
         )}
 
@@ -201,7 +217,7 @@ export function Card({
           <input type="hidden" name="itemId" value={id} />
           <button
             aria-label="Delete card"
-            className="text-slate-400 dark:text-slate-500 opacity-0 group-hover:opacity-100 hover:text-red-600 dark:hover:text-red-400 transition-all disabled:opacity-50"
+            className="text-slate-400 dark:text-slate-500 opacity-50 group-hover:opacity-100 hover:text-red-600 dark:hover:text-red-400 transition-all disabled:opacity-50"
             type="submit"
             disabled={deleteFetcher.state !== "idle"}
             onClick={(event) => {

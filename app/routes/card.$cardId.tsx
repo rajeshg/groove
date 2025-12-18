@@ -1,9 +1,4 @@
-import {
-  useNavigate,
-  useFetcher,
-  useLoaderData,
-  useParams,
-} from "react-router";
+import { useNavigate, useFetcher, useParams } from "react-router";
 import { useState, useRef } from "react";
 import invariant from "tiny-invariant";
 
@@ -14,6 +9,8 @@ import { BoardHeader } from "./board/board-header";
 import { EditableComment } from "./board/components";
 import { INTENTS, type RenderedComment } from "./types";
 import type { Column } from "@prisma/client";
+import { getInitials, getAvatarColor, getDisplayName } from "../utils/avatar";
+import type { Route } from "./+types/card.$cardId";
 
 export async function loader({
   request,
@@ -34,7 +31,18 @@ export async function loader({
     include: {
       Column: true,
       Board: true,
-      comments: { orderBy: { createdAt: "asc" } },
+      Assignee: { select: { id: true, name: true, userId: true } },
+      createdByUser: {
+        select: { id: true, firstName: true, lastName: true },
+      },
+      comments: {
+        include: {
+          createdByUser: {
+            select: { id: true, firstName: true, lastName: true },
+          },
+        },
+        orderBy: { createdAt: "asc" },
+      },
     },
   });
 
@@ -46,12 +54,19 @@ export async function loader({
     orderBy: { order: "asc" },
   });
 
+  const assignees = await prisma.assignee.findMany({
+    where: { boardId: card.Board.id },
+    select: { id: true, name: true, userId: true },
+    orderBy: { name: "asc" },
+  });
+
   return {
     card,
     boardName: card.Board.name,
     boardId: card.Board.id,
     columns,
     accountId,
+    assignees,
   };
 }
 
@@ -101,17 +116,16 @@ export async function action({
   return { success: true };
 }
 
-export default function CardDetail() {
+export default function CardDetail({ loaderData }: Route.ComponentProps) {
   const { cardId } = useParams();
   const navigate = useNavigate();
   const editFetcher = useFetcher();
   const commentFetcher = useFetcher();
-  const loaderData = useLoaderData<typeof loader>();
 
   invariant(cardId, "Missing card ID");
   if (!loaderData || !loaderData.card) return null;
 
-  const { card, boardName, boardId, columns } = loaderData;
+  const { card, boardName, boardId, columns, assignees } = loaderData;
   const [editMode, setEditMode] = useState(false);
   const [editTitleMode, setEditTitleMode] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
@@ -327,10 +341,15 @@ export default function CardDetail() {
                 <div className="p-4 sm:px-6 border-t border-slate-200 dark:border-slate-700">
                   <CardMeta
                     createdBy={card.createdBy || null}
-                    assignedTo={card.assignedTo || null}
+                    createdByUser={card.createdByUser || null}
+                    assignee={card.Assignee}
                     createdAt={new Date(card.createdAt)}
                     updatedAt={new Date(card.updatedAt)}
                     columnColor={columnColor}
+                    itemId={cardId}
+                    boardId={boardId}
+                    availableAssignees={assignees}
+                    isCardDetail={true}
                   />
                 </div>
 
@@ -342,21 +361,24 @@ export default function CardDetail() {
                         isCommentEditable(comment.createdAt) &&
                         comment.createdBy === loaderData.accountId;
                       const isEditing = editingCommentId === comment.id;
+                      const displayName = comment.createdByUser
+                        ? getDisplayName(comment.createdByUser)
+                        : comment.createdBy
+                          ? `User ${comment.createdBy.substring(0, 8)}`
+                          : "Unknown User";
                       return (
                         <div key={comment.id} className="flex gap-3 text-sm">
                           <div
                             className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
                             style={{
-                              backgroundColor: `hsl(${(comment.createdBy.charCodeAt(0) * 137) % 360}, 70%, 50%)`,
+                              backgroundColor: getAvatarColor(displayName),
                             }}
                           >
-                            {comment.createdBy.substring(0, 2).toUpperCase()}
+                            {getInitials(displayName)}
                           </div>
                           <div className="flex-1">
                             <div className="flex items-baseline gap-2 mb-1">
-                              <span className="font-medium">
-                                {comment.createdBy.substring(0, 8)}...
-                              </span>
+                              <span className="font-medium">{displayName}</span>
                               <span className="text-xs text-slate-500">
                                 {new Date(
                                   comment.createdAt

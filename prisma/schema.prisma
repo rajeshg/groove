@@ -10,9 +10,16 @@ datasource db {
 }
 
 model Account {
-  id     String  @id @default(uuid())
-  email  String  @unique
+  id        String  @id @default(uuid())
+  email     String  @unique
+  firstName String?
+  lastName  String?
   boards Board[]
+  boardMemberships BoardMember[]
+  receivedInvitations BoardInvitation[]
+  assignees Assignee[]
+  comments Comment[] @relation("CommentCreatedBy")
+  createdItems Item[] @relation("ItemCreatedBy")
 
   Password Password?
 }
@@ -33,6 +40,9 @@ model Board {
   updatedAt DateTime @default(now()) @updatedAt
   columns   Column[]
   items     Item[]
+  members   BoardMember[]
+  invitations BoardInvitation[]
+  assignees Assignee[]
   Account   Account  @relation(fields: [accountId], references: [id])
   accountId String
 }
@@ -52,28 +62,31 @@ model Column {
 }
 
 model Item {
-   id        String   @id @default(uuid())
-   title     String
-   content   String?
+    id        String   @id @default(uuid())
+    title     String
+    content   String?
 
-   // we split the difference between the prev/next items. If an item is dropped
-   // between 1.00 and 2.00 it will be 1.50. If dropped between 1.50 and 2.00 it
-   // will be 1.75, etc.
-   order     Float
+    // we split the difference between the prev/next items. If an item is dropped
+    // between 1.00 and 2.00 it will be 1.50. If dropped between 1.50 and 2.00 it
+    // will be 1.75, etc.
+    order     Float
 
-   createdAt    DateTime @default(now())
-   updatedAt    DateTime @default(now()) @updatedAt
-   lastActiveAt DateTime @default(now())
-   createdBy    String?
-   assignedTo   String?
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @default(now()) @updatedAt
+    lastActiveAt DateTime @default(now())
+    createdBy    String?
+    createdByUser Account? @relation("ItemCreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
 
-   Column   Column @relation(fields: [columnId], references: [id], onDelete: Cascade)
-   columnId String
+    Column   Column @relation(fields: [columnId], references: [id], onDelete: Cascade)
+    columnId String
 
-   Board   Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
-   boardId Int
+    Board   Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+    boardId Int
 
-   comments Comment[]
+    Assignee   Assignee? @relation(fields: [assigneeId], references: [id], onDelete: SetNull)
+    assigneeId String?
+
+    comments Comment[]
 }
 
 model Comment {
@@ -81,8 +94,56 @@ model Comment {
   content   String
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
-  createdBy String
+  createdBy String?
+  createdByUser Account? @relation("CommentCreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
 
   Item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
   itemId String
+}
+
+model Assignee {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  Board   Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  boardId Int
+
+  Account   Account? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId    String?
+
+  items     Item[]
+
+  @@unique([name, boardId])
+}
+
+model BoardMember {
+  id        String   @id @default(uuid())
+  role      String   @default("editor")
+  createdAt DateTime @default(now())
+
+  Account   Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  accountId String
+
+  Board   Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  boardId Int
+
+  @@unique([accountId, boardId])
+}
+
+model BoardInvitation {
+  id        String   @id @default(uuid())
+  email     String
+  role      String   @default("editor")
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  Board   Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  boardId Int
+
+  Account   Account @relation(fields: [invitedBy], references: [id])
+  invitedBy String
+
+  @@unique([email, boardId])
 }

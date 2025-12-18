@@ -1,12 +1,28 @@
 import { useMemo, useEffect, useState } from "react";
+import { AssigneePicker } from "./assignee-picker";
+import {
+  getInitials,
+  getAvatarColor,
+  getDisplayName,
+} from "../../utils/avatar";
+import type { RenderedAssignee } from "../types";
 
 interface CardMetaProps {
   createdBy: string | null;
-  assignedTo: string | null;
+  createdByUser?: {
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+  } | null;
+  assignee: { id: string; name: string; userId: string | null } | null;
   createdAt: Date;
   updatedAt?: Date;
   lastActiveAt?: Date;
   columnColor?: string;
+  itemId?: string;
+  boardId?: number;
+  availableAssignees?: RenderedAssignee[];
+  isCardDetail?: boolean;
 }
 
 /**
@@ -14,10 +30,10 @@ interface CardMetaProps {
  */
 function getRelativeTime(date: Date | string): string {
   let dateObj: Date;
-  
+
   if (date instanceof Date) {
     dateObj = date;
-  } else if (typeof date === 'string') {
+  } else if (typeof date === "string") {
     dateObj = new Date(date);
   } else {
     return "UNKNOWN";
@@ -34,35 +50,6 @@ function getRelativeTime(date: Date | string): string {
   } else {
     return `${diffDays} DAYS AGO`;
   }
-}
-
-/**
- * Extract initials from email or name string
- */
-function getInitials(str: string): string {
-  if (!str) return "?";
-  const parts = str.split("@")[0].split(/[._-]/);
-  return parts
-    .slice(0, 2)
-    .map((p) => p.charAt(0).toUpperCase())
-    .join("");
-}
-
-/**
- * Generate a consistent color based on a string - using Fizzy's exact color palette
- */
-function getAvatarColor(str: string): string {
-  const colors = [
-    "#AF2E1B", "#CC6324", "#3B4B59", "#BFA07A", "#ED8008", "#ED3F1C", 
-    "#BF1B1B", "#736B1E", "#D07B53", "#736356", "#AD1D1D", "#BF7C2A", 
-    "#C09C6F", "#698F9C", "#7C956B", "#5D618F", "#3B3633", "#67695E"
-  ];
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i);
-    hash = hash & hash; 
-  }
-  return colors[Math.abs(hash) % colors.length];
 }
 
 /**
@@ -85,18 +72,24 @@ function Avatar({ label, bgColor }: { label: string; bgColor?: string }) {
 
 export function CardMeta({
   createdBy,
-  assignedTo,
+  createdByUser,
+  assignee,
   createdAt,
   updatedAt,
   lastActiveAt,
   columnColor,
+  itemId,
+  boardId,
+  availableAssignees = [],
+  isCardDetail = false,
 }: CardMetaProps) {
   const [tick, setTick] = useState(0);
-  
+  const [pickerOpen, setPickerOpen] = useState(false);
+
   useEffect(() => {
     const timer = setInterval(() => {
       setTick((tick) => tick + 1);
-    }, 30000); 
+    }, 30000);
 
     return () => clearInterval(timer);
   }, []);
@@ -111,92 +104,124 @@ export function CardMeta({
     () => getRelativeTime(effectiveLastActive),
     [effectiveLastActive, tick]
   );
-  const createdByName = useMemo(
-    () => (createdBy ? createdBy.split("@")[0] : null),
-    [createdBy]
-  );
-  const assignedToName = useMemo(
-    () => (assignedTo ? assignedTo.split("@")[0] : null),
-    [assignedTo]
-  );
+  const createdByName = useMemo(() => {
+    if (createdByUser) {
+      return getDisplayName(createdByUser);
+    }
+    // If createdBy ID exists but user was deleted, show minimal info
+    if (createdBy) {
+      return `User ${createdBy.substring(0, 8)}`;
+    }
+    return null;
+  }, [createdByUser, createdBy]);
+  const assigneeName = useMemo(() => {
+    if (!assignee) return null;
+    // Fallback: if name is missing or looks like a UUID, show "Unknown"
+    if (!assignee.name || assignee.name.match(/^[0-9a-f-]{36}$/i)) {
+      return "Unknown";
+    }
+    return assignee.name;
+  }, [assignee]);
 
-  const createdAtDate = createdAt instanceof Date ? createdAt : new Date(createdAt);
-  const lastActiveAtDate = effectiveLastActive instanceof Date ? effectiveLastActive : new Date(effectiveLastActive);
+  const createdAtDate =
+    createdAt instanceof Date ? createdAt : new Date(createdAt);
+  const lastActiveAtDate =
+    effectiveLastActive instanceof Date
+      ? effectiveLastActive
+      : new Date(effectiveLastActive);
   const hasUpdate = lastActiveAtDate.getTime() > createdAtDate.getTime() + 1000;
 
   return (
     <div className="mt-4 pt-3">
-      <div 
-        className="grid text-[12px] uppercase font-medium w-fit"
+      <div
+        className="grid text-[12px] uppercase font-medium"
         style={{
-          gridTemplateColumns: 'auto auto 1fr auto',
+          gridTemplateColumns: "44px 1fr 1fr 44px",
           gridTemplateAreas: `
             "avatars-author text-added text-updated avatars-assignees"
             "avatars-author text-author text-assignees avatars-assignees"
           `,
-          color: 'rgb(100 116 139)',
-          alignItems: 'stretch',
+          color: "rgb(100 116 139)",
+          alignItems: "stretch",
+          width: "100%",
+          maxWidth: "440px",
         }}
       >
-        <div 
-          className="row-span-2 flex items-center mr-[1.25ch]" 
-          style={{ gridArea: 'avatars-author' }}
+        <div
+          className="row-span-2 flex items-center pr-3"
+          style={{ gridArea: "avatars-author" }}
         >
-          {createdBy ? (
-            <Avatar label={createdBy} bgColor={columnColor} />
+          {createdByName ? (
+            <Avatar label={createdByName} bgColor={columnColor} />
           ) : (
             <div className="w-8 h-8 rounded-full bg-slate-300 dark:bg-slate-600" />
           )}
         </div>
-        
-        <span 
-          className="whitespace-nowrap border-r border-b border-slate-200 dark:border-slate-700 pr-[1ch] pb-[0.75ch] flex items-center"
-          style={{ gridArea: 'text-added', lineHeight: 1 }}
+
+        <span
+          className="whitespace-nowrap border-r border-b border-slate-200 dark:border-slate-700 pr-3 pb-[0.75ch] flex items-center min-w-0"
+          style={{ gridArea: "text-added", lineHeight: 1 }}
         >
-          ADDED <span className="font-black ml-1">{createdTimeText}</span>
+          <span className="truncate">
+            ADDED <span className="font-black ml-1">{createdTimeText}</span>
+          </span>
         </span>
-        
-        <span 
-          className="whitespace-nowrap border-b border-slate-200 dark:border-slate-700 pl-[1ch] pb-[0.75ch] text-right flex items-center justify-end"
-          style={{ gridArea: 'text-updated', lineHeight: 1 }}
+
+        <span
+          className="whitespace-nowrap border-b border-slate-200 dark:border-slate-700 pl-3 pb-[0.75ch] text-right flex items-center justify-end min-w-0"
+          style={{ gridArea: "text-updated", lineHeight: 1 }}
         >
           {hasUpdate ? (
-            <>
-              <span className="inline-block mr-1 text-[9px] opacity-70">🔄</span>
+            <span className="truncate">
+              <span className="inline-block mr-1 text-[9px] opacity-70">
+                🔄
+              </span>
               <span className="font-black">{lastActiveTimeText}</span>
-            </>
+            </span>
           ) : (
             <span className="opacity-0">.</span>
           )}
         </span>
-        
-        <span 
-          className="whitespace-nowrap border-r border-slate-200 dark:border-slate-700 pr-[1ch] pt-[0.75ch] capitalize text-slate-600 dark:text-slate-400 flex items-center"
-          style={{ gridArea: 'text-author', lineHeight: 1 }}
+
+        <span
+          className="whitespace-nowrap border-r border-slate-200 dark:border-slate-700 pr-3 pt-[0.75ch] capitalize text-slate-600 dark:text-slate-400 flex items-center min-w-0"
+          style={{ gridArea: "text-author", lineHeight: 1 }}
+          title={createdByName || "Unknown"}
         >
-          {createdByName || 'Unknown'}
+          <span className="truncate">{createdByName || "Unknown"}</span>
         </span>
-        
-        <span 
-          className="whitespace-nowrap pl-[1ch] pt-[0.75ch] text-right capitalize text-slate-600 dark:text-slate-400 flex items-center justify-end"
-          style={{ gridArea: 'text-assignees', lineHeight: 1 }}
+
+        <span
+          className="whitespace-nowrap pl-3 pt-[0.75ch] text-right capitalize text-slate-600 dark:text-slate-400 flex items-center justify-end min-w-0"
+          style={{ gridArea: "text-assignees", lineHeight: 1 }}
+          title={assignee ? `→ ${assigneeName}` : undefined}
         >
-          {assignedTo ? (
-            <>
+          {assignee ? (
+            <span className="truncate">
               <span className="mr-1">→</span>
-              {assignedToName}
-            </>
+              {assigneeName}
+            </span>
           ) : (
             <span className="opacity-0">.</span>
           )}
         </span>
-        
-        <div 
-          className="row-span-2 flex items-center ml-[1.25ch]" 
-          style={{ gridArea: 'avatars-assignees' }}
+
+        <div
+          className="row-span-2 flex items-center pl-3 gap-1"
+          style={{ gridArea: "avatars-assignees" }}
         >
-          {assignedTo ? (
-            <Avatar label={assignedTo} />
+          {isCardDetail && itemId && boardId ? (
+            <AssigneePicker
+              itemId={itemId}
+              boardId={boardId}
+              currentAssignee={assignee}
+              availableAssignees={availableAssignees}
+              isOpen={pickerOpen}
+              onOpenChange={setPickerOpen}
+              action={`/board/${boardId}`}
+            />
+          ) : assignee ? (
+            <Avatar label={assignee.name} />
           ) : (
             <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs text-slate-400 border-2 border-dashed border-slate-300 dark:border-slate-600">
               +

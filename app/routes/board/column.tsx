@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useSubmit } from "react-router";
 import invariant from "tiny-invariant";
 
@@ -27,6 +27,7 @@ interface ColumnProps {
   boardName: string; // Board name for cards
   boardId: number; // Board ID number for cards
   className?: string;
+  onAddCardKeydown?: (callback: () => void) => void;
 }
 
 export function Column({
@@ -40,12 +41,25 @@ export function Column({
   boardName,
   boardId,
   className = "",
+  onAddCardKeydown,
 }: ColumnProps) {
   let submit = useSubmit();
 
   let [acceptDrop, setAcceptDrop] = useState(false);
   let [edit, setEdit] = useState(false);
   let listRef = useRef<HTMLUListElement>(null);
+
+  // Register the add card callback when the column mounts
+  useEffect(() => {
+    if (onAddCardKeydown && isExpanded) {
+      onAddCardKeydown(() => {
+        flushSync(() => {
+          setEdit(true);
+        });
+        scrollList();
+      });
+    }
+  }, [onAddCardKeydown, isExpanded]);
 
   function scrollList() {
     invariant(listRef.current);
@@ -60,6 +74,7 @@ export function Column({
           ? `ring-2 ring-offset-2 dark:ring-offset-slate-900 ring-blue-400`
           : ``)
       }
+      data-column-id={columnId}
       onDragOver={(event) => {
         // Only accept card drops, not column drops
         if (event.dataTransfer.types.includes(CONTENT_TYPES.card)) {
@@ -167,9 +182,39 @@ export function Column({
         </div>
       </div>
 
+      {edit ? (
+        <NewCard
+          columnId={columnId}
+          nextOrder={items.length === 0 ? 1 : items[items.length - 1].order + 1}
+          onAddCard={() => scrollList()}
+          onComplete={() => setEdit(false)}
+        />
+      ) : (
+        <div className="p-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              flushSync(() => {
+                setEdit(true);
+              });
+              scrollList();
+            }}
+            className="flex items-center gap-2 rounded text-left flex-1 p-2 font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 focus:bg-slate-100 dark:focus:bg-slate-700 transition-colors text-sm"
+            data-add-card-button
+          >
+            <Icon name="plus" /> Add a card
+          </button>
+          {name === "May be?" && (
+            <kbd className="text-xs px-2 py-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-600 font-mono">
+              c
+            </kbd>
+          )}
+        </div>
+      )}
+
       <ul
         ref={listRef}
-        className="flex flex-col gap-y-2 flex-grow min-h-[2px] px-0 pb-1 pt-0"
+        className="flex flex-col gap-y-2 flex-grow min-h-[2px] px-0 py-2"
       >
         {items
           .sort((a, b) => a.order - b.order)
@@ -194,10 +239,14 @@ export function Column({
                 boardName={boardName}
                 boardId={boardId}
                 createdBy={item.createdBy}
-                assignedTo={item.assignedTo}
+                createdByUser={item.createdByUser || null}
+                assignee={item.Assignee}
                 createdAt={item.createdAt}
                 lastActiveAt={item.lastActiveAt}
-                commentCount={(item as unknown as { _count?: { comments: number } })._count?.comments}
+                commentCount={
+                  (item as unknown as { _count?: { comments: number } })._count
+                    ?.comments
+                }
               />
             );
           })}
@@ -212,30 +261,6 @@ export function Column({
           >
             No cards
           </div>
-        </div>
-      )}
-
-      {edit ? (
-        <NewCard
-          columnId={columnId}
-          nextOrder={items.length === 0 ? 1 : items[items.length - 1].order + 1}
-          onAddCard={() => scrollList()}
-          onComplete={() => setEdit(false)}
-        />
-      ) : (
-        <div className="p-3">
-          <button
-            type="button"
-            onClick={() => {
-              flushSync(() => {
-                setEdit(true);
-              });
-              scrollList();
-            }}
-            className="flex items-center gap-2 rounded text-left w-full p-2 font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 focus:bg-slate-100 dark:focus:bg-slate-700 transition-colors text-sm"
-          >
-            <Icon name="plus" /> Add a card
-          </button>
         </div>
       )}
     </div>

@@ -1,3 +1,9 @@
+export interface RenderedAssignee {
+  id: string;
+  name: string;
+  userId: string | null;
+}
+
 export interface RenderedItem {
   id: string;
   title: string;
@@ -5,10 +11,17 @@ export interface RenderedItem {
   content: string | null;
   columnId: string;
   createdBy: string | null;
-  assignedTo: string | null;
+  createdByUser?: {
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+  } | null;
+  assigneeId: string | null;
+  Assignee: RenderedAssignee | null;
   createdAt: Date;
   updatedAt: Date;
   lastActiveAt: Date;
+  boardId: number;
   comments?: RenderedComment[];
 }
 
@@ -17,7 +30,12 @@ export interface RenderedComment {
   content: string;
   createdAt: Date;
   updatedAt: Date;
-  createdBy: string;
+  createdBy: string | null;
+  createdByUser?: {
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+  } | null;
 }
 
 export const CONTENT_TYPES = {
@@ -40,6 +58,12 @@ export const INTENTS = {
   createComment: "createComment" as const,
   updateComment: "updateComment" as const,
   deleteComment: "deleteComment" as const,
+  inviteUser: "inviteUser" as const,
+  acceptInvitation: "acceptInvitation" as const,
+  declineInvitation: "declineInvitation" as const,
+  updateItemAssignee: "updateItemAssignee" as const,
+  createVirtualAssignee: "createVirtualAssignee" as const,
+  createAndAssignVirtualAssignee: "createAndAssignVirtualAssignee" as const,
 };
 
 export const ItemMutationFields = {
@@ -60,7 +84,9 @@ type ConstructorToType<T> = T extends typeof String
     ? number
     : never;
 
-export type MutationFromFields<T extends Record<string, { type: typeof String | typeof Number }>> = {
+export type MutationFromFields<
+  T extends Record<string, { type: typeof String | typeof Number }>,
+> = {
   [K in keyof T]: K extends "content"
     ? string | null
     : ConstructorToType<T[K]["type"]>;

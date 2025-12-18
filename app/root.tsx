@@ -16,6 +16,8 @@ import { ThemeProvider } from "./context/theme";
 import { BoardSwitcher } from "./routes/board/board-switcher";
 import type { Board } from "@prisma/client";
 
+type SimpleBoardInfo = { id: number; name: string; color: string };
+
 export const links = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   {
@@ -67,14 +69,22 @@ export default function App() {
   );
 }
 
-function AppContent({ userId, allBoards }: { userId: string | null; allBoards: Board[] }) {
+function AppContent({
+  userId,
+  allBoards,
+}: {
+  userId: string | null;
+  allBoards: SimpleBoardInfo[];
+}) {
   const matches = useMatches();
-  
+
   // Find board context from matches (board page or card detail page)
   const boardMatch = matches.find((m) => m.id.includes("board.$id"));
   const cardMatch = matches.find((m) => m.id.includes("card.$cardId"));
-  
-  const currentBoard = (boardMatch?.data as unknown as { board?: Board })?.board || (cardMatch?.data as unknown as { card?: { Board: Board } })?.card?.Board;
+
+  const currentBoard =
+    (boardMatch?.data as unknown as { board?: Board })?.board ||
+    (cardMatch?.data as unknown as { card?: { Board: Board } })?.card?.Board;
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 flex flex-col">

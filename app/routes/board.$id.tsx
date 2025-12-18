@@ -18,9 +18,15 @@ import {
   deleteCard,
   getItem,
   getHomeData,
+  inviteUserToBoard,
+  acceptBoardInvitation,
+  declineBoardInvitation,
+  updateItemAssignee,
 } from "./queries";
-import { Board } from "./board/board";
+import { createOrGetAssignee } from "../utils/assignee";
+import Board from "./board/board";
 import type { Board as BoardType } from "@prisma/client";
+import type { Route } from "./+types/board.$id";
 import {
   updateBoardNameSchema,
   itemMutationSchema,
@@ -30,9 +36,14 @@ import {
   moveColumnSchema,
   deleteColumnSchema,
   moveItemSchema,
-   tryParseFormData,
- } from "./validation";
-
+  inviteUserSchema,
+  acceptInvitationSchema,
+  declineInvitationSchema,
+  updateItemAssigneeSchema,
+  createVirtualAssigneeSchema,
+  createAndAssignVirtualAssigneeSchema,
+  tryParseFormData,
+} from "./validation";
 export async function loader({
   request,
   params,
@@ -61,7 +72,9 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
   ];
 };
 
-export { Board as default };
+export default function BoardPage({ loaderData }: Route.ComponentProps) {
+  return <Board board={loaderData.board} />;
+}
 
 export async function action({
   request,
@@ -122,7 +135,10 @@ export async function action({
       if (!result.success) throw badRequest(result.error);
       // Assign current user as creator when creating new card
       await upsertItem(
-        { ...result.data, boardId, createdBy: accountId } as ItemMutation & { boardId: number; createdBy: string },
+        { ...result.data, boardId, createdBy: accountId } as ItemMutation & {
+          boardId: number;
+          createdBy: string;
+        },
         accountId
       );
       break;
@@ -172,6 +188,58 @@ export async function action({
       console.log("[DELETE_COLUMN] Deleting column ID:", result.data.columnId);
       await deleteColumn(result.data.columnId, boardId, accountId);
       console.log("[DELETE_COLUMN] Column deleted successfully");
+      break;
+    }
+    case INTENTS.inviteUser: {
+      const result = tryParseFormData(formData, inviteUserSchema);
+      if (!result.success) throw badRequest(result.error);
+      // Check that user is owner or admin
+      const board = await getBoardData(boardId, accountId);
+      if (!board) throw notFound();
+      await inviteUserToBoard(
+        boardId,
+        result.data.email,
+        accountId,
+        result.data.role
+      );
+      break;
+    }
+    case INTENTS.acceptInvitation: {
+      const result = tryParseFormData(formData, acceptInvitationSchema);
+      if (!result.success) throw badRequest(result.error);
+      await acceptBoardInvitation(result.data.invitationId, accountId);
+      break;
+    }
+    case INTENTS.declineInvitation: {
+      const result = tryParseFormData(formData, declineInvitationSchema);
+      if (!result.success) throw badRequest(result.error);
+      await declineBoardInvitation(result.data.invitationId);
+      break;
+    }
+    case INTENTS.updateItemAssignee: {
+      const result = tryParseFormData(formData, updateItemAssigneeSchema);
+      if (!result.success) throw badRequest(result.error);
+      await updateItemAssignee(
+        result.data.itemId,
+        result.data.assigneeId || null,
+        accountId
+      );
+      break;
+    }
+    case INTENTS.createVirtualAssignee: {
+      const result = tryParseFormData(formData, createVirtualAssigneeSchema);
+      if (!result.success) throw badRequest(result.error);
+      await createOrGetAssignee(boardId, result.data.name);
+      break;
+    }
+    case INTENTS.createAndAssignVirtualAssignee: {
+      const result = tryParseFormData(
+        formData,
+        createAndAssignVirtualAssigneeSchema
+      );
+      if (!result.success) throw badRequest(result.error);
+      const assignee = await createOrGetAssignee(boardId, result.data.name);
+      await updateItemAssignee(result.data.itemId, assignee.id, accountId);
       break;
     }
     default: {

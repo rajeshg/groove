@@ -75,12 +75,10 @@ export function BoardSwitcher({
     );
   }, [allBoards, menuSearchTerm]);
 
-
-
   return (
     <div className="relative inline-flex items-center gap-1" ref={dropdownRef}>
       {/* J shortcut badge */}
-      <button 
+      <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-1.5"
       >
@@ -98,7 +96,7 @@ export function BoardSwitcher({
 
       {/* Popover Menu - Perfectly matching board-menu.png */}
       {isOpen && (
-        <div className="absolute top-full left-0 mt-4 w-[420px] max-h-[85vh] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl shadow-2xl z-[100] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
+        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 w-[calc(100vw-2rem)] sm:w-[420px] max-h-[85vh] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl shadow-2xl z-[100] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
           {/* Search Header */}
           <div className="p-5">
             <div className="relative">
@@ -118,12 +116,28 @@ export function BoardSwitcher({
 
           {/* Scrollable Content */}
           <div className="flex-1 overflow-y-auto custom-scrollbar pb-4">
-             {/* Top Grid Actions */}
-             <div className="grid grid-cols-3 gap-3 px-5 mb-4">
-               <MenuActionCard icon="home" label="Home" count={1} to="/home" active />
-               <MenuActionCard icon="assigned" label="Assigned to me" count={2} to="/me/assigned" />
-               <MenuActionCard icon="added" label="Added by me" count={3} to="/me/created" />
-             </div>
+            {/* Top Grid Actions */}
+            <div className="grid grid-cols-3 gap-3 px-5 mb-4">
+              <MenuActionCard
+                icon="home"
+                label="Home"
+                count={1}
+                to="/home"
+                active
+              />
+              <MenuActionCard
+                icon="assigned"
+                label="Assigned to me"
+                count={2}
+                to="/me/assigned"
+              />
+              <MenuActionCard
+                icon="added"
+                label="Added by me"
+                count={3}
+                to="/me/created"
+              />
+            </div>
 
             {/* BOARDS Section */}
             <MenuSection label="BOARDS">
@@ -153,36 +167,34 @@ export function BoardSwitcher({
 
             {/* PEOPLE Section */}
             <MenuSection label="PEOPLE">
-              <button className="w-full flex items-center gap-3 px-5 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                <Icon name="plus" size="md" className="opacity-60" />
-                <span>Invite people</span>
-              </button>
-               <Link
-                 to="/profile"
-                 className="flex items-center gap-3 px-5 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
-                 onClick={() => setIsOpen(false)}
-               >
-                 <Icon name="user" size="md" className="opacity-60" />
-                 <span className="truncate">My Profile</span>
-               </Link>
+              {currentBoardId ? (
+                <Link
+                  to={`/board/${currentBoardId}/members`}
+                  className="w-full flex items-center gap-3 px-5 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <Icon name="plus" size="md" className="opacity-60" />
+                  <span>Invite people</span>
+                </Link>
+              ) : (
+                <Link
+                  to="/home"
+                  className="w-full flex items-center gap-3 px-5 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <Icon name="plus" size="md" className="opacity-60" />
+                  <span>Invite people</span>
+                </Link>
+              )}
+              <Link
+                to="/profile"
+                className="flex items-center gap-3 px-5 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                onClick={() => setIsOpen(false)}
+              >
+                <Icon name="user" size="md" className="opacity-60" />
+                <span className="truncate">My Profile</span>
+              </Link>
             </MenuSection>
-
-
-          </div>
-
-          {/* Footer Attribution - matching Fizzy exactly */}
-          <div className="px-6 py-6 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 flex flex-col items-center gap-3">
-            <div className="flex items-center gap-3">
-              <div className="flex gap-0.5 opacity-40">
-                <div className="w-0.5 h-3 bg-blue-500 rounded-full"></div>
-                <div className="w-0.5 h-3 bg-red-500 rounded-full"></div>
-                <div className="w-0.5 h-3 bg-yellow-500 rounded-full"></div>
-                <div className="w-0.5 h-3 bg-green-500 rounded-full"></div>
-              </div>
-              <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest text-center">
-                Trellix™ is designed, built, and backed by OpenCode™
-              </p>
-            </div>
           </div>
         </div>
       )}

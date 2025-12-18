@@ -28,14 +28,24 @@ export async function action({ request }: { request: Request }) {
     );
   }
 
-  let user = await createAccount(result.data.email, result.data.password);
+  let user = await createAccount(
+    result.data.email,
+    result.data.password,
+    result.data.firstName,
+    result.data.lastName
+  );
   return setAuthOnResponse(redirect("/home"), user.id);
 }
 
 export default function Signup() {
   let actionResult = useActionData<{
     ok?: boolean;
-    errors?: { email?: string; password?: string };
+    errors?: {
+      email?: string;
+      password?: string;
+      firstName?: string;
+      lastName?: string;
+    };
   }>();
 
   return (
@@ -52,6 +62,60 @@ export default function Signup() {
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-[480px]">
         <div className="bg-white px-6 py-12 shadow sm:rounded-lg sm:px-12">
           <Form className="space-y-6" method="post">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="firstName">
+                  First Name{" "}
+                  {actionResult?.errors?.firstName && (
+                    <span
+                      id="firstName-error"
+                      className="text-red-600 font-semibold"
+                    >
+                      {actionResult.errors.firstName}
+                    </span>
+                  )}
+                </Label>
+                <Input
+                  id="firstName"
+                  name="firstName"
+                  type="text"
+                  autoComplete="given-name"
+                  aria-describedby={
+                    actionResult?.errors?.firstName
+                      ? "firstName-error"
+                      : "signup-header"
+                  }
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="lastName">
+                  Last Name{" "}
+                  {actionResult?.errors?.lastName && (
+                    <span
+                      id="lastName-error"
+                      className="text-red-600 font-semibold"
+                    >
+                      {actionResult.errors.lastName}
+                    </span>
+                  )}
+                </Label>
+                <Input
+                  id="lastName"
+                  name="lastName"
+                  type="text"
+                  autoComplete="family-name"
+                  aria-describedby={
+                    actionResult?.errors?.lastName
+                      ? "lastName-error"
+                      : "signup-header"
+                  }
+                  required
+                />
+              </div>
+            </div>
+
             <div>
               <Label htmlFor="email">
                 Email address{" "}

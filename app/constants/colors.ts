@@ -4,9 +4,9 @@
  */
 
 export const DEFAULT_COLUMN_COLORS = {
-  notNow: "#cbd5e1", // Slate-300 (Not Now) - lighter, softer
-  mayBe: "#f472b6", // Orange-500 (May be?) - more vibrant than pink
-  done: "#059669", // Emerald-500 (Done) - clearer than cyan
+  notNow: "#cbd5e1", // Slate-300 (Not Now) - light gray
+  mayBe: "#ec4899", // Pink-500 (May be?) - vibrant pink
+  done: "#06b6d4", // Cyan-500 (Done) - bright cyan
 } as const;
 
 export const COLOR_PRESETS = [

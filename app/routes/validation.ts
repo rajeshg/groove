@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+// Maximum assignee name length: 50 (firstName) + 50 (lastName) + 1 (space) + 9 (dedup buffer) = 110 chars
+const MAX_ASSIGNEE_NAME_LENGTH = 110;
+
 // ============================================================================
 // Authentication
 // ============================================================================
@@ -18,6 +21,14 @@ export const loginSchema = z.object({
 export type LoginInput = z.infer<typeof loginSchema>;
 
 export const signupSchema = z.object({
+  firstName: z
+    .string()
+    .min(1, "First name is required")
+    .max(50, "First name must be 50 characters or less"),
+  lastName: z
+    .string()
+    .min(1, "Last name is required")
+    .max(50, "Last name must be 50 characters or less"),
   email: z
     .string()
     .min(1, "Email is required")
@@ -146,6 +157,74 @@ export const deleteColumnSchema = z.object({
 });
 
 export type DeleteColumnInput = z.infer<typeof deleteColumnSchema>;
+
+// ============================================================================
+// Invitation Operations
+// ============================================================================
+
+export const inviteUserSchema = z.object({
+  intent: z.literal("inviteUser"),
+  email: z
+    .string()
+    .min(1, "Email is required")
+    .email("Please enter a valid email address"),
+  role: z.string().default("editor"),
+});
+
+export type InviteUserInput = z.infer<typeof inviteUserSchema>;
+
+export const acceptInvitationSchema = z.object({
+  intent: z.literal("acceptInvitation"),
+  invitationId: z.string().min(1, "Invitation ID is required"),
+});
+
+export type AcceptInvitationInput = z.infer<typeof acceptInvitationSchema>;
+
+export const declineInvitationSchema = z.object({
+  intent: z.literal("declineInvitation"),
+  invitationId: z.string().min(1, "Invitation ID is required"),
+});
+
+export type DeclineInvitationInput = z.infer<typeof declineInvitationSchema>;
+
+export const updateItemAssigneeSchema = z.object({
+  intent: z.literal("updateItemAssignee"),
+  itemId: z.string().min(1, "Invalid item ID"),
+  assigneeId: z.string().nullable().optional(),
+});
+
+export type UpdateItemAssigneeInput = z.infer<typeof updateItemAssigneeSchema>;
+
+export const createVirtualAssigneeSchema = z.object({
+  intent: z.literal("createVirtualAssignee"),
+  name: z
+    .string()
+    .min(1, "Assignee name is required")
+    .refine(
+      (name) => name.length <= MAX_ASSIGNEE_NAME_LENGTH,
+      `Assignee name must be ${MAX_ASSIGNEE_NAME_LENGTH} characters or less`
+    ),
+});
+
+export type CreateVirtualAssigneeInput = z.infer<
+  typeof createVirtualAssigneeSchema
+>;
+
+export const createAndAssignVirtualAssigneeSchema = z.object({
+  intent: z.literal("createAndAssignVirtualAssignee"),
+  name: z
+    .string()
+    .min(1, "Assignee name is required")
+    .refine(
+      (name) => name.length <= MAX_ASSIGNEE_NAME_LENGTH,
+      `Assignee name must be ${MAX_ASSIGNEE_NAME_LENGTH} characters or less`
+    ),
+  itemId: z.string().min(1, "Invalid item ID"),
+});
+
+export type CreateAndAssignVirtualAssigneeInput = z.infer<
+  typeof createAndAssignVirtualAssigneeSchema
+>;
 
 // ============================================================================
 // Helper Functions

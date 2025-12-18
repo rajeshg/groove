@@ -1,84 +1,88 @@
 import { prisma } from "../db/prisma";
 import { DEFAULT_COLUMN_COLORS } from "../constants/colors";
+import { ensureAssigneeForUser } from "../utils/assignee";
 
 import type { ItemMutation } from "./types";
+import type { Prisma } from "@prisma/client";
 
 // Time threshold for editing/deleting comments (15 minutes in milliseconds)
 const COMMENT_EDIT_THRESHOLD_MS = 15 * 60 * 1000;
 
-export async function deleteBoard(boardId: number, accountId: string) {
-  return prisma.board.delete({
-    where: { id: boardId, accountId },
+/**
+ * Check if user is a member of the board (owner or invited member)
+ * With Option B: Owner is also in BoardMember table
+ */
+export async function isBoardMember(
+  boardId: number,
+  accountId: string
+): Promise<boolean> {
+  const member = await prisma.boardMember.findUnique({
+    where: { accountId_boardId: { accountId, boardId } },
   });
+  return !!member;
 }
 
-export async function createBoard(userId: string, name: string, color: string) {
-  return prisma.board.create({
-    data: {
-      name,
-      color,
-      Account: {
-        connect: {
-          id: userId,
-        },
-      },
-      columns: {
-        create: [
-          {
-            name: "Not Now",
-            color: DEFAULT_COLUMN_COLORS.notNow,
-            order: 1,
-            id: `col-not-now-${Date.now()}-1`,
-            isDefault: true,
-          },
-          {
-            name: "May be?",
-            color: DEFAULT_COLUMN_COLORS.mayBe,
-            order: 2,
-            id: `col-maybe-${Date.now()}-2`,
-            isDefault: true,
-          },
-          {
-            name: "Done",
-            color: DEFAULT_COLUMN_COLORS.done,
-            order: 3,
-            id: `col-done-${Date.now()}-3`,
-            isDefault: true,
-          },
-        ],
-      },
-    },
-  });
-}
+/**
+ * Get board with membership check
+ */
+export async function getBoardData(
+  boardId: number,
+  accountId: string
+): Promise<Prisma.BoardGetPayload<{
+  include: {
+    items: {
+      include: {
+        _count: { select: { comments: true } };
+        createdByUser: {
+          select: { id: true; firstName: true; lastName: true };
+        };
+        Assignee: { select: { id: true; name: true; userId: true } };
+      };
+    };
+    columns: { orderBy: { order: "asc" } };
+    members: { include: { Account: { select: { id: true; email: true } } } };
+    invitations: {
+      where: { status: "pending" };
+      include: { Account: { select: { email: true } } };
+    };
+    assignees: {
+      select: { id: true; name: true; userId: true };
+      orderBy: { name: "asc" };
+    };
+  };
+}> | null> {
+  // Check membership
+  const isMember = await isBoardMember(boardId, accountId);
+  if (!isMember) throw new Error("Unauthorized: Not a board member");
 
-export async function getHomeData(userId: string) {
-  return prisma.board.findMany({
-    where: {
-      accountId: userId,
-    },
-  });
-}
-
-// Board detail queries
-export function deleteCard(id: string, accountId: string) {
-  return prisma.item.delete({ where: { id, Board: { accountId } } });
-}
-
-export async function getBoardData(boardId: number, accountId: string) {
   return prisma.board.findUnique({
-    where: {
-      id: boardId,
-      accountId: accountId,
-    },
+    where: { id: boardId },
     include: {
       items: {
         include: {
           _count: {
-            select: { comments: true }
-          }
-        }
+            select: { comments: true },
+          },
+          createdByUser: {
+            select: { id: true, firstName: true, lastName: true },
+          },
+          Assignee: {
+            select: { id: true, name: true, userId: true },
+          },
+        },
       },
       columns: { orderBy: { order: "asc" } },
+      members: {
+        include: { Account: { select: { id: true, email: true } } },
+      },
+      invitations: {
+        where: { status: "pending" },
+        include: { Account: { select: { email: true } } },
+      },
+      assignees: {
+        select: { id: true, name: true, userId: true },
+        orderBy: { name: "asc" },
+      },
     },
   });
 }
@@ -125,7 +129,7 @@ export function upsertItem(
 ) {
   // Touch lastActiveAt on meaningful changes (content/title/column changes)
   const updateData = { ...mutation, lastActiveAt: new Date() };
-  
+
   return prisma.item.upsert({
     where: {
       id: mutation.id,
@@ -250,7 +254,7 @@ export async function deleteColumn(
  */
 export async function updateItemAssignment(
   itemId: string,
-  assignedTo: string | null,
+  assigneeId: string | null,
   accountId: string
 ) {
   return prisma.item.update({
@@ -259,7 +263,7 @@ export async function updateItemAssignment(
       Board: { accountId },
     },
     data: {
-      assignedTo,
+      assigneeId,
       lastActiveAt: new Date(),
     },
   });
@@ -335,7 +339,9 @@ export async function updateComment(
   // Check if comment is within edit threshold
   const commentAge = Date.now() - comment.createdAt.getTime();
   if (commentAge > COMMENT_EDIT_THRESHOLD_MS) {
-    throw new Error("Comments can only be edited within 15 minutes of creation");
+    throw new Error(
+      "Comments can only be edited within 15 minutes of creation"
+    );
   }
 
   // Update comment and card's lastActiveAt
@@ -356,10 +362,7 @@ export async function updateComment(
 /**
  * Delete a comment and touch card's lastActiveAt
  */
-export async function deleteComment(
-  commentId: string,
-  accountId: string
-) {
+export async function deleteComment(commentId: string, accountId: string) {
   // Verify the comment belongs to a card owned by the account
   const comment = await prisma.comment.findFirst({
     where: {
@@ -382,7 +385,9 @@ export async function deleteComment(
   // Check if comment is within edit threshold
   const commentAge = Date.now() - comment.createdAt.getTime();
   if (commentAge > COMMENT_EDIT_THRESHOLD_MS) {
-    throw new Error("Comments can only be deleted within 15 minutes of creation");
+    throw new Error(
+      "Comments can only be deleted within 15 minutes of creation"
+    );
   }
 
   // Delete comment and update card's lastActiveAt
@@ -399,19 +404,363 @@ export async function deleteComment(
   return { success: true };
 }
 
+/**
+ * Get all boards for a user (owned or member)
+ */
+export async function getHomeData(accountId: string) {
+  return prisma.board.findMany({
+    where: {
+      OR: [
+        { accountId },
+        {
+          members: {
+            some: {
+              accountId,
+            },
+          },
+        },
+      ],
+    },
+    select: {
+      id: true,
+      name: true,
+      color: true,
+      accountId: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+/**
+ * Create a new board with owner in BoardMember table and default columns
+ */
+export async function createBoard(
+  accountId: string,
+  name: string,
+  color: string
+) {
+  const board = await prisma.board.create({
+    data: {
+      name,
+      color,
+      accountId,
+    },
+  });
+
+  // Create owner as a board member with role 'owner'
+  await prisma.boardMember.create({
+    data: {
+      boardId: board.id,
+      accountId,
+      role: "owner",
+    },
+  });
+
+  // Create default assignee for the owner
+  const ownerAccount = await prisma.account.findUnique({
+    where: { id: accountId },
+    select: { email: true },
+  });
+
+  if (ownerAccount?.email) {
+    await ensureAssigneeForUser(board.id, accountId, ownerAccount.email);
+  }
+
+  // Create default columns
+  const defaultColumns = [
+    {
+      name: "Not Now",
+      order: 1,
+      isDefault: false,
+      color: DEFAULT_COLUMN_COLORS.notNow,
+    },
+    {
+      name: "May be?",
+      order: 2,
+      isDefault: true,
+      color: DEFAULT_COLUMN_COLORS.mayBe,
+    },
+    {
+      name: "Done",
+      order: 3,
+      isDefault: false,
+      color: DEFAULT_COLUMN_COLORS.done,
+    },
+  ];
+
+  for (const col of defaultColumns) {
+    await prisma.column.create({
+      data: {
+        id: `col-${board.id}-${col.order}`,
+        boardId: board.id,
+        name: col.name,
+        order: col.order,
+        isDefault: col.isDefault,
+        color: col.color,
+        isExpanded: true,
+      },
+    });
+  }
+
+  return board;
+}
+
+/**
+ * Delete a board (owner only)
+ */
+export async function deleteBoard(boardId: number, accountId: string) {
+  // Check if user is owner
+  const board = await prisma.board.findUnique({
+    where: { id: boardId },
+    select: { accountId: true },
+  });
+
+  if (board?.accountId !== accountId) {
+    throw new Error("Unauthorized: Only owner can delete board");
+  }
+
+  return prisma.board.delete({
+    where: { id: boardId },
+  });
+}
+
+/**
+ * Delete a card (item) from a board
+ */
+export async function deleteCard(itemId: string, accountId: string) {
+  return prisma.item.delete({
+    where: {
+      id: itemId,
+      Board: { accountId },
+    },
+  });
+}
+
 export async function getProfileData(accountId: string) {
   const [account, assignedCount, createdCount] = await Promise.all([
     prisma.account.findUnique({
       where: { id: accountId },
-      select: { email: true },
+      select: { email: true, firstName: true, lastName: true },
     }),
     prisma.item.count({
-      where: { assignedTo: accountId },
+      where: { createdBy: accountId },
     }),
     prisma.item.count({
       where: { createdBy: accountId },
     }),
   ]);
 
-  return { email: account?.email || "Unknown", assignedCount, createdCount };
+  return {
+    email: account?.email || "Unknown",
+    firstName: account?.firstName || null,
+    lastName: account?.lastName || null,
+    assignedCount,
+    createdCount,
+  };
+}
+
+/**
+ * Add a board member (only for already-registered users)
+ */
+export async function addBoardMember(
+  boardId: number,
+  accountId: string,
+  role: string = "editor"
+) {
+  return prisma.boardMember.create({
+    data: {
+      boardId,
+      accountId,
+      role,
+    },
+  });
+}
+
+/**
+ * Remove a board member
+ */
+export async function removeBoardMember(boardId: number, accountId: string) {
+  return prisma.boardMember.delete({
+    where: {
+      accountId_boardId: { accountId, boardId },
+    },
+  });
+}
+
+/**
+ * Get all members of a board (excluding owner if not in table)
+ */
+export async function getBoardMembers(boardId: number) {
+  return prisma.boardMember.findMany({
+    where: { boardId },
+    include: {
+      Account: {
+        select: { email: true, id: true },
+      },
+    },
+  });
+}
+
+/**
+ * Send invitation to email to join board
+ */
+export async function inviteUserToBoard(
+  boardId: number,
+  email: string,
+  invitedBy: string,
+  role: string = "editor"
+) {
+  return prisma.boardInvitation.create({
+    data: {
+      boardId,
+      email,
+      invitedBy,
+      role,
+      status: "pending",
+    },
+  });
+}
+
+/**
+ * Accept a board invitation
+ */
+export async function acceptBoardInvitation(
+  invitationId: string,
+  userId: string
+) {
+  const invitation = await prisma.boardInvitation.findUnique({
+    where: { id: invitationId },
+  });
+
+  if (!invitation) {
+    throw new Error("Invitation not found");
+  }
+
+  if (invitation.status !== "pending") {
+    throw new Error("Invitation already processed");
+  }
+
+  // Create board member record
+  await prisma.boardMember.create({
+    data: {
+      boardId: invitation.boardId,
+      accountId: userId,
+      role: invitation.role,
+    },
+  });
+
+  // Get or create assignee for the user
+  const account = await prisma.account.findUnique({
+    where: { id: userId },
+    select: { email: true },
+  });
+
+  if (account?.email) {
+    await ensureAssigneeForUser(invitation.boardId, userId, account.email);
+  }
+
+  // Mark invitation as accepted
+  await prisma.boardInvitation.update({
+    where: { id: invitationId },
+    data: { status: "accepted" },
+  });
+
+  return { success: true };
+}
+
+/**
+ * Decline a board invitation
+ */
+export async function declineBoardInvitation(invitationId: string) {
+  const invitation = await prisma.boardInvitation.findUnique({
+    where: { id: invitationId },
+  });
+
+  if (!invitation) {
+    throw new Error("Invitation not found");
+  }
+
+  if (invitation.status !== "pending") {
+    throw new Error("Invitation already processed");
+  }
+
+  await prisma.boardInvitation.update({
+    where: { id: invitationId },
+    data: { status: "declined" },
+  });
+
+  return { success: true };
+}
+
+/**
+ * Get all pending invitations for a user (by email)
+ */
+export async function getPendingInvitationsForUser(email: string) {
+  return prisma.boardInvitation.findMany({
+    where: {
+      email,
+      status: "pending",
+    },
+    include: {
+      Board: {
+        select: { id: true, name: true, color: true },
+      },
+      Account: {
+        select: { email: true },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+/**
+ * Get all pending invitations for a board
+ */
+export async function getPendingInvitationsForBoard(boardId: number) {
+  return prisma.boardInvitation.findMany({
+    where: {
+      boardId,
+      status: "pending",
+    },
+    include: {
+      Account: {
+        select: { email: true },
+      },
+    },
+  });
+}
+
+/**
+ * Update item assignee
+ */
+export async function updateItemAssignee(
+  itemId: string,
+  assigneeId: string | null,
+  accountId: string
+) {
+  // Verify user has access to this item
+  const item = await prisma.item.findUnique({
+    where: { id: itemId },
+    include: { Board: true },
+  });
+
+  if (!item) {
+    throw new Error("Item not found");
+  }
+
+  const isMember = await isBoardMember(item.boardId, accountId);
+  if (!isMember) {
+    throw new Error("Unauthorized: Not a board member");
+  }
+
+  // Update item with new assignee
+  return prisma.item.update({
+    where: { id: itemId },
+    data: { assigneeId },
+    include: {
+      Assignee: {
+        select: { id: true, name: true, userId: true },
+      },
+    },
+  });
 }
