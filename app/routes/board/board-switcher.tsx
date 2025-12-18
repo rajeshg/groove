@@ -16,7 +16,7 @@ interface BoardSwitcherProps {
 export function BoardSwitcher({
   currentBoardId,
   allBoards,
-  userId,
+  userId: _userId,
 }: BoardSwitcherProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [menuSearchTerm, setMenuSearchTerm] = useState("");
@@ -75,7 +75,7 @@ export function BoardSwitcher({
     );
   }, [allBoards, menuSearchTerm]);
 
-  const userName = userId ? userId.split("@")[0].split(".").map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(" ") : "Guest";
+
 
   return (
     <div className="relative inline-flex items-center gap-1" ref={dropdownRef}>
@@ -118,12 +118,12 @@ export function BoardSwitcher({
 
           {/* Scrollable Content */}
           <div className="flex-1 overflow-y-auto custom-scrollbar pb-4">
-            {/* Top Grid Actions */}
-            <div className="grid grid-cols-3 gap-3 px-5 mb-4">
-              <MenuActionCard icon="home" label="Home" count={1} to="/home" active />
-              <MenuActionCard icon="assigned" label="Assigned to me" count={2} to="#" />
-              <MenuActionCard icon="user-plus" label="Added by me" count={3} to="#" />
-            </div>
+             {/* Top Grid Actions */}
+             <div className="grid grid-cols-3 gap-3 px-5 mb-4">
+               <MenuActionCard icon="home" label="Home" count={1} to="/home" active />
+               <MenuActionCard icon="assigned" label="Assigned to me" count={2} to="/me/assigned" />
+               <MenuActionCard icon="added" label="Added by me" count={3} to="/me/created" />
+             </div>
 
             {/* BOARDS Section */}
             <MenuSection label="BOARDS">
@@ -157,27 +157,17 @@ export function BoardSwitcher({
                 <Icon name="plus" size="md" className="opacity-60" />
                 <span>Invite people</span>
               </button>
-              <Link 
-                to="/profile"
-                className="flex items-center gap-3 px-5 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
-                onClick={() => setIsOpen(false)}
-              >
-                <Icon name="user" size="md" className="opacity-60" />
-                <span className="truncate">{userName}</span>
-              </Link>
+               <Link
+                 to="/profile"
+                 className="flex items-center gap-3 px-5 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                 onClick={() => setIsOpen(false)}
+               >
+                 <Icon name="user" size="md" className="opacity-60" />
+                 <span className="truncate">My Profile</span>
+               </Link>
             </MenuSection>
 
-            {/* SETTINGS Section */}
-            <MenuSection label="SETTINGS">
-              <Link 
-                to="/profile"
-                className="flex items-center gap-3 px-5 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
-                onClick={() => setIsOpen(false)}
-              >
-                <Icon name="cog" size="md" className="opacity-60" />
-                <span>My Profile</span>
-              </Link>
-            </MenuSection>
+
           </div>
 
           {/* Footer Attribution - matching Fizzy exactly */}

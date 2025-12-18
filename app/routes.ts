@@ -9,4 +9,6 @@ export default [
   route("board/:id", "routes/board.$id.tsx"),
   route("card/:cardId", "routes/card.$cardId.tsx"),
   route("profile", "routes/profile.tsx"),
+  route("me/assigned", "routes/me.assigned.tsx"),
+  route("me/created", "routes/me.created.tsx"),
 ] satisfies RouteConfig;

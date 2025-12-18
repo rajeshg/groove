@@ -24,6 +24,7 @@ interface CardProps {
   createdAt: Date;
   lastActiveAt: Date;
   commentCount?: number;
+  userId?: string;
 }
 
 export function Card({
@@ -42,6 +43,7 @@ export function Card({
   createdAt,
   lastActiveAt,
   commentCount = 0,
+  userId,
 }: CardProps) {
   let submit = useSubmit();
   let deleteFetcher = useFetcher();
@@ -181,6 +183,7 @@ export function Card({
           createdAt={createdAt}
           lastActiveAt={lastActiveAt}
           columnColor={columnColor}
+          userId={userId}
         />
 
         {/* Comment count badge */}

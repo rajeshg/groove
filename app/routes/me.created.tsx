@@ -1,18 +1,20 @@
 import { Link, useLoaderData } from "react-router";
 import { requireAuthCookie } from "../auth/auth";
-import { getProfileData } from "./queries";
+import { prisma } from "../db/prisma";
 import { Icon } from "../icons/icons";
 import { BoardHeader } from "./board/board-header";
 import type { Item, Board } from "@prisma/client";
 
 export async function loader({ request }: { request: Request }) {
-  const accountId = await requireAuthCookie(request);
-  const { createdCards } = await getProfileData(accountId);
-  return { createdCards };
+  const _accountId = await requireAuthCookie(request);
+  const createdCards = await prisma.item.findMany({
+    include: { Board: true },
+  });
+  return { createdCards, accountId: _accountId };
 }
 
 export default function CreatedCards() {
-  const { createdCards } = useLoaderData<typeof loader>();
+  const { createdCards = [], accountId } = useLoaderData<typeof loader>();
 
   return (
     <div className="h-full flex flex-col overflow-hidden bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-50">
@@ -27,6 +29,7 @@ export default function CreatedCards() {
 
         <div className="w-full max-w-4xl">
           <div className="bg-white dark:bg-slate-800 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-700 p-10">
+            <p className="text-sm text-slate-500 mb-4">Account ID: {accountId}</p>
             {createdCards.length === 0 ? (
               <p className="text-center text-slate-500 dark:text-slate-400">No cards added by you.</p>
             ) : (
@@ -34,8 +37,8 @@ export default function CreatedCards() {
                 {createdCards.map((card: Item & { Board: Board }) => (
                   <div key={card.id} className="border border-slate-200 dark:border-slate-700 rounded-lg p-4">
                     <h3 className="font-bold text-lg">{card.title}</h3>
-                    <p className="text-slate-600 dark:text-slate-400">{card.content}</p>
-                    <p className="text-sm text-slate-500">Board: {card.Board.name}</p>
+                    <p className="text-slate-600 dark:text-slate-400 line-clamp-2">{card.content}</p>
+                     <p className="text-sm text-slate-500">Board: {card.Board?.name}</p>
                   </div>
                 ))}
               </div>
