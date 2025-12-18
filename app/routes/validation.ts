@@ -9,7 +9,10 @@ export const loginSchema = z.object({
     .string()
     .min(1, "Email is required")
     .email("Please enter a valid email address"),
-  password: z.string().min(1, "Password is required").min(6, "Password must be at least 6 characters"),
+  password: z
+    .string()
+    .min(1, "Password is required")
+    .min(6, "Password must be at least 6 characters"),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
@@ -34,7 +37,10 @@ export type SignupInput = z.infer<typeof signupSchema>;
 
 export const updateBoardNameSchema = z.object({
   intent: z.literal("updateBoardName"),
-  name: z.string().min(1, "Board name is required").max(255, "Board name is too long"),
+  name: z
+    .string()
+    .min(1, "Board name is required")
+    .max(255, "Board name is too long"),
 });
 
 export type UpdateBoardNameInput = z.infer<typeof updateBoardNameSchema>;
@@ -46,8 +52,13 @@ export type UpdateBoardNameInput = z.infer<typeof updateBoardNameSchema>;
 export const itemMutationSchema = z.object({
   id: z.string().min(1, "Invalid item ID"),
   columnId: z.string().min(1, "Invalid column ID"),
-  title: z.string().min(1, "Card title is required").max(255, "Card title is too long"),
-  order: z.coerce.number("Order must be a number").finite("Order must be a valid number"),
+  title: z
+    .string()
+    .min(1, "Card title is required")
+    .max(255, "Card title is too long"),
+  order: z.coerce
+    .number("Order must be a number")
+    .finite("Order must be a valid number"),
   content: z.string().nullable().default(null),
 });
 
@@ -72,7 +83,9 @@ export const moveItemSchema = z.object({
   id: z.string().min(1, "Invalid item ID"),
   columnId: z.string().min(1, "Invalid column ID"),
   title: z.string().optional(),
-  order: z.coerce.number("Order must be a number").finite("Order must be a valid number"),
+  order: z.coerce
+    .number("Order must be a number")
+    .finite("Order must be a valid number"),
   content: z.string().nullable().default(null),
 });
 
@@ -91,7 +104,10 @@ export type DeleteCardInput = z.infer<typeof deleteCardSchema>;
 
 export const createColumnSchema = z.object({
   intent: z.literal("newColumn"),
-  name: z.string().min(1, "Column name is required").max(255, "Column name is too long"),
+  name: z
+    .string()
+    .min(1, "Column name is required")
+    .max(255, "Column name is too long"),
   id: z.string().min(1, "Invalid column ID"),
 });
 
@@ -100,8 +116,15 @@ export type CreateColumnInput = z.infer<typeof createColumnSchema>;
 export const updateColumnSchema = z.object({
   intent: z.literal("updateColumn"),
   columnId: z.string().min(1, "Invalid column ID"),
-  name: z.string().min(1, "Column name is required").max(255, "Column name is too long").optional(),
-  color: z.string().regex(/^#[0-9a-f]{6}$/i, "Invalid color format").optional(),
+  name: z
+    .string()
+    .min(1, "Column name is required")
+    .max(255, "Column name is too long")
+    .optional(),
+  color: z
+    .string()
+    .regex(/^#[0-9a-f]{6}$/i, "Invalid color format")
+    .optional(),
   isExpanded: z.enum(["0", "1"]).optional(),
 });
 
@@ -110,7 +133,9 @@ export type UpdateColumnInput = z.infer<typeof updateColumnSchema>;
 export const moveColumnSchema = z.object({
   intent: z.literal("moveColumn"),
   id: z.string().min(1, "Invalid column ID"),
-  order: z.coerce.number("Order must be a number").finite("Order must be a valid number"),
+  order: z.coerce
+    .number("Order must be a number")
+    .finite("Order must be a valid number"),
 });
 
 export type MoveColumnInput = z.infer<typeof moveColumnSchema>;
@@ -162,7 +187,9 @@ export function tryParseFormData<T extends z.ZodSchema>(
     return { success: true, data };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const messages = error.issues.map((e) => `${e.path.join(".")}: ${e.message}`);
+      const messages = error.issues.map(
+        (e) => `${e.path.join(".")}: ${e.message}`
+      );
       return { success: false, error: messages.join("; ") };
     }
     return { success: false, error: "Unknown validation error" };

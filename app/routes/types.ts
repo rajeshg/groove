@@ -4,6 +4,11 @@ export interface RenderedItem {
   order: number;
   content: string | null;
   columnId: string;
+  createdBy: string | null;
+  assignedTo: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  lastActiveAt: Date;
 }
 
 export const CONTENT_TYPES = {
@@ -44,5 +49,7 @@ type ConstructorToType<T> = T extends typeof String
     : never;
 
 export type MutationFromFields<T extends Record<string, any>> = {
-  [K in keyof T]: K extends "content" ? string | null : ConstructorToType<T[K]["type"]>;
+  [K in keyof T]: K extends "content"
+    ? string | null
+    : ConstructorToType<T[K]["type"]>;
 };

@@ -53,41 +53,43 @@ export function Column({
   return (
     <div
       className={
-         "flex-shrink-0 flex flex-col overflow-hidden max-h-full w-72 sm:w-80 rounded-lg transition-all duration-100 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 " +
-         (acceptDrop ? `ring-2 ring-offset-2 dark:ring-offset-slate-900 ring-blue-400` : ``)
+        "flex-shrink-0 flex flex-col overflow-y-auto w-[24rem] box-border rounded-lg transition-all duration-100 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 " +
+        (acceptDrop
+          ? `ring-2 ring-offset-2 dark:ring-offset-slate-900 ring-blue-400`
+          : ``)
       }
-       onDragOver={(event) => {
-         // Only accept card drops, not column drops
-         if (event.dataTransfer.types.includes(CONTENT_TYPES.card)) {
-           if (items.length === 0) {
-             event.preventDefault();
-             setAcceptDrop(true);
-           }
-         }
-         // Ignore column drops on the empty column drop zone
-       }}
-       onDragLeave={() => {
-         setAcceptDrop(false);
-       }}
-       onDrop={(event) => {
-         // Only handle card drops
-         if (!event.dataTransfer.types.includes(CONTENT_TYPES.card)) {
-           return;
-         }
+      onDragOver={(event) => {
+        // Only accept card drops, not column drops
+        if (event.dataTransfer.types.includes(CONTENT_TYPES.card)) {
+          if (items.length === 0) {
+            event.preventDefault();
+            setAcceptDrop(true);
+          }
+        }
+        // Ignore column drops on the empty column drop zone
+      }}
+      onDragLeave={() => {
+        setAcceptDrop(false);
+      }}
+      onDrop={(event) => {
+        // Only handle card drops
+        if (!event.dataTransfer.types.includes(CONTENT_TYPES.card)) {
+          return;
+        }
 
-         let transfer = JSON.parse(
-           event.dataTransfer.getData(CONTENT_TYPES.card)
-         );
-         invariant(transfer.id, "missing transfer.id");
-         invariant(transfer.title, "missing transfer.title");
+        let transfer = JSON.parse(
+          event.dataTransfer.getData(CONTENT_TYPES.card)
+        );
+        invariant(transfer.id, "missing transfer.id");
+        invariant(transfer.title, "missing transfer.title");
 
-          let mutation: ItemMutation = {
-            order: 1,
-            columnId: columnId,
-            id: transfer.id,
-            title: transfer.title,
-            content: null,
-          };
+        let mutation: ItemMutation = {
+          order: 1,
+          columnId: columnId,
+          id: transfer.id,
+          title: transfer.title,
+          content: null,
+        };
 
         submit(
           { ...mutation, intent: INTENTS.moveItem },
@@ -103,7 +105,10 @@ export function Column({
         setAcceptDrop(false);
       }}
     >
-      <div className="px-3 py-3 border-b-4 bg-white dark:bg-slate-800" style={{ borderColor: color }}>
+      <div
+        className="px-3 py-3 border-b-4 bg-white dark:bg-slate-800"
+        style={{ borderColor: color }}
+      >
         <div className="flex items-center justify-between gap-2">
           {isExpanded ? (
             <EditableText
@@ -128,8 +133,12 @@ export function Column({
               title={`Expand column: ${name} (${items.length} cards)`}
             >
               <Icon name="chevron-right" />
-              <span className="font-bold text-slate-900 dark:text-slate-50 text-sm truncate">{name}</span>
-              <span className="text-xs text-slate-500 dark:text-slate-400 ml-auto">({items.length})</span>
+              <span className="font-bold text-slate-900 dark:text-slate-50 text-sm truncate">
+                {name}
+              </span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 ml-auto">
+                ({items.length})
+              </span>
             </button>
           )}
           {isExpanded && (
@@ -156,40 +165,54 @@ export function Column({
         </div>
       </div>
 
-      <ul ref={listRef} className="flex-grow overflow-auto min-h-[2px]">
-         {items
-           .sort((a, b) => a.order - b.order)
-           .map((item, index, sortedItems) => {
-             const previousOrder = index > 0 ? sortedItems[index - 1].order : 0;
-             const nextOrder = index < sortedItems.length - 1 ? sortedItems[index + 1].order : item.order + 1;
+      <ul
+        ref={listRef}
+        className="flex flex-col gap-y-2 flex-grow min-h-[2px] px-0 pb-1 pt-0"
+      >
+        {items
+          .sort((a, b) => a.order - b.order)
+          .map((item, index, sortedItems) => {
+            const previousOrder = index > 0 ? sortedItems[index - 1].order : 0;
+            const nextOrder =
+              index < sortedItems.length - 1
+                ? sortedItems[index + 1].order
+                : item.order + 1;
 
-             return (
-               <Card
-                 key={item.id}
-                 title={item.title}
-                 content={item.content}
-                 id={item.id}
-                 order={item.order}
-                 nextOrder={nextOrder}
-                 previousOrder={previousOrder}
-                 columnId={columnId}
-                 columnColor={color}
-                 boardName={boardName}
-                 boardId={boardId}
-               />
-             );
-           })}
-       </ul>
+            return (
+              <Card
+                key={item.id}
+                title={item.title}
+                content={item.content}
+                id={item.id}
+                order={item.order}
+                nextOrder={nextOrder}
+                previousOrder={previousOrder}
+                columnId={columnId}
+                columnColor={color}
+                boardName={boardName}
+                boardId={boardId}
+                createdBy={item.createdBy}
+                assignedTo={item.assignedTo}
+                createdAt={item.createdAt}
+                lastActiveAt={item.lastActiveAt}
+              />
+            );
+          })}
+      </ul>
 
-       {items.length === 0 && !edit && (
-         <div className={`py-8 text-center transition-all duration-200 bg-slate-50 dark:bg-slate-700/50`}>
-           <div className={`text-xs font-medium text-slate-400 dark:text-slate-500`}>
-             No cards
-           </div>
-         </div>
-       )}
+      {items.length === 0 && !edit && (
+        <div
+          className={`py-8 text-center transition-all duration-200 bg-slate-50 dark:bg-slate-700/50`}
+        >
+          <div
+            className={`text-xs font-medium text-slate-400 dark:text-slate-500`}
+          >
+            No cards
+          </div>
+        </div>
+      )}
 
-       {edit ? (
+      {edit ? (
         <NewCard
           columnId={columnId}
           nextOrder={items.length === 0 ? 1 : items[items.length - 1].order + 1}

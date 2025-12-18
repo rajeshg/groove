@@ -96,32 +96,44 @@ export async function action({
       await updateBoardName(boardId, result.data.name, accountId);
       break;
     }
-      case INTENTS.moveItem: {
-        const result = tryParseFormData(formData, moveItemSchema);
-        if (!result.success) throw badRequest(result.error);
-        
-        // For move operations, fetch existing item and update only columnId and order
-        const existingItem = await getItem(result.data.id, accountId);
-        if (!existingItem) throw badRequest("Item not found");
-        
-        // Upsert with existing data but new position
-        await upsertItem({
+    case INTENTS.moveItem: {
+      const result = tryParseFormData(formData, moveItemSchema);
+      if (!result.success) throw badRequest(result.error);
+
+      // For move operations, fetch existing item and update only columnId and order
+      const existingItem = await getItem(result.data.id, accountId);
+      if (!existingItem) throw badRequest("Item not found");
+
+      // Upsert with existing data but new position
+      await upsertItem(
+        {
           id: existingItem.id,
           columnId: result.data.columnId,
           title: existingItem.title,
           order: result.data.order,
           content: existingItem.content,
           boardId,
-        }, accountId);
-        break;
-      }
-     case INTENTS.createItem:
-     case INTENTS.updateItem: {
-       const result = tryParseFormData(formData, itemMutationSchema);
-       if (!result.success) throw badRequest(result.error);
-       await upsertItem({ ...result.data, boardId }, accountId);
-       break;
-     }
+        },
+        accountId
+      );
+      break;
+    }
+    case INTENTS.createItem: {
+      const result = tryParseFormData(formData, itemMutationSchema);
+      if (!result.success) throw badRequest(result.error);
+      // Assign current user as creator when creating new card
+      await upsertItem(
+        { ...result.data, boardId, createdBy: accountId } as any,
+        accountId
+      );
+      break;
+    }
+    case INTENTS.updateItem: {
+      const result = tryParseFormData(formData, itemMutationSchema);
+      if (!result.success) throw badRequest(result.error);
+      await upsertItem({ ...result.data, boardId }, accountId);
+      break;
+    }
     case INTENTS.createColumn: {
       const result = tryParseFormData(formData, createColumnSchema);
       if (!result.success) throw badRequest(result.error);
@@ -143,7 +155,7 @@ export async function action({
       }
 
       if (isExpanded !== undefined) {
-        const isExpandedBool = isExpanded === '1';
+        const isExpandedBool = isExpanded === "1";
         await updateColumnExpanded(columnId, isExpandedBool, accountId);
       }
       break;

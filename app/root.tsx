@@ -74,7 +74,10 @@ function AppContent({ userId }: { userId: any }) {
       <div className="flex-shrink-0 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
         <div className="flex items-center justify-between h-16 px-6">
           {/* Logo/Brand */}
-          <Link to="/home" className="font-bold text-xl hover:opacity-80 transition-opacity">
+          <Link
+            to="/home"
+            className="font-bold text-xl hover:opacity-80 transition-opacity"
+          >
             Trellix
           </Link>
 

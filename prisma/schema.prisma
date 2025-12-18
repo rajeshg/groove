@@ -52,21 +52,24 @@ model Column {
 }
 
 model Item {
-  id        String   @id @default(uuid())
-  title     String
-  content   String?
+   id        String   @id @default(uuid())
+   title     String
+   content   String?
 
-  // we split the difference between the prev/next items. If an item is dropped
-  // between 1.00 and 2.00 it will be 1.50. If dropped between 1.50 and 2.00 it
-  // will be 1.75, etc.
-  order     Float
+   // we split the difference between the prev/next items. If an item is dropped
+   // between 1.00 and 2.00 it will be 1.50. If dropped between 1.50 and 2.00 it
+   // will be 1.75, etc.
+   order     Float
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+   createdAt    DateTime @default(now())
+   updatedAt    DateTime @default(now()) @updatedAt
+   lastActiveAt DateTime @default(now())
+   createdBy    String?
+   assignedTo   String?
 
-  Column   Column @relation(fields: [columnId], references: [id], onDelete: Cascade)
-  columnId String
+   Column   Column @relation(fields: [columnId], references: [id], onDelete: Cascade)
+   columnId String
 
-  Board   Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
-  boardId Int
+   Board   Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+   boardId Int
 }

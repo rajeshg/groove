@@ -10,4 +10,3 @@ export function parseItemMutation(formData: FormData): ItemMutation {
   const obj = formDataToObject(formData);
   return itemMutationSchema.parse(obj);
 }
-

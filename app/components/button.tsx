@@ -2,10 +2,12 @@ import { forwardRef } from "react";
 
 export let Button = forwardRef<
   HTMLButtonElement,
-  React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "danger" }
+  React.ButtonHTMLAttributes<HTMLButtonElement> & {
+    variant?: "primary" | "secondary" | "danger";
+  }
 >((props, ref) => {
   const { variant = "primary", className, ...rest } = props;
-  
+
   const variantClasses = {
     primary: "bg-blue-600 hover:bg-blue-700 text-white",
     secondary: "bg-slate-200 hover:bg-slate-300 text-slate-900",

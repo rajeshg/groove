@@ -20,10 +20,13 @@ export async function action({ request }: { request: Request }) {
 
   const result = tryParseFormData(formData, loginSchema);
   if (!result.success) {
-    return new Response(JSON.stringify({ ok: false, errors: { general: result.error } }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ ok: false, errors: { general: result.error } }),
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 
   let userId = await login(result.data.email, result.data.password);
@@ -87,7 +90,10 @@ export default function Signup() {
               <Label htmlFor="password">
                 Password{" "}
                 {actionResult?.errors?.password && (
-                  <span id="password-error" className="text-red-600 font-semibold">
+                  <span
+                    id="password-error"
+                    className="text-red-600 font-semibold"
+                  >
                     {actionResult.errors.password}
                   </span>
                 )}
@@ -107,7 +113,10 @@ export default function Signup() {
             </div>
             <div className="text-sm text-slate-500">
               Don't have an account?{" "}
-              <Link className="text-blue-600 hover:text-blue-700 underline" to="/signup">
+              <Link
+                className="text-blue-600 hover:text-blue-700 underline"
+                to="/signup"
+              >
                 Sign up
               </Link>
               .

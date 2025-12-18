@@ -7,4 +7,5 @@ export default [
   route("signup", "routes/signup.tsx"),
   route("logout", "routes/logout.tsx"),
   route("board/:id", "routes/board.$id.tsx"),
+  route("card/:cardId", "routes/card.$cardId.tsx"),
 ] satisfies RouteConfig;

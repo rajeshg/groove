@@ -65,7 +65,9 @@ function Boards() {
     <div className="p-8">
       <h2 className="font-bold mb-6 text-2xl text-slate-900">Your Boards</h2>
       {boards.length === 0 ? (
-        <p className="text-slate-600">No boards yet. Create one to get started!</p>
+        <p className="text-slate-600">
+          No boards yet. Create one to get started!
+        </p>
       ) : (
         <nav className="flex flex-wrap gap-6">
           {boards.map((board) => (
@@ -123,16 +125,23 @@ function NewBoard() {
   let isCreating = navigation.formData?.get("intent") === "createBoard";
 
   return (
-    <Form method="post" className="p-8 max-w-md border-b border-slate-200 bg-slate-50">
+    <Form
+      method="post"
+      className="p-8 max-w-md border-b border-slate-200 bg-slate-50"
+    >
       <input type="hidden" name="intent" value="createBoard" />
       <div>
-        <h2 className="font-bold mb-4 text-xl text-slate-900">Create New Board</h2>
+        <h2 className="font-bold mb-4 text-xl text-slate-900">
+          Create New Board
+        </h2>
         <LabeledInput label="Name" name="name" type="text" required />
       </div>
 
       <div className="mt-6 flex items-center gap-4">
         <div className="flex items-center gap-2">
-          <Label htmlFor="board-color" className="mb-0">Color</Label>
+          <Label htmlFor="board-color" className="mb-0">
+            Color
+          </Label>
           <input
             id="board-color"
             name="color"

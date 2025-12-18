@@ -19,31 +19,31 @@ export async function createBoard(userId: string, name: string, color: string) {
           id: userId,
         },
       },
-       columns: {
-         create: [
-           {
-             name: "Not Now",
-             color: DEFAULT_COLUMN_COLORS.notNow,
-             order: 1,
-             id: `col-not-now-${Date.now()}-1`,
-             isDefault: true,
-           },
-           {
-             name: "May be?",
-             color: DEFAULT_COLUMN_COLORS.mayBe,
-             order: 2,
-             id: `col-maybe-${Date.now()}-2`,
-             isDefault: true,
-           },
-           {
-             name: "Done",
-             color: DEFAULT_COLUMN_COLORS.done,
-             order: 3,
-             id: `col-done-${Date.now()}-3`,
-             isDefault: true,
-           },
-         ],
-       },
+      columns: {
+        create: [
+          {
+            name: "Not Now",
+            color: DEFAULT_COLUMN_COLORS.notNow,
+            order: 1,
+            id: `col-not-now-${Date.now()}-1`,
+            isDefault: true,
+          },
+          {
+            name: "May be?",
+            color: DEFAULT_COLUMN_COLORS.mayBe,
+            order: 2,
+            id: `col-maybe-${Date.now()}-2`,
+            isDefault: true,
+          },
+          {
+            name: "Done",
+            color: DEFAULT_COLUMN_COLORS.done,
+            order: 3,
+            id: `col-done-${Date.now()}-3`,
+            isDefault: true,
+          },
+        ],
+      },
     },
   });
 }
@@ -94,10 +94,29 @@ export async function getItem(id: string, accountId: string) {
   });
 }
 
+export async function getCardDetail(
+  cardId: string,
+  boardId: number,
+  accountId: string
+) {
+  return prisma.item.findUnique({
+    where: {
+      id: cardId,
+      Board: { id: boardId, accountId },
+    },
+    include: {
+      Column: true,
+    },
+  });
+}
+
 export function upsertItem(
   mutation: ItemMutation & { boardId: number },
   accountId: string
 ) {
+  // Touch lastActiveAt on meaningful changes (content/title/column changes)
+  const updateData = { ...mutation, lastActiveAt: new Date() };
+  
   return prisma.item.upsert({
     where: {
       id: mutation.id,
@@ -105,8 +124,8 @@ export function upsertItem(
         accountId,
       },
     },
-    create: mutation,
-    update: mutation,
+    create: updateData,
+    update: updateData,
   });
 }
 
@@ -205,13 +224,34 @@ export async function deleteColumn(
   }
 
   // Move all items from the deleted column to the May be column
+  // Touch lastActiveAt since cards are being moved
   await prisma.item.updateMany({
     where: { columnId },
-    data: { columnId: mayBeColumn.id },
+    data: { columnId: mayBeColumn.id, lastActiveAt: new Date() },
   });
 
   // Delete the column
   return prisma.column.delete({
     where: { id: columnId },
+  });
+}
+
+/**
+ * Update assignment on a card and touch lastActiveAt
+ */
+export async function updateItemAssignment(
+  itemId: string,
+  assignedTo: string | null,
+  accountId: string
+) {
+  return prisma.item.update({
+    where: {
+      id: itemId,
+      Board: { accountId },
+    },
+    data: {
+      assignedTo,
+      lastActiveAt: new Date(),
+    },
   });
 }

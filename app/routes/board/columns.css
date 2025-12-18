@@ -8,13 +8,15 @@
   --column-transition-duration: 300ms;
   --progress-max-cards: 20;
   --progress-max-height: 300px;
-  --progress-increment: calc(var(--progress-max-height) / var(--progress-max-cards));
+  --progress-increment: calc(
+    var(--progress-max-height) / var(--progress-max-cards)
+  );
 }
 
 /* Collapsed Column Container */
 .column-collapsed {
   --gradient-direction: to bottom;
-  
+
   align-items: center;
   border-radius: 99rem;
   cursor: pointer;

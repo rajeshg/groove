@@ -20,7 +20,9 @@ export function Board() {
   let submit = useSubmit();
   let [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
   let [draggedCardId, setDraggedCardId] = useState<string | null>(null);
-  let [expandedColumnIds, setExpandedColumnIds] = useState<Set<string>>(new Set());
+  let [expandedColumnIds, setExpandedColumnIds] = useState<Set<string>>(
+    new Set()
+  );
 
   const handleColumnToggle = (columnId: string) => {
     const willBeExpanded = !expandedColumnIds.has(columnId);
@@ -34,7 +36,10 @@ export function Board() {
         updated.add(columnId);
       }
       // Save to localStorage
-      localStorage.setItem(`board-${board.id}-expanded`, JSON.stringify(Array.from(updated)));
+      localStorage.setItem(
+        `board-${board.id}-expanded`,
+        JSON.stringify(Array.from(updated))
+      );
       return updated;
     });
 
@@ -55,12 +60,15 @@ export function Board() {
   // Initialize expanded columns from database on mount
   useEffect(() => {
     const expandedFromDB = board.columns
-      .filter(col => (col as any).isExpanded !== false)
-      .map(col => col.id);
+      .filter((col) => (col as any).isExpanded !== false)
+      .map((col) => col.id);
 
     setExpandedColumnIds(new Set(expandedFromDB));
     // Also save to localStorage for quick access
-    localStorage.setItem(`board-${board.id}-expanded`, JSON.stringify(expandedFromDB));
+    localStorage.setItem(
+      `board-${board.id}-expanded`,
+      JSON.stringify(expandedFromDB)
+    );
   }, []);
 
   let itemsById = new Map(board.items.map((item) => [item.id, item]));
@@ -81,10 +89,16 @@ export function Board() {
   type Column =
     | (typeof board.columns)[number]
     | (typeof optAddingColumns)[number];
-  type ColumnWithItems = (Column & { items: typeof board.items }) | (Column & { items: typeof board.items; order: number });
+  type ColumnWithItems =
+    | (Column & { items: typeof board.items })
+    | (Column & { items: typeof board.items; order: number });
   let columns = new Map<string, any>();
   for (let column of [...board.columns, ...optAddingColumns]) {
-    columns.set(column.id, { ...column, items: [], order: (column as any).order || 0 });
+    columns.set(column.id, {
+      ...column,
+      items: [],
+      order: (column as any).order || 0,
+    });
   }
 
   // add items to their columns
@@ -104,10 +118,12 @@ export function Board() {
   }
 
   // Get sorted columns for rendering
-  const columnArray = [...columns.values()].sort((a, b) => (a.order || 0) - (b.order || 0));
+  const columnArray = [...columns.values()].sort(
+    (a, b) => (a.order || 0) - (b.order || 0)
+  );
 
   return (
-    <div className="h-full min-h-0 flex flex-col relative">
+    <div className="min-h-screen h-full flex flex-col relative bg-white dark:bg-slate-900">
       {/* Top color accent stripe - shows board theme color */}
       <div
         className="h-1 w-full flex-shrink-0"
@@ -134,7 +150,7 @@ export function Board() {
 
       {/* Canvas area with creative background color visualization */}
       <div
-        className="flex-1 bg-white dark:bg-slate-900 overflow-x-scroll overflow-y-hidden relative flex"
+        className="flex-1 w-full overflow-x-scroll overflow-y-visible relative flex flex-col"
         ref={scrollContainerRef}
       >
         {/* Left color accent bar - vertical stripe showing board color */}
@@ -155,7 +171,7 @@ export function Board() {
         />
 
         <div
-          className="flex flex-grow min-h-0 h-full items-start gap-4 px-8 pb-4 pt-4 relative z-10"
+          className="flex w-max min-h-0 items-start gap-2 px-8 pb-4 pt-4 relative z-10"
           onDragEnd={() => {
             // Reset all drag states when any drag ends
             setDraggedCardId(null);
@@ -169,12 +185,16 @@ export function Board() {
               <div
                 key={col.id}
                 className={`transition-all duration-300 ease-out relative ${
-                  isExpanded ? "w-80" : "w-10 h-full"
+                  isExpanded ? "w-[24rem]" : "w-10 h-full"
                 } ${draggedColumnId === col.id ? "shadow-xl scale-105 opacity-50" : ""}`}
-                title={isExpanded ? "Drag to reorder column" : `Expand ${col.name} (${col.items.length} cards)`}
+                title={
+                  isExpanded
+                    ? "Drag to reorder column"
+                    : `Expand ${col.name} (${col.items.length} cards)`
+                }
                 draggable={isExpanded}
                 style={{
-                  overflow: isExpanded ? 'visible' : 'visible',
+                  overflow: isExpanded ? "visible" : "visible",
                 }}
               >
                 {isExpanded ? (
@@ -185,7 +205,10 @@ export function Board() {
                     onDragStart={(e) => {
                       setDraggedColumnId(col.id);
                       e.dataTransfer!.effectAllowed = "move";
-                      e.dataTransfer!.setData(CONTENT_TYPES.column, JSON.stringify({ id: col.id, name: col.name }));
+                      e.dataTransfer!.setData(
+                        CONTENT_TYPES.column,
+                        JSON.stringify({ id: col.id, name: col.name })
+                      );
                     }}
                     onDragEnd={() => {
                       setDraggedColumnId(null);
@@ -198,7 +221,9 @@ export function Board() {
                       }
                     }}
                     onDrop={(e) => {
-                      if (!e.dataTransfer.types.includes(CONTENT_TYPES.column)) {
+                      if (
+                        !e.dataTransfer.types.includes(CONTENT_TYPES.column)
+                      ) {
                         return;
                       }
 
@@ -206,7 +231,9 @@ export function Board() {
                       e.stopPropagation();
 
                       try {
-                        const transfer = JSON.parse(e.dataTransfer.getData(CONTENT_TYPES.column));
+                        const transfer = JSON.parse(
+                          e.dataTransfer.getData(CONTENT_TYPES.column)
+                        );
                         const draggedId = transfer.id;
 
                         if (draggedId === col.id) {
@@ -214,24 +241,31 @@ export function Board() {
                           return;
                         }
 
-                        const draggedCol = columnArray.find((c) => c.id === draggedId);
+                        const draggedCol = columnArray.find(
+                          (c) => c.id === draggedId
+                        );
                         if (!draggedCol) return;
 
                         const rect = e.currentTarget.getBoundingClientRect();
-                        const isDroppedLeft = e.clientX < rect.left + rect.width / 2;
+                        const isDroppedLeft =
+                          e.clientX < rect.left + rect.width / 2;
 
                         let newOrder: number;
                         if (isDroppedLeft) {
-                          const prevCol = columnArray[columnArray.indexOf(col) - 1];
+                          const prevCol =
+                            columnArray[columnArray.indexOf(col) - 1];
                           if (prevCol) {
-                            newOrder = ((prevCol.order || 0) + (col.order || 0)) / 2;
+                            newOrder =
+                              ((prevCol.order || 0) + (col.order || 0)) / 2;
                           } else {
                             newOrder = (col.order || 0) - 1;
                           }
                         } else {
-                          const nextCol = columnArray[columnArray.indexOf(col) + 1];
+                          const nextCol =
+                            columnArray[columnArray.indexOf(col) + 1];
                           if (nextCol) {
-                            newOrder = ((col.order || 0) + (nextCol.order || 0)) / 2;
+                            newOrder =
+                              ((col.order || 0) + (nextCol.order || 0)) / 2;
                           } else {
                             newOrder = (col.order || 0) + 1;
                           }
@@ -273,10 +307,12 @@ export function Board() {
                   <button
                     onClick={() => handleColumnToggle(col.id)}
                     className="column-collapsed"
-                    style={{
-                      color: (col as any).color || "#94a3b8",
-                      '--collapse-height': `${COLUMN_WIDTH_COLLAPSED + Math.min(col.items.length, MAX_VISIBLE_CARDS) * PROGRESS_INCREMENT}px`,
-                    } as any}
+                    style={
+                      {
+                        color: (col as any).color || "#94a3b8",
+                        "--collapse-height": `${COLUMN_WIDTH_COLLAPSED + Math.min(col.items.length, MAX_VISIBLE_CARDS) * PROGRESS_INCREMENT}px`,
+                      } as any
+                    }
                     title={`Click to expand "${col.name}" (${col.items.length} cards)`}
                   >
                     {/* Content - badge and name on top of progress bar */}
@@ -292,9 +328,7 @@ export function Board() {
                       </div>
 
                       {/* Vertical title text */}
-                      <span className="column-collapsed-title">
-                        {col.name}
-                      </span>
+                      <span className="column-collapsed-title">{col.name}</span>
                     </div>
                   </button>
                 )}
@@ -351,7 +385,18 @@ function usePendingItems() {
       let title = String(fetcher.formData.get("title"));
       let id = String(fetcher.formData.get("id"));
       let order = Number(fetcher.formData.get("order"));
-      let item: RenderedItem = { title, id, order, columnId, content: null };
+      let item: RenderedItem = {
+        title,
+        id,
+        order,
+        columnId,
+        content: null,
+        createdBy: null,
+        assignedTo: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        lastActiveAt: new Date(),
+      };
       return item;
     });
 }

@@ -81,16 +81,17 @@ export function EditableText({
   };
 
   const handleClickOutside = (e: React.FocusEvent<HTMLDivElement>) => {
-    if (edit && editContainerRef.current && !editContainerRef.current.contains(e.relatedTarget as Node)) {
+    if (
+      edit &&
+      editContainerRef.current &&
+      !editContainerRef.current.contains(e.relatedTarget as Node)
+    ) {
       submitEdit();
     }
   };
 
   return edit ? (
-    <div
-      ref={editContainerRef}
-      onBlur={handleClickOutside}
-    >
+    <div ref={editContainerRef} onBlur={handleClickOutside}>
       {children}
       <input
         required

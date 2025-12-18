@@ -72,36 +72,37 @@ export function ColumnColorPicker({
         aria-label={`Change color for column ${columnName}`}
       />
 
-      {isOpen && createPortal(
-        <div
-          className="fixed z-50 bg-white rounded-lg shadow-lg p-3 border border-slate-200"
-          style={{
-            top: dropdownPosition.top,
-            left: dropdownPosition.left,
-          }}
-        >
-          <p className="text-xs font-semibold text-slate-700 mb-2 text-center">
-            Colors
-          </p>
-          <div className="grid grid-cols-4 gap-2">
-            {COLOR_PRESETS.map((preset) => (
-              <button
-                key={preset.value}
-                onClick={() => handleColorSelect(preset.value)}
-                className={`w-8 h-8 rounded-lg border-2 transition-all hover:scale-110 ${
-                  currentColor === preset.value
-                    ? "border-slate-900 ring-2 ring-slate-900 ring-offset-1"
-                    : "border-slate-300 hover:border-slate-400"
-                }`}
-                style={{ backgroundColor: preset.value }}
-                title={preset.name}
-                aria-label={`Select ${preset.name}`}
-              />
-            ))}
-          </div>
-        </div>,
-        document.body
-      )}
+      {isOpen &&
+        createPortal(
+          <div
+            className="fixed z-50 bg-white rounded-lg shadow-lg p-3 border border-slate-200"
+            style={{
+              top: dropdownPosition.top,
+              left: dropdownPosition.left,
+            }}
+          >
+            <p className="text-xs font-semibold text-slate-700 mb-2 text-center">
+              Colors
+            </p>
+            <div className="grid grid-cols-4 gap-2">
+              {COLOR_PRESETS.map((preset) => (
+                <button
+                  key={preset.value}
+                  onClick={() => handleColorSelect(preset.value)}
+                  className={`w-8 h-8 rounded-lg border-2 transition-all hover:scale-110 ${
+                    currentColor === preset.value
+                      ? "border-slate-900 ring-2 ring-slate-900 ring-offset-1"
+                      : "border-slate-300 hover:border-slate-400"
+                  }`}
+                  style={{ backgroundColor: preset.value }}
+                  title={preset.name}
+                  aria-label={`Select ${preset.name}`}
+                />
+              ))}
+            </div>
+          </div>,
+          document.body
+        )}
     </>
   );
 }
