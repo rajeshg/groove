@@ -67,7 +67,7 @@ export function NewCard({
         ref={textAreaRef}
         name={ItemMutationFields.title.name}
         placeholder="Enter a title for this card"
-        className="outline-none shadow-sm border border-slate-300 dark:border-slate-600 text-sm rounded w-full py-2 px-3 resize-none placeholder:text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 h-16 bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-50"
+        className="outline-none shadow-sm border border-slate-300 dark:border-slate-600 text-sm rounded w-full py-2 px-3 resize-none placeholder:text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 min-h-16 max-h-64 overflow-y-auto bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-50"
         onKeyDown={(event) => {
           if (event.key === "Enter") {
             event.preventDefault();
@@ -80,7 +80,8 @@ export function NewCard({
         }}
         onChange={(event) => {
           let el = event.currentTarget;
-          el.style.height = el.scrollHeight + "px";
+          el.style.height = "auto";
+          el.style.height = Math.min(el.scrollHeight, 256) + "px";
         }}
       />
       <div className="flex justify-between">

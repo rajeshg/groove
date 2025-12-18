@@ -9,7 +9,7 @@ import {
   CONTENT_TYPES,
 } from "../types";
 import type { Column as ColumnType, Item } from "@prisma/client";
-import { getBoardData } from "../queries";
+import type { getBoardData } from "../queries";
 
 type ColumnWithItems = ColumnType & {
   items: Array<Item & { Assignee: RenderedAssignee | null }>;

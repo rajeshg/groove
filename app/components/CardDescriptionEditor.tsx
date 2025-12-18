@@ -1,8 +1,4 @@
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import Image from "@tiptap/extension-image";
-import Placeholder from "@tiptap/extension-placeholder";
-import { useEffect, useState } from "react";
+import { useRef, useEffect } from "react";
 
 export interface CardDescriptionEditorProps {
   content?: string | null;
@@ -12,6 +8,11 @@ export interface CardDescriptionEditorProps {
   autoFocus?: boolean;
 }
 
+/**
+ * Lightweight rich text editor using contenteditable
+ * Supports: bold, italic, strike, headings, lists, code, blockquotes
+ * No heavy dependencies - just HTML/CSS
+ */
 export function CardDescriptionEditor({
   content = "",
   onChange,
@@ -19,50 +20,30 @@ export function CardDescriptionEditor({
   readOnly = false,
   autoFocus = true,
 }: CardDescriptionEditorProps) {
-  const [imageUrl, setImageUrl] = useState("");
+  const editorRef = useRef<HTMLDivElement>(null);
+  const isInitializedRef = useRef(false);
 
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        heading: {
-          levels: [1, 2, 3],
-        },
-      }),
-      Image.configure({
-        allowBase64: true,
-      }),
-      Placeholder.configure({
-        placeholder:
-          "Click to add description... (Tip: Ctrl+B for bold, Ctrl+I for italic)",
-      }),
-    ],
-    content: content || "",
-    editable: !readOnly,
-    onUpdate: ({ editor }) => {
-      onChange?.(editor.getHTML());
-    },
-    onBlur: ({ editor }) => {
-      onBlur?.(editor.getHTML());
-    },
-  });
+  // Initialize content only once on mount
+  useEffect(() => {
+    if (editorRef.current && !isInitializedRef.current && content) {
+      editorRef.current.innerHTML = content;
+      isInitializedRef.current = true;
+    }
+  }, []);
 
   useEffect(() => {
-    if (editor && autoFocus && !readOnly) {
-      setTimeout(() => {
-        editor.commands.focus("end");
-      }, 0);
+    if (editorRef.current && autoFocus && !readOnly) {
+      editorRef.current.focus();
     }
-  }, [editor, autoFocus, readOnly]);
+  }, [autoFocus, readOnly]);
 
-  if (!editor) {
-    return null;
-  }
+  const execCommand = (command: string, value?: string) => {
+    document.execCommand(command, false, value);
+    editorRef.current?.focus();
+  };
 
-  const addImage = () => {
-    if (imageUrl) {
-      editor.chain().focus().setImage({ src: imageUrl }).run();
-      setImageUrl("");
-    }
+  const isCommandActive = (command: string): boolean => {
+    return document.queryCommandState(command);
   };
 
   const ToolbarButton = ({
@@ -98,16 +79,30 @@ export function CardDescriptionEditor({
     </button>
   );
 
+  const handleContentChange = () => {
+    if (editorRef.current) {
+      const html = editorRef.current.innerHTML;
+      onChange?.(html);
+    }
+  };
+
+  const handleBlur = () => {
+    if (editorRef.current) {
+      const html = editorRef.current.innerHTML;
+      onBlur?.(html);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-2">
       {!readOnly && (
         <div className="border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-800 p-2 space-y-2">
-          {/* Formatting Toolbar - Row 1 */}
+          {/* Formatting Toolbar */}
           <div className="flex flex-wrap gap-1">
             <ToolbarButton
-              onClick={() => editor.chain().focus().toggleBold().run()}
-              isActive={editor.isActive("bold")}
-              disabled={!editor.can().chain().focus().toggleBold().run()}
+              onClick={() => execCommand("bold")}
+              isActive={isCommandActive("bold")}
+              disabled={false}
               label="Bold"
               icon={
                 <svg
@@ -124,9 +119,9 @@ export function CardDescriptionEditor({
               shortcut="Ctrl+B"
             />
             <ToolbarButton
-              onClick={() => editor.chain().focus().toggleItalic().run()}
-              isActive={editor.isActive("italic")}
-              disabled={!editor.can().chain().focus().toggleItalic().run()}
+              onClick={() => execCommand("italic")}
+              isActive={isCommandActive("italic")}
+              disabled={false}
               label="Italic"
               icon={
                 <svg
@@ -143,9 +138,9 @@ export function CardDescriptionEditor({
               shortcut="Ctrl+I"
             />
             <ToolbarButton
-              onClick={() => editor.chain().focus().toggleStrike().run()}
-              isActive={editor.isActive("strike")}
-              disabled={!editor.can().chain().focus().toggleStrike().run()}
+              onClick={() => execCommand("strikethrough")}
+              isActive={isCommandActive("strikethrough")}
+              disabled={false}
               label="Strike"
               icon={
                 <svg
@@ -164,19 +159,15 @@ export function CardDescriptionEditor({
             <div className="border-l border-slate-300 dark:border-slate-600" />
 
             <ToolbarButton
-              onClick={() =>
-                editor.chain().focus().toggleHeading({ level: 2 }).run()
-              }
-              isActive={editor.isActive("heading", { level: 2 })}
+              onClick={() => execCommand("formatBlock", "h2")}
+              isActive={isCommandActive("formatBlock")}
               disabled={false}
               label="H2"
               icon={<span className="text-sm font-bold">H2</span>}
             />
             <ToolbarButton
-              onClick={() =>
-                editor.chain().focus().toggleHeading({ level: 3 }).run()
-              }
-              isActive={editor.isActive("heading", { level: 3 })}
+              onClick={() => execCommand("formatBlock", "h3")}
+              isActive={isCommandActive("formatBlock")}
               disabled={false}
               label="H3"
               icon={<span className="text-sm font-bold">H3</span>}
@@ -185,8 +176,8 @@ export function CardDescriptionEditor({
             <div className="border-l border-slate-300 dark:border-slate-600" />
 
             <ToolbarButton
-              onClick={() => editor.chain().focus().toggleBulletList().run()}
-              isActive={editor.isActive("bulletList")}
+              onClick={() => execCommand("insertUnorderedList")}
+              isActive={isCommandActive("insertUnorderedList")}
               disabled={false}
               label="Bullet List"
               icon={
@@ -208,8 +199,8 @@ export function CardDescriptionEditor({
               }
             />
             <ToolbarButton
-              onClick={() => editor.chain().focus().toggleOrderedList().run()}
-              isActive={editor.isActive("orderedList")}
+              onClick={() => execCommand("insertOrderedList")}
+              isActive={isCommandActive("insertOrderedList")}
               disabled={false}
               label="Ordered List"
               icon={
@@ -240,8 +231,8 @@ export function CardDescriptionEditor({
             <div className="border-l border-slate-300 dark:border-slate-600" />
 
             <ToolbarButton
-              onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-              isActive={editor.isActive("codeBlock")}
+              onClick={() => execCommand("formatBlock", "pre")}
+              isActive={isCommandActive("formatBlock")}
               disabled={false}
               label="Code"
               icon={
@@ -258,8 +249,8 @@ export function CardDescriptionEditor({
               }
             />
             <ToolbarButton
-              onClick={() => editor.chain().focus().toggleBlockquote().run()}
-              isActive={editor.isActive("blockquote")}
+              onClick={() => execCommand("formatBlock", "blockquote")}
+              isActive={isCommandActive("formatBlock")}
               disabled={false}
               label="Quote"
               icon={
@@ -278,7 +269,7 @@ export function CardDescriptionEditor({
             />
           </div>
 
-          {/* Image Upload */}
+          {/* Image Insert */}
           <div className="flex gap-2 items-end bg-white dark:bg-slate-700 p-2 rounded border border-slate-200 dark:border-slate-600">
             <div className="flex-1">
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
@@ -286,11 +277,13 @@ export function CardDescriptionEditor({
               </label>
               <input
                 type="text"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    addImage();
+                  if (e.key === "Enter" && e.currentTarget.value) {
+                    execCommand(
+                      "insertImage",
+                      e.currentTarget.value
+                    );
+                    e.currentTarget.value = "";
                   }
                 }}
                 placeholder="https://example.com/image.jpg"
@@ -301,10 +294,13 @@ export function CardDescriptionEditor({
               type="button"
               onMouseDown={(e) => {
                 e.preventDefault();
-                addImage();
+                const input = (e.target as HTMLElement).parentElement?.querySelector("input") as HTMLInputElement;
+                if (input?.value) {
+                  execCommand("insertImage", input.value);
+                  input.value = "";
+                }
               }}
-              disabled={!imageUrl}
-              className="px-3 py-1.5 rounded text-xs font-semibold bg-blue-500 text-white hover:bg-blue-600 disabled:bg-slate-300 dark:disabled:bg-slate-600 transition whitespace-nowrap"
+              className="px-3 py-1.5 rounded text-xs font-semibold bg-blue-500 text-white hover:bg-blue-600 transition whitespace-nowrap"
             >
               Add
             </button>
@@ -314,15 +310,21 @@ export function CardDescriptionEditor({
 
       {/* Editor Content */}
       <div
-        className={`border-2 rounded-lg p-0 min-h-48 transition cursor-text overflow-hidden ${
+        className={`border-2 rounded-lg p-0 min-h-48 transition cursor-text overflow-auto ${
           readOnly
             ? "bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600"
             : "bg-white dark:bg-slate-900 border-blue-500 dark:border-blue-600 shadow-lg shadow-blue-500/10"
         }`}
       >
-        <div className="p-4 prose dark:prose-invert prose-sm max-w-none prose-headings:font-bold prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-p:text-sm prose-p:leading-6 prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-a:underline prose-strong:font-semibold prose-code:bg-slate-100 dark:prose-code:bg-slate-700 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-pre:bg-slate-800 dark:prose-pre:bg-slate-900 prose-pre:text-slate-100 prose-pre:p-3 prose-pre:rounded prose-blockquote:border-l-4 prose-blockquote:border-slate-300 dark:prose-blockquote:border-slate-600 prose-blockquote:pl-4 prose-blockquote:text-slate-600 dark:prose-blockquote:text-slate-400 prose-ul:list-disc prose-ul:pl-5 prose-ol:list-decimal prose-ol:pl-5 prose-li:my-1 prose-img:rounded prose-img:max-w-full">
-          <EditorContent editor={editor} />
-        </div>
+        <div
+          ref={editorRef}
+          contentEditable={!readOnly}
+          suppressContentEditableWarning
+          onInput={handleContentChange}
+          onBlur={handleBlur}
+          className="p-4 prose dark:prose-invert prose-sm max-w-none prose-headings:font-bold prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-p:text-sm prose-p:leading-6 prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-a:underline prose-strong:font-semibold prose-code:bg-slate-100 dark:prose-code:bg-slate-700 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-pre:bg-slate-800 dark:prose-pre:bg-slate-900 prose-pre:text-slate-100 prose-pre:p-3 prose-pre:rounded prose-blockquote:border-l-4 prose-blockquote:border-slate-300 dark:prose-blockquote:border-slate-600 prose-blockquote:pl-4 prose-blockquote:text-slate-600 dark:prose-blockquote:text-slate-400 prose-ul:list-disc prose-ul:pl-5 prose-ol:list-decimal prose-ol:pl-5 prose-li:my-1 prose-img:rounded prose-img:max-w-full outline-none ltr"
+          dir="ltr"
+        />
       </div>
     </div>
   );
