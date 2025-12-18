@@ -116,37 +116,7 @@ export default function Profile() {
               </div>
             </section>
 
-            {/* Devices */}
-            <section>
-              <div className="flex items-center gap-4 mb-6">
-                <div className="h-px flex-1 bg-slate-100 dark:bg-slate-700"></div>
-                <h2 className="text-xl font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest text-[13px]">Devices</h2>
-                <div className="h-px flex-1 bg-slate-100 dark:bg-slate-700"></div>
-              </div>
-              
-              <p className="text-center text-slate-600 dark:text-slate-400 mb-4 text-sm font-medium px-4">
-                Link to automatically log in on another device.
-              </p>
-              
-              <div className="flex flex-col items-center gap-4">
-                <div className="w-full relative group">
-                  <input 
-                    readOnly
-                    value={`https://trellix.app/session/transfer/r8k3p2`}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg py-2 px-3 text-xs text-slate-500 font-mono focus:outline-none"
-                  />
-                </div>
-                
-                <div className="flex gap-4">
-                  <button className="p-3 rounded-full border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm">
-                    <Icon name="device-qr" size="md" />
-                  </button>
-                  <button className="p-3 rounded-full border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm">
-                    <Icon name="clipboard" size="md" />
-                  </button>
-                </div>
-              </div>
-            </section>
+
 
             {/* Developer */}
             <section>
