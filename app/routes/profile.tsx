@@ -1,4 +1,4 @@
-import { useLoaderData } from "react-router";
+import { useLoaderData, Link } from "react-router";
 import { requireAuthCookie } from "../auth/auth";
 import { getProfileData } from "./queries";
 import { Icon } from "../icons/icons";
@@ -65,14 +65,14 @@ export default function Profile() {
               {email}
             </a>
 
-            <div className="w-full flex flex-col gap-3 mb-12">
-              <button className="w-full py-3 px-6 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl transition-all shadow-md active:scale-[0.98]">
-                Which cards are assigned to me?
-              </button>
-              <button className="w-full py-3 px-6 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl transition-all shadow-md active:scale-[0.98]">
-                Which cards were added by me?
-              </button>
-            </div>
+             <div className="w-full flex flex-col gap-3 mb-12">
+               <Link to="/me/assigned" className="w-full py-3 px-6 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl transition-all shadow-md active:scale-[0.98] block text-center">
+                 Which cards are assigned to me?
+               </Link>
+               <Link to="/me/created" className="w-full py-3 px-6 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl transition-all shadow-md active:scale-[0.98] block text-center">
+                 Which cards were added by me?
+               </Link>
+             </div>
 
             <div className="w-full pt-8 border-t border-slate-100 dark:border-slate-700 flex justify-center">
               <form action="/logout" method="post">

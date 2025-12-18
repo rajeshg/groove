@@ -400,17 +400,20 @@ export async function deleteComment(
 }
 
 export async function getProfileData(accountId: string) {
-  const [account, assignedCount, createdCount] = await Promise.all([
+  const [account, assignedCards, createdCards] = await Promise.all([
     prisma.account.findUnique({
       where: { id: accountId },
+      select: { email: true },
     }),
-    prisma.item.count({
+    prisma.item.findMany({
       where: { assignedTo: accountId },
+      include: { Board: true },
     }),
-    prisma.item.count({
+    prisma.item.findMany({
       where: { createdBy: accountId },
+      include: { Board: true },
     }),
   ]);
 
-  return { email: account?.email || "Unknown", assignedCount, createdCount };
+  return { email: account?.email || "Unknown", assignedCards, createdCards };
 }
