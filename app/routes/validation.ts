@@ -154,8 +154,8 @@ export type DeleteColumnInput = z.infer<typeof deleteColumnSchema>;
 /**
  * Parse FormData into an object, handling multiple values and null
  */
-export function formDataToObject(formData: FormData): Record<string, any> {
-  const obj: Record<string, any> = {};
+export function formDataToObject(formData: FormData): Record<string, unknown> {
+  const obj: Record<string, unknown> = {};
   for (const [key, value] of formData.entries()) {
     // Handle empty strings as null for optional fields
     obj[key] = value === "" ? null : value;

@@ -4,10 +4,12 @@ export function Icon({
   name,
   size = "md",
   spin = false,
+  className = "",
 }: {
   name: string;
   size?: "md" | "xl";
   spin?: boolean;
+  className?: string;
 }) {
   let classNames = {
     md: "w-4 h-4",
@@ -17,7 +19,7 @@ export function Icon({
     <svg
       className={`${classNames[size]} inline self-center ${
         spin ? "animate-spin" : ""
-      }`}
+      } ${className}`}
     >
       <use href={`${iconsHref}#${name}`} />
     </svg>

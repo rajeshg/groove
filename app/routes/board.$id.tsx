@@ -1,6 +1,5 @@
 import { type MetaFunction } from "react-router";
 import invariant from "tiny-invariant";
-import { z } from "zod";
 
 import { badRequest, notFound } from "../http/bad-request";
 import { requireAuthCookie } from "../auth/auth";
@@ -21,6 +20,7 @@ import {
   getHomeData,
 } from "./queries";
 import { Board } from "./board/board";
+import type { Board as BoardType } from "@prisma/client";
 import {
   updateBoardNameSchema,
   itemMutationSchema,
@@ -30,9 +30,8 @@ import {
   moveColumnSchema,
   deleteColumnSchema,
   moveItemSchema,
-  tryParseFormData,
-  formDataToObject,
-} from "./validation";
+   tryParseFormData,
+ } from "./validation";
 
 export async function loader({
   request,
@@ -57,7 +56,7 @@ export async function loader({
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   return [
     {
-      title: `${data ? (data as any).board.name : "Board"} | Trellix`,
+      title: `${data ? (data as { board: BoardType }).board.name : "Board"} | Trellix`,
     },
   ];
 };
@@ -123,7 +122,7 @@ export async function action({
       if (!result.success) throw badRequest(result.error);
       // Assign current user as creator when creating new card
       await upsertItem(
-        { ...result.data, boardId, createdBy: accountId } as any,
+        { ...result.data, boardId, createdBy: accountId } as ItemMutation & { boardId: number; createdBy: string },
         accountId
       );
       break;

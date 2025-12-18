@@ -26,6 +26,7 @@ interface ColumnProps {
   onToggle?: () => void;
   boardName: string; // Board name for cards
   boardId: number; // Board ID number for cards
+  className?: string;
 }
 
 export function Column({
@@ -38,6 +39,7 @@ export function Column({
   onToggle,
   boardName,
   boardId,
+  className = "",
 }: ColumnProps) {
   let submit = useSubmit();
 
@@ -53,7 +55,7 @@ export function Column({
   return (
     <div
       className={
-        "flex-shrink-0 flex flex-col overflow-y-auto w-[24rem] box-border rounded-lg transition-all duration-100 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 " +
+        `flex-shrink-0 flex flex-col w-[24rem] box-border rounded-lg transition-all duration-100 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 ${className} ` +
         (acceptDrop
           ? `ring-2 ring-offset-2 dark:ring-offset-slate-900 ring-blue-400`
           : ``)
@@ -195,7 +197,7 @@ export function Column({
                 assignedTo={item.assignedTo}
                 createdAt={item.createdAt}
                 lastActiveAt={item.lastActiveAt}
-                commentCount={(item as any)._count?.comments}
+                commentCount={(item as unknown as { _count?: { comments: number } })._count?.comments}
               />
             );
           })}

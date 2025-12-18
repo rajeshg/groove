@@ -121,7 +121,7 @@ export async function getCardDetail(
 
 export function upsertItem(
   mutation: ItemMutation & { boardId: number },
-  accountId: string
+  _accountId: string
 ) {
   // Touch lastActiveAt on meaningful changes (content/title/column changes)
   const updateData = { ...mutation, lastActiveAt: new Date() };
@@ -130,7 +130,7 @@ export function upsertItem(
     where: {
       id: mutation.id,
       Board: {
-        accountId,
+        accountId: _accountId,
       },
     },
     create: updateData,
@@ -205,7 +205,7 @@ export async function createColumn(
 export async function deleteColumn(
   columnId: string,
   boardId: number,
-  accountId: string
+  _accountId: string
 ) {
   // Get the column to check if it's default
   const column = await prisma.column.findUnique({
@@ -397,4 +397,20 @@ export async function deleteComment(
   ]);
 
   return { success: true };
+}
+
+export async function getProfileData(accountId: string) {
+  const [account, assignedCount, createdCount] = await Promise.all([
+    prisma.account.findUnique({
+      where: { id: accountId },
+    }),
+    prisma.item.count({
+      where: { assignedTo: accountId },
+    }),
+    prisma.item.count({
+      where: { createdBy: accountId },
+    }),
+  ]);
+
+  return { email: account?.email || "Unknown", assignedCount, createdCount };
 }

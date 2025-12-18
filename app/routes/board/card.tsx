@@ -28,7 +28,7 @@ interface CardProps {
 
 export function Card({
   title,
-  content,
+  content: _content,
   id,
   columnId,
   columnColor = "#94a3b8",
@@ -36,7 +36,7 @@ export function Card({
   nextOrder,
   previousOrder,
   boardName,
-  boardId,
+  boardId: _boardId,
   createdBy,
   assignedTo,
   createdAt,

@@ -2,7 +2,7 @@ export interface Route {
   LoaderArgs: {
     request: Request;
     params: Record<string, string>;
-    context?: any;
+    context?: unknown;
   };
   LinksFunction: () => Array<{
     rel?: string;

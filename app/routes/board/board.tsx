@@ -1,12 +1,15 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useMemo } from "react";
 import invariant from "tiny-invariant";
 import { useFetchers, useLoaderData, useSubmit } from "react-router";
 
 import type { LoaderData } from "../../+types/board.$id";
 import { INTENTS, type RenderedItem, CONTENT_TYPES } from "../types";
+import type { Board, Column as ColumnType, Item } from "@prisma/client";
+
+type ColumnWithItems = ColumnType & { items: Item[]; order: number };
 import { Column } from "./column";
 import { NewColumn } from "./new-column";
-import { EditableText } from "./components";
+import { BoardHeader } from "./board-header";
 import "./columns.css";
 
 // Constants for proportional calculation of collapsed column height
@@ -19,10 +22,10 @@ export function Board() {
   let { board } = useLoaderData<LoaderData>();
   let submit = useSubmit();
   let [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
-  let [draggedCardId, setDraggedCardId] = useState<string | null>(null);
   let [expandedColumnIds, setExpandedColumnIds] = useState<Set<string>>(
     new Set()
   );
+  let [searchTerm, setSearchTerm] = useState("");
 
   const handleColumnToggle = (columnId: string) => {
     const willBeExpanded = !expandedColumnIds.has(columnId);
@@ -60,7 +63,7 @@ export function Board() {
   // Initialize expanded columns from database on mount
   useEffect(() => {
     const expandedFromDB = board.columns
-      .filter((col) => (col as any).isExpanded !== false)
+      .filter((col) => (col as ColumnType).isExpanded !== false)
       .map((col) => col.id);
 
     setExpandedColumnIds(new Set(expandedFromDB));
@@ -69,7 +72,7 @@ export function Board() {
       `board-${board.id}-expanded`,
       JSON.stringify(expandedFromDB)
     );
-  }, []);
+  }, [board.columns, board.id]);
 
   let itemsById = new Map(board.items.map((item) => [item.id, item]));
 
@@ -78,35 +81,27 @@ export function Board() {
   // merge pending items and existing items
   for (const pendingItem of pendingItems) {
     let item = itemsById.get(pendingItem.id);
-    let merged: any = item
-      ? { ...item, ...pendingItem }
-      : { ...pendingItem, boardId: board.id };
+    let merged = item ? ({ ...item, ...pendingItem } as unknown as Item) : ({ ...pendingItem, boardId: board.id, _count: { comments: 0 } } as unknown as Item);
     itemsById.set(pendingItem.id, merged);
   }
 
   // merge pending and existing columns
   let optAddingColumns = usePendingColumns();
-  type Column =
-    | (typeof board.columns)[number]
-    | (typeof optAddingColumns)[number];
-  type ColumnWithItems =
-    | (Column & { items: typeof board.items })
-    | (Column & { items: typeof board.items; order: number });
-  let columns = new Map<string, any>();
+  let columns = new Map<string, unknown>();
   for (let column of [...board.columns, ...optAddingColumns]) {
     columns.set(column.id, {
       ...column,
       items: [],
-      order: (column as any).order || 0,
+      order: (column as unknown as { order?: number }).order || 0,
     });
   }
 
   // add items to their columns
   for (const item of itemsById.values()) {
-    let columnId = (item as any).columnId;
-    let column = columns.get(columnId);
+    let columnId = item.columnId;
+    let column = columns.get(columnId) as ColumnWithItems;
     invariant(column, "missing column");
-    column.items.push(item as any);
+    column.items.push(item);
   }
 
   // scroll right when new columns are added
@@ -118,63 +113,55 @@ export function Board() {
   }
 
   // Get sorted columns for rendering
-  const columnArray = [...columns.values()].sort(
-    (a, b) => (a.order || 0) - (b.order || 0)
-  );
+  const columnArray = useMemo(() => {
+    const sorted = [...(columns as Map<string, ColumnWithItems>).values()].sort(
+      (a, b) => (a.order || 0) - (b.order || 0)
+    );
+
+    if (!searchTerm) return sorted;
+
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    return sorted.map((col) => ({
+      ...col,
+      items: col.items.filter(
+        (item: Item) =>
+          item.title.toLowerCase().includes(lowerSearchTerm) ||
+          (item.content && item.content.toLowerCase().includes(lowerSearchTerm))
+      ),
+    }));
+  }, [columns, searchTerm]);
 
   return (
-    <div className="min-h-screen h-full flex flex-col relative bg-white dark:bg-slate-900">
-      {/* Top color accent stripe - shows board theme color */}
+    <div className="flex-1 flex flex-col relative bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 min-h-full">
+      {/* Top color accent stripe - high visibility */}
       <div
-        className="h-1 w-full flex-shrink-0"
+        className="h-1 w-full flex-shrink-0 sticky top-14 z-50"
         style={{ background: board.color }}
       />
 
-      <h1>
-        <EditableText
-          value={board.name}
-          fieldName="name"
-          inputClassName="mx-8 my-4 text-2xl font-medium border border-slate-400 rounded-lg py-1 px-2 text-black"
-          buttonClassName="mx-8 my-4 text-2xl font-medium block rounded-lg text-left border border-transparent py-1 px-2 text-slate-800"
-          buttonLabel={`Edit board "${board.name}" name`}
-          inputLabel="Edit board name"
-          placeholder="Board name..."
-          hiddenFields={{
-            intent: INTENTS.updateBoardName,
-            id: String(board.id),
-          }}
-        >
-          <></>
-        </EditableText>
-      </h1>
+      <div className="sticky top-[60px] z-40 bg-white dark:bg-slate-900 shadow-sm">
+        <BoardHeader searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+      </div>
 
-      {/* Canvas area with creative background color visualization */}
+      {/* Canvas area */}
       <div
-        className="flex-1 w-full overflow-x-scroll overflow-y-visible relative flex flex-col"
+        className="flex-1 w-full overflow-x-auto relative flex flex-col"
         ref={scrollContainerRef}
       >
-        {/* Left color accent bar - vertical stripe showing board color */}
+        {/* Left color accent bar - spans the whole scrollable height */}
         <div
-          className="w-1 flex-shrink-0"
+          className="w-1.5 absolute top-0 bottom-0 left-0"
           style={{
             background: board.color,
-            opacity: 0.2,
-          }}
-        />
-
-        {/* Subtle gradient footer below columns - fades board color at bottom */}
-        <div
-          className="absolute inset-0 pointer-events-none bottom-0 left-0 right-0"
-          style={{
-            background: `linear-gradient(to bottom, transparent 0%, ${board.color}05 60%, ${board.color}12 100%)`,
+            opacity: 0.5,
+            zIndex: 0,
           }}
         />
 
         <div
-          className="flex w-max min-h-0 items-start gap-2 px-8 pb-4 pt-4 relative z-10"
+          className="flex w-max items-stretch gap-2 px-8 pb-10 pt-4 relative z-10"
           onDragEnd={() => {
             // Reset all drag states when any drag ends
-            setDraggedCardId(null);
             setDraggedColumnId(null);
           }}
         >
@@ -184,8 +171,8 @@ export function Board() {
             return (
               <div
                 key={col.id}
-                className={`transition-all duration-300 ease-out relative ${
-                  isExpanded ? "w-[24rem]" : "w-10 h-full"
+                className={`transition-all duration-300 ease-out relative self-stretch ${
+                  isExpanded ? "w-[24rem]" : "w-10"
                 } ${draggedColumnId === col.id ? "shadow-xl scale-105 opacity-50" : ""}`}
                 title={
                   isExpanded
@@ -294,12 +281,13 @@ export function Board() {
                       name={col.name}
                       columnId={col.id}
                       items={col.items}
-                      color={(col as any).color || "#94a3b8"}
-                      isDefault={(col as any).isDefault || false}
+                      color={(col as unknown as { color?: string }).color || "#94a3b8"}
+                      isDefault={(col as unknown as { isDefault?: boolean }).isDefault || false}
                       isExpanded={true}
                       onToggle={() => handleColumnToggle(col.id)}
                       boardName={board.name}
                       boardId={board.id}
+                      className="h-full"
                     />
                   </div>
                 ) : (
@@ -309,9 +297,9 @@ export function Board() {
                     className="column-collapsed"
                     style={
                       {
-                        color: (col as any).color || "#94a3b8",
+                        color: (col as unknown as { color?: string }).color || "#94a3b8",
                         "--collapse-height": `${COLUMN_WIDTH_COLLAPSED + Math.min(col.items.length, MAX_VISIBLE_CARDS) * PROGRESS_INCREMENT}px`,
-                      } as any
+                      } as Record<string, unknown>
                     }
                     title={`Click to expand "${col.name}" (${col.items.length} cards)`}
                   >

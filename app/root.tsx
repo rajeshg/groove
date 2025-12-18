@@ -7,11 +7,14 @@ import {
   ScrollRestoration,
   useLoaderData,
   Link,
+  useMatches,
 } from "react-router";
 
 import "./app.css";
 import { getAuthFromRequest } from "./auth/auth";
-import { ThemeProvider, useTheme } from "./context/theme";
+import { ThemeProvider } from "./context/theme";
+import { BoardSwitcher } from "./routes/board/board-switcher";
+import type { Board } from "@prisma/client";
 
 export const links = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -27,8 +30,13 @@ export const links = () => [
 ];
 
 export async function loader({ request }: { request: Request }) {
-  let auth = await getAuthFromRequest(request);
-  return auth;
+  let userId = await getAuthFromRequest(request);
+  if (userId) {
+    const { getHomeData } = await import("./routes/queries");
+    const allBoards = await getHomeData(userId);
+    return { userId, allBoards };
+  }
+  return { userId: null, allBoards: [] };
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -50,63 +58,63 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  let userId = useLoaderData<typeof loader>();
+  let { userId, allBoards } = useLoaderData<typeof loader>();
 
   return (
     <ThemeProvider>
-      <AppContent userId={userId} />
+      <AppContent userId={userId} allBoards={allBoards} />
     </ThemeProvider>
   );
 }
 
-function AppContent({ userId }: { userId: any }) {
-  const { theme, toggleTheme } = useTheme();
-
-  const getThemeIcon = () => {
-    if (theme === "light") return "🌙";
-    if (theme === "dark") return "☀️";
-    return "🖥️"; // system preference
-  };
+function AppContent({ userId, allBoards }: { userId: string | null; allBoards: Board[] }) {
+  const matches = useMatches();
+  
+  // Find board context from matches (board page or card detail page)
+  const boardMatch = matches.find((m) => m.id.includes("board.$id"));
+  const cardMatch = matches.find((m) => m.id.includes("card.$cardId"));
+  
+  const currentBoard = (boardMatch?.data as unknown as { board?: Board })?.board || (cardMatch?.data as unknown as { card?: { Board: Board } })?.card?.Board;
 
   return (
-    <div className="h-screen bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 flex flex-col">
-      {/* Header */}
-      <div className="flex-shrink-0 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-        <div className="flex items-center justify-between h-16 px-6">
-          {/* Logo/Brand */}
-          <Link
-            to="/home"
-            className="font-bold text-xl hover:opacity-80 transition-opacity"
-          >
-            Trellix
-          </Link>
+    <div className="min-h-screen bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 flex flex-col">
+      {/* Global Header */}
+      <div className="sticky top-0 z-50 flex-shrink-0 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+        <div className="grid grid-cols-3 items-center h-14 px-6">
+          {/* Left section: Switcher (only on board pages) */}
+          <div className="flex items-center">
+            {/* Space left empty to keep Trellix centered, or could put switcher here if desired */}
+          </div>
 
-          {/* Auth and theme controls on the right */}
-          <div className="flex items-center gap-2">
-            {/* Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-              title={`Theme: ${theme === "system" ? "System" : theme === "light" ? "Light" : "Dark"}`}
-              aria-label="Toggle theme"
+          {/* Center: Brand Logo + Optional Board Switcher */}
+          <div className="flex justify-center items-center gap-2">
+            <Link
+              to="/home"
+              className="font-bold text-xl hover:opacity-80 transition-opacity tracking-tighter uppercase flex items-center gap-2"
             >
-              <span className="text-lg">{getThemeIcon()}</span>
-            </button>
+              Trellix
+            </Link>
+            {userId && (
+              <BoardSwitcher
+                currentBoardId={currentBoard?.id}
+                allBoards={allBoards}
+                userId={userId}
+              />
+            )}
+          </div>
 
-            {/* Auth divider */}
-            <div className="w-px h-6 bg-slate-200 dark:bg-slate-700"></div>
-
-            {/* Auth controls */}
+          {/* Right section: Auth controls */}
+          <div className="flex items-center justify-end gap-2">
             {userId ? (
               <form method="post" action="/logout">
-                <button className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-700">
+                <button className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-700">
                   Log out
                 </button>
               </form>
             ) : (
               <Link
                 to="/login"
-                className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-700"
+                className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-700"
               >
                 Log in
               </Link>
@@ -116,7 +124,7 @@ function AppContent({ userId }: { userId: any }) {
       </div>
 
       {/* Main content */}
-      <div className="flex-grow min-h-0 h-full">
+      <div className="flex-1 flex flex-col">
         <Outlet />
       </div>
     </div>

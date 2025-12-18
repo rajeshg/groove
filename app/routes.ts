@@ -8,4 +8,5 @@ export default [
   route("logout", "routes/logout.tsx"),
   route("board/:id", "routes/board.$id.tsx"),
   route("card/:cardId", "routes/card.$cardId.tsx"),
+  route("profile", "routes/profile.tsx"),
 ] satisfies RouteConfig;

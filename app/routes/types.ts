@@ -60,7 +60,7 @@ type ConstructorToType<T> = T extends typeof String
     ? number
     : never;
 
-export type MutationFromFields<T extends Record<string, any>> = {
+export type MutationFromFields<T extends Record<string, { type: typeof String | typeof Number }>> = {
   [K in keyof T]: K extends "content"
     ? string | null
     : ConstructorToType<T[K]["type"]>;
