@@ -134,3 +134,56 @@ export function EditableText({
     </button>
   );
 }
+
+export function EditableComment({
+  value,
+  onSubmit,
+  onCancel,
+}: {
+  value: string;
+  onSubmit: (newValue: string) => void;
+  onCancel: () => void;
+}) {
+  let inputRef = useRef<HTMLInputElement>(null);
+  let editContainerRef = useRef<HTMLDivElement>(null);
+
+  const submitEdit = () => {
+    const newValue = inputRef.current?.value?.trim() || "";
+    if (newValue && newValue !== value) {
+      onSubmit(newValue);
+    } else {
+      onCancel();
+    }
+  };
+
+  const handleClickOutside = (e: React.FocusEvent<HTMLDivElement>) => {
+    if (
+      editContainerRef.current &&
+      !editContainerRef.current.contains(e.relatedTarget as Node)
+    ) {
+      submitEdit();
+    }
+  };
+
+  return (
+    <div ref={editContainerRef} onBlur={handleClickOutside}>
+      <Input
+        ref={inputRef}
+        type="text"
+        defaultValue={value}
+        className="flex-1 text-sm border border-slate-300 dark:border-slate-500 bg-white dark:bg-slate-700 px-2 py-1 rounded"
+        placeholder="Edit comment..."
+        autoFocus
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            submitEdit();
+          } else if (event.key === "Escape") {
+            flushSync(() => {
+              onCancel();
+            });
+          }
+        }}
+      />
+    </div>
+  );
+}
