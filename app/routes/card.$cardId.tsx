@@ -1,11 +1,17 @@
 import { useNavigate, useFetcher, useLoaderData, useParams } from "react-router";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { flushSync } from "react-dom";
 import invariant from "tiny-invariant";
 
+import { Textarea } from "../components/textarea";
+import { Input } from "../components/input";
+
 import { Icon } from "../icons/icons";
 import { CardMeta } from "./board/card-meta";
-import { INTENTS } from "./types";
+import { INTENTS, type RenderedComment } from "./types";
+
+// Time threshold for editing/deleting comments (15 minutes in milliseconds)
+const COMMENT_EDIT_THRESHOLD_MS = 15 * 60 * 1000;
 
 /**
  * Loader for card detail route - fetches card data on the server
@@ -34,6 +40,9 @@ export async function loader({
     include: {
       Column: true,
       Board: true,
+      comments: {
+        orderBy: { createdAt: 'asc' },
+      },
     },
   });
 
@@ -51,7 +60,59 @@ export async function loader({
     boardName: card.Board.name,
     boardId: card.Board.id,
     columns,
+    accountId, // Pass accountId for comment creation
   };
+}
+
+/**
+ * Action handler for card detail page - handles comment operations
+ */
+export async function action({
+  request,
+  params,
+}: {
+  request: Request;
+  params: Record<string, string>;
+}) {
+  const { requireAuthCookie } = await import("../auth/auth");
+  const { createComment, updateComment, deleteComment } = await import("./queries");
+  const { INTENTS } = await import("./types");
+  
+  const accountId = await requireAuthCookie(request);
+  invariant(params.cardId, "Missing card ID");
+  
+  const formData = await request.formData();
+  const intent = String(formData.get("intent"));
+  
+  switch (intent) {
+    case INTENTS.createComment: {
+      const content = String(formData.get("content"));
+      if (!content.trim()) {
+        return { error: "Comment content is required" };
+      }
+      await createComment(params.cardId, content, accountId, accountId);
+      return { success: true };
+    }
+    
+    case INTENTS.updateComment: {
+      const commentId = String(formData.get("commentId"));
+      const content = String(formData.get("content"));
+      if (!content.trim()) {
+        return { error: "Comment content is required" };
+      }
+      await updateComment(commentId, content, accountId);
+      return { success: true };
+    }
+    
+    case INTENTS.deleteComment: {
+      const commentId = String(formData.get("commentId"));
+      await deleteComment(commentId, accountId);
+      return { success: true };
+    }
+    
+    default:
+      return { error: "Unknown intent" };
+  }
 }
 
 /**
@@ -63,6 +124,7 @@ export default function CardDetail() {
   const { cardId } = useParams();
   const navigate = useNavigate();
   const editFetcher = useFetcher();
+  const commentFetcher = useFetcher(); // Separate fetcher for comments
   const loaderData = useLoaderData();
 
   invariant(cardId, "Missing card ID");
@@ -81,6 +143,7 @@ export default function CardDetail() {
   const [localContent, setLocalContent] = useState(card.content);
   const [localTitle, setLocalTitle] = useState(card.title);
   const [localColumnId, setLocalColumnId] = useState(card.columnId);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
 
   const currentColumn = columns.find((col: any) => col.id === localColumnId);
   const columnColor = currentColumn?.color || "#94a3b8";
@@ -245,7 +308,7 @@ export default function CardDetail() {
                   <div>
                     {editTitleMode ? (
                       <div onBlur={handleTitleClickOutside}>
-                        <input
+                        <Input
                           ref={titleInputRef}
                           type="text"
                           defaultValue={localTitle}
@@ -281,11 +344,11 @@ export default function CardDetail() {
                   <div className="flex-1">
                     {editMode ? (
                       <div onBlur={handleContentClickOutside}>
-                        <textarea
+                        <Textarea
                           ref={contentInputRef}
                           defaultValue={localContent || ""}
                           placeholder="Add some notes, context, pictures, or video about this…"
-                          className="block w-full border border-slate-300 dark:border-slate-500 bg-white dark:bg-slate-700 px-3 py-2 text-sm text-slate-900 dark:text-slate-50 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none resize-none rounded min-h-[50vh] md:min-h-[300px]"
+                          className="block w-full border border-slate-300 dark:border-slate-500 bg-white dark:bg-slate-700 px-3 py-2 text-sm text-slate-900 dark:text-slate-50 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none resize-none rounded min-h-[200px] md:min-h-[300px]"
                           autoFocus
                           onKeyDown={(e) => {
                             if (e.key === "Escape") {
@@ -299,7 +362,7 @@ export default function CardDetail() {
                     ) : (
                       <div
                         onClick={() => setEditMode(true)}
-                        className="min-h-[50vh] md:min-h-[300px] p-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded cursor-text hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors text-slate-700 dark:text-slate-200 whitespace-pre-wrap break-words text-sm"
+                        className="min-h-[200px] md:min-h-[300px] p-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded cursor-text hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors text-slate-700 dark:text-slate-200 whitespace-pre-wrap break-words text-sm"
                       >
                         {localContent ? (
                           localContent
@@ -357,8 +420,8 @@ export default function CardDetail() {
                 </div>
               </div>
 
-              {/* Card footer - metadata */}
-              <footer className="p-4 sm:px-6 sm:pb-6">
+              {/* Card Metadata */}
+              <div className="p-4 sm:px-6 border-t border-slate-200 dark:border-slate-700">
                 <CardMeta
                   createdBy={card.createdBy || null}
                   assignedTo={card.assignedTo || null}
@@ -366,7 +429,139 @@ export default function CardDetail() {
                   lastActiveAt={new Date(card.lastActiveAt)}
                   columnColor={columnColor}
                 />
-              </footer>
+              </div>
+
+              {/* Comments Section */}
+              <div className="p-4 sm:px-6 border-t border-slate-200 dark:border-slate-700">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-50 mb-4">Comments</h3>
+                
+                {/* Comment List */}
+                <div className="space-y-4 mb-4">
+                  {card.comments && card.comments.length > 0 ? (
+                    card.comments.map((comment: RenderedComment) => (
+                      <div key={comment.id} className="flex gap-3">
+                        <div 
+                          className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                          style={{ 
+                            backgroundColor: `hsl(${(comment.createdBy.charCodeAt(0) * 137) % 360}, 70%, 50%)`
+                          }}
+                        >
+                          {comment.createdBy.substring(0, 2).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-baseline gap-2 mb-1 flex-wrap">
+                            <span className="text-sm font-medium text-slate-900 dark:text-slate-50">
+                              {comment.createdBy.substring(0, 8)}...
+                            </span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400">
+                              {new Date(comment.createdAt).toLocaleDateString()}
+                              {new Date(comment.updatedAt).getTime() - new Date(comment.createdAt).getTime() > 1000 && (
+                                <span className="ml-1 italic">(edited)</span>
+                              )}
+                            </span>
+                            {loaderData.accountId === comment.createdBy && (() => {
+                              const commentAge = Date.now() - new Date(comment.createdAt).getTime();
+                              const canEdit = commentAge < COMMENT_EDIT_THRESHOLD_MS;
+                              
+                              return canEdit ? (
+                                <>
+                                  <button
+                                    onClick={() => setEditingCommentId(comment.id)}
+                                    className="text-xs text-blue-500 hover:text-blue-600"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      if (confirm('Delete this comment?')) {
+                                        commentFetcher.submit(
+                                          { intent: INTENTS.deleteComment, commentId: comment.id },
+                                          { method: 'post' }
+                                        );
+                                      }
+                                    }}
+                                    disabled={commentFetcher.state !== "idle"}
+                                    className="text-xs text-red-500 hover:text-red-600 disabled:opacity-50"
+                                  >
+                                    Delete
+                                  </button>
+                                </>
+                              ) : null;
+                            })()}
+                          </div>
+                          {editingCommentId === comment.id ? (
+                            <commentFetcher.Form 
+                              method="post" 
+                              className="mt-2"
+                              key={comment.id}
+                              onSubmit={() => {
+                                // Close edit mode after form submits
+                                setTimeout(() => setEditingCommentId(null), 100);
+                              }}
+                            >
+                              <input type="hidden" name="intent" value={INTENTS.updateComment} />
+                              <input type="hidden" name="commentId" value={comment.id} />
+                              <Textarea
+                                name="content"
+                                defaultValue={comment.content}
+                                className="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-sm text-slate-900 dark:text-slate-50 rounded resize-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                                rows={2}
+                                required
+                                autoFocus
+                              />
+                              <div className="flex gap-2 mt-2">
+                                <button
+                                  type="submit"
+                                  disabled={commentFetcher.state !== "idle"}
+                                  className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold rounded transition-colors disabled:opacity-50"
+                                >
+                                  {commentFetcher.state !== "idle" ? "Saving..." : "Save"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingCommentId(null)}
+                                  className="px-3 py-1 bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded transition-colors"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </commentFetcher.Form>
+                          ) : (
+                            <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap break-words">
+                              {comment.content}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-slate-500 dark:text-slate-400 italic">No comments yet</p>
+                  )}
+                </div>
+
+                {/* Add Comment Form */}
+                <commentFetcher.Form 
+                  method="post" 
+                  className="flex gap-2"
+                  key={commentFetcher.state === "idle" && commentFetcher.data?.success ? Date.now() : undefined}
+                >
+                  <input type="hidden" name="intent" value={INTENTS.createComment} />
+                  <Textarea
+                    name="content"
+                    placeholder="Add a comment..."
+                    className="flex-1 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-sm text-slate-900 dark:text-slate-50 rounded resize-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                    rows={2}
+                    required
+                  />
+                  <button
+                    type="submit"
+                    disabled={commentFetcher.state !== "idle"}
+                    className="self-end px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold rounded transition-colors disabled:opacity-50"
+                  >
+                    {commentFetcher.state !== "idle" ? "Posting..." : "Post"}
+                  </button>
+                </commentFetcher.Form>
+              </div>
             </article>
           </div>
 

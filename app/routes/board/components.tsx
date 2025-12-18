@@ -2,6 +2,8 @@ import { useFetcher } from "react-router";
 import { forwardRef, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
+import { Input } from "../../components/input";
+
 export let SaveButton = forwardRef<
   HTMLButtonElement,
   React.ButtonHTMLAttributes<HTMLButtonElement>
@@ -93,7 +95,7 @@ export function EditableText({
   return edit ? (
     <div ref={editContainerRef} onBlur={handleClickOutside}>
       {children}
-      <input
+      <Input
         required
         ref={inputRef}
         type="text"

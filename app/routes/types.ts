@@ -9,6 +9,15 @@ export interface RenderedItem {
   createdAt: Date;
   updatedAt: Date;
   lastActiveAt: Date;
+  comments?: RenderedComment[];
+}
+
+export interface RenderedComment {
+  id: string;
+  content: string;
+  createdAt: Date;
+  updatedAt: Date;
+  createdBy: string;
 }
 
 export const CONTENT_TYPES = {
@@ -28,6 +37,9 @@ export const INTENTS = {
   deleteBoard: "deleteBoard" as const,
   createBoard: "createBoard" as const,
   deleteCard: "deleteCard" as const,
+  createComment: "createComment" as const,
+  updateComment: "updateComment" as const,
+  deleteComment: "deleteComment" as const,
 };
 
 export const ItemMutationFields = {

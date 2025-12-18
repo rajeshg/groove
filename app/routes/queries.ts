@@ -3,6 +3,9 @@ import { DEFAULT_COLUMN_COLORS } from "../constants/colors";
 
 import type { ItemMutation } from "./types";
 
+// Time threshold for editing/deleting comments (15 minutes in milliseconds)
+const COMMENT_EDIT_THRESHOLD_MS = 15 * 60 * 1000;
+
 export async function deleteBoard(boardId: number, accountId: string) {
   return prisma.board.delete({
     where: { id: boardId, accountId },
@@ -68,7 +71,13 @@ export async function getBoardData(boardId: number, accountId: string) {
       accountId: accountId,
     },
     include: {
-      items: true,
+      items: {
+        include: {
+          _count: {
+            select: { comments: true }
+          }
+        }
+      },
       columns: { orderBy: { order: "asc" } },
     },
   });
@@ -254,4 +263,138 @@ export async function updateItemAssignment(
       lastActiveAt: new Date(),
     },
   });
+}
+
+/**
+ * Create a comment on a card and update lastActiveAt
+ */
+export async function createComment(
+  itemId: string,
+  content: string,
+  createdBy: string,
+  accountId: string
+) {
+  // Verify the card belongs to the account
+  const item = await prisma.item.findFirst({
+    where: {
+      id: itemId,
+      Board: { accountId },
+    },
+  });
+
+  if (!item) {
+    throw new Error("Item not found");
+  }
+
+  // Create comment and update lastActiveAt
+  const [comment] = await prisma.$transaction([
+    prisma.comment.create({
+      data: {
+        content,
+        createdBy,
+        itemId,
+      },
+    }),
+    prisma.item.update({
+      where: { id: itemId },
+      data: { lastActiveAt: new Date() },
+    }),
+  ]);
+
+  return comment;
+}
+
+/**
+ * Update a comment and touch card's lastActiveAt
+ */
+export async function updateComment(
+  commentId: string,
+  content: string,
+  accountId: string
+) {
+  // Verify the comment belongs to a card owned by the account
+  const comment = await prisma.comment.findFirst({
+    where: {
+      id: commentId,
+      Item: {
+        Board: { accountId },
+      },
+    },
+    include: { Item: true },
+  });
+
+  if (!comment) {
+    throw new Error("Comment not found");
+  }
+
+  // Check if user owns the comment
+  if (comment.createdBy !== accountId) {
+    throw new Error("You can only edit your own comments");
+  }
+
+  // Check if comment is within edit threshold
+  const commentAge = Date.now() - comment.createdAt.getTime();
+  if (commentAge > COMMENT_EDIT_THRESHOLD_MS) {
+    throw new Error("Comments can only be edited within 15 minutes of creation");
+  }
+
+  // Update comment and card's lastActiveAt
+  const [updatedComment] = await prisma.$transaction([
+    prisma.comment.update({
+      where: { id: commentId },
+      data: { content },
+    }),
+    prisma.item.update({
+      where: { id: comment.itemId },
+      data: { lastActiveAt: new Date() },
+    }),
+  ]);
+
+  return updatedComment;
+}
+
+/**
+ * Delete a comment and touch card's lastActiveAt
+ */
+export async function deleteComment(
+  commentId: string,
+  accountId: string
+) {
+  // Verify the comment belongs to a card owned by the account
+  const comment = await prisma.comment.findFirst({
+    where: {
+      id: commentId,
+      Item: {
+        Board: { accountId },
+      },
+    },
+  });
+
+  if (!comment) {
+    throw new Error("Comment not found");
+  }
+
+  // Check if user owns the comment
+  if (comment.createdBy !== accountId) {
+    throw new Error("You can only delete your own comments");
+  }
+
+  // Check if comment is within edit threshold
+  const commentAge = Date.now() - comment.createdAt.getTime();
+  if (commentAge > COMMENT_EDIT_THRESHOLD_MS) {
+    throw new Error("Comments can only be deleted within 15 minutes of creation");
+  }
+
+  // Delete comment and update card's lastActiveAt
+  await prisma.$transaction([
+    prisma.comment.delete({
+      where: { id: commentId },
+    }),
+    prisma.item.update({
+      where: { id: comment.itemId },
+      data: { lastActiveAt: new Date() },
+    }),
+  ]);
+
+  return { success: true };
 }

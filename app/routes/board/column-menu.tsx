@@ -177,16 +177,17 @@ export function ColumnMenu({
             {!isDefault && (
               <div className="p-2">
                 {!showDeleteConfirm ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      console.log("Delete button clicked");
-                      setShowDeleteConfirm(true);
-                    }}
-                    className="w-full text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-2 rounded transition-colors text-left"
-                  >
-                    Delete Column
-                  </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    console.log("Delete button clicked");
+                    setShowDeleteConfirm(true);
+                  }}
+                  disabled={fetcher.state !== "idle"}
+                  className="w-full text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-2 rounded transition-colors text-left disabled:opacity-50"
+                >
+                  Delete Column
+                </button>
                 ) : (
                   <div className="space-y-2">
                     <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -203,9 +204,10 @@ export function ColumnMenu({
                           console.log("Confirm delete clicked");
                           handleDeleteColumn();
                         }}
-                        className="flex-1 px-2 py-1 text-sm font-medium bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+                        disabled={fetcher.state !== "idle"}
+                        className="flex-1 px-2 py-1 text-sm font-medium bg-red-600 hover:bg-red-700 text-white rounded transition-colors disabled:opacity-50"
                       >
-                        Delete
+                        {fetcher.state !== "idle" ? "Deleting..." : "Delete"}
                       </button>
                       <button
                         type="button"

@@ -4,6 +4,7 @@ import { Form, useSubmit } from "react-router";
 
 import { INTENTS, ItemMutationFields } from "../types";
 import { SaveButton, CancelButton } from "./components";
+import { Textarea } from "../../components/textarea";
 
 export function NewCard({
   columnId,
@@ -60,7 +61,7 @@ export function NewCard({
         value={nextOrder}
       />
 
-      <textarea
+      <Textarea
         autoFocus
         required
         ref={textAreaRef}

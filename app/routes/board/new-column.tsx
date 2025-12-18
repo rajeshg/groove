@@ -6,6 +6,7 @@ import { Form, useSubmit } from "react-router";
 
 import { INTENTS } from "../types";
 import { CancelButton, SaveButton } from "./components";
+import { Input } from "../../components/input";
 
 export function NewColumn({
   boardId,
@@ -24,7 +25,7 @@ export function NewColumn({
     <Form
       method="post"
       navigate={false}
-      className="p-3 flex-shrink-0 flex flex-col gap-3 overflow-hidden max-h-full w-72 sm:w-80 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm bg-white dark:bg-slate-800"
+      className="p-3 flex-shrink-0 flex flex-col gap-3 overflow-hidden max-h-full w-[24rem] border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm bg-white dark:bg-slate-800"
       onSubmit={(event) => {
         event.preventDefault();
         let formData = new FormData(event.currentTarget);
@@ -46,7 +47,7 @@ export function NewColumn({
     >
       <input type="hidden" name="intent" value={INTENTS.createColumn} />
       <input type="hidden" name="boardId" value={boardId} />
-      <input
+      <Input
         autoFocus
         required
         ref={inputRef}
@@ -69,11 +70,9 @@ export function NewColumn({
         onAdd();
       }}
       aria-label="Add new column"
-      className="flex-shrink-0 flex justify-center items-center h-auto px-3 py-3 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg transition-colors shadow-sm hover:shadow-md w-72 sm:w-80"
+      className="flex-shrink-0 flex items-center justify-center w-8 h-8 mt-2 ml-2 text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all"
     >
-      <div className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400">
-        <Icon name="plus" size="md" />
-      </div>
+      <Icon name="plus" size="md" />
     </button>
   );
 }

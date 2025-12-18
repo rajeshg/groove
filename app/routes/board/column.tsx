@@ -116,8 +116,8 @@ export function Column({
               value={name}
               inputLabel="Edit column name"
               buttonLabel={`Edit column "${name}" name`}
-              inputClassName="border border-slate-300 dark:border-slate-500 flex-1 rounded px-2 py-1 font-bold text-slate-900 dark:text-slate-50 dark:bg-slate-700 text-sm"
-              buttonClassName="block rounded text-left flex-1 border border-transparent py-1 px-2 font-bold text-slate-900 dark:text-slate-50 text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
+              inputClassName="border border-slate-300 dark:border-slate-500 flex-1 rounded px-2 py-1 font-bold text-slate-900 dark:text-slate-50 dark:bg-slate-700 text-sm text-center uppercase"
+              buttonClassName="block rounded text-center flex-1 border border-transparent py-1 px-2 font-bold text-slate-900 dark:text-slate-50 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 uppercase"
               placeholder="Column name..."
               hiddenFields={{
                 intent: INTENTS.updateColumn,
@@ -129,14 +129,14 @@ export function Column({
           ) : (
             <button
               onClick={onToggle}
-              className="flex items-center gap-2 flex-1 text-left p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+              className="flex items-center justify-center gap-2 flex-1 text-center p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors uppercase"
               title={`Expand column: ${name} (${items.length} cards)`}
             >
               <Icon name="chevron-right" />
               <span className="font-bold text-slate-900 dark:text-slate-50 text-sm truncate">
                 {name}
               </span>
-              <span className="text-xs text-slate-500 dark:text-slate-400 ml-auto">
+              <span className="text-xs text-slate-500 dark:text-slate-400">
                 ({items.length})
               </span>
             </button>
@@ -195,6 +195,7 @@ export function Column({
                 assignedTo={item.assignedTo}
                 createdAt={item.createdAt}
                 lastActiveAt={item.lastActiveAt}
+                commentCount={(item as any)._count?.comments}
               />
             );
           })}

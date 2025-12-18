@@ -70,7 +70,7 @@ function Boards() {
         </p>
       ) : (
         <nav className="flex flex-wrap gap-6">
-          {boards.map((board) => (
+          {boards.map((board: { id: number; name: string; color: string }) => (
             <Board
               key={board.id}
               name={board.name}
@@ -107,8 +107,9 @@ function Board({
         <input type="hidden" name="boardId" value={id} />
         <button
           aria-label="Delete board"
-          className="absolute top-4 right-4 text-slate-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"
+          className="absolute top-4 right-4 text-slate-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-50"
           type="submit"
+          disabled={fetcher.state !== "idle"}
           onClick={(event) => {
             event.stopPropagation();
           }}
@@ -150,7 +151,7 @@ function NewBoard() {
             className="h-10 w-14 rounded border border-slate-300 cursor-pointer"
           />
         </div>
-        <Button type="submit" className="flex-1">
+        <Button type="submit" className="flex-1" disabled={isCreating}>
           {isCreating ? "Creating..." : "Create"}
         </Button>
       </div>

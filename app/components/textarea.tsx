@@ -1,10 +1,10 @@
 import { forwardRef, useId } from "react";
 
-export let Input = forwardRef<
-  HTMLInputElement,
-  React.InputHTMLAttributes<HTMLInputElement>
+export let Textarea = forwardRef<
+  HTMLTextAreaElement,
+  React.TextareaHTMLAttributes<HTMLTextAreaElement>
 >(({ onFocus, ...props }, ref) => {
-  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+  const handleFocus = (e: React.FocusEvent<HTMLTextAreaElement>) => {
     // Move cursor to end of text when focused (only if there's text)
     if (e.target.value) {
       const len = e.target.value.length;
@@ -16,11 +16,11 @@ export let Input = forwardRef<
   };
 
   return (
-    <input
+    <textarea
       {...props}
       ref={ref}
       onFocus={handleFocus}
-      className="block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm ring-0 placeholder:text-slate-400 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm sm:leading-6"
+      className="block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm ring-0 placeholder:text-slate-400 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm sm:leading-6 resize-none"
     />
   );
 });
@@ -38,9 +38,9 @@ export let Label = forwardRef<
   );
 });
 
-export let LabeledInput = forwardRef<
-  HTMLInputElement,
-  React.InputHTMLAttributes<HTMLInputElement> & {
+export let LabeledTextarea = forwardRef<
+  HTMLTextAreaElement,
+  React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
     label: React.ReactNode;
     id?: string;
   }
@@ -51,7 +51,7 @@ export let LabeledInput = forwardRef<
     <>
       <Label htmlFor={id}>{label}</Label>
       <div className="mt-2">
-        <Input {...props} ref={ref} id={id} />
+        <Textarea {...props} ref={ref} id={id} />
       </div>
     </>
   );
