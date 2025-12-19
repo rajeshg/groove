@@ -1,10 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSubmit } from "react-router";
 import { INTENTS } from "../../types";
 import type { Column } from "@prisma/client";
 
 interface UseBoardStateOptions {
-  boardId: number;
   columns: Column[];
 }
 
@@ -19,19 +18,17 @@ interface UseBoardStateResult {
  * Manages board UI state including column expand/collapse and drag state
  */
 export function useBoardState({
-  boardId,
   columns,
 }: UseBoardStateOptions): UseBoardStateResult {
   const submit = useSubmit();
   const [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
   // Initialize expanded columns from database values immediately (prevents visual shift)
   const [expandedColumnIds, setExpandedColumnIds] = useState<Set<string>>(
-    () => new Set(columns
-      .filter((col) => col.isExpanded !== false)
-      .map((col) => col.id))
+    () =>
+      new Set(
+        columns.filter((col) => col.isExpanded !== false).map((col) => col.id)
+      )
   );
-
-
 
   const handleColumnToggle = (columnId: string) => {
     const willBeExpanded = !expandedColumnIds.has(columnId);

@@ -1,6 +1,6 @@
 import { useLoaderData, useNavigate } from "react-router";
 import { requireAuthCookie } from "~/auth/auth";
-import { badRequest } from "~/http/bad-request";
+import { badRequest, notFound } from "~/http/bad-request";
 import { getBoardData, updateColumnName, updateColumnColor } from "./queries";
 import { Icon } from "~/icons/icons";
 import { Card } from "./board/card";
@@ -9,6 +9,7 @@ import { EditableText } from "./board/components";
 import { ColumnColorPicker } from "./board/column-color-picker";
 import { INTENTS } from "./types";
 import { updateColumnSchema, tryParseFormData } from "./validation";
+import { assertBoardAccess } from "~/utils/permissions";
 
 export async function action({
   request,
@@ -80,13 +81,16 @@ export async function loader({
   const board = await getBoardData(boardId, accountId);
 
   if (!board) {
-    throw new Response("Board not found", { status: 404 });
+    throw notFound();
   }
+
+  // Check if user has access to this board
+  assertBoardAccess(board, accountId);
 
   const column = board.columns.find((col) => col.id === columnId);
 
   if (!column) {
-    throw new Response("Column not found", { status: 404 });
+    throw notFound();
   }
 
   // Get items for this column

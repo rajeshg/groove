@@ -141,7 +141,9 @@ function ProseMirrorEditor({
     return state.doc.rangeHasMark(from, to, type);
   };
 
-  const exec = (cmd: (state: EditorState, dispatch?: (tr: Transaction) => void) => boolean) => {
+  const exec = (
+    cmd: (state: EditorState, dispatch?: (tr: Transaction) => void) => boolean
+  ) => {
     if (viewRef.current) {
       cmd(viewRef.current.state, viewRef.current.dispatch);
       viewRef.current.focus();

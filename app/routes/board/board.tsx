@@ -33,7 +33,7 @@ export default function Board({ board }: BoardProps) {
     handleColumnToggle,
     draggedColumnId,
     setDraggedColumnId,
-  } = useBoardState({ boardId: board.id, columns: board.columns });
+  } = useBoardState({ columns: board.columns });
 
   useBoardKeyboardShortcuts({ columns: board.columns, addCardCallbackRef });
 

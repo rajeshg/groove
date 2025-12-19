@@ -103,15 +103,15 @@ function AppContent({
               className="group flex items-center gap-2.5 transition-all"
             >
               <div className="relative w-7 h-7">
-                <img 
-                  src="/app/welcome/logo-light.svg" 
-                  alt="" 
-                  className="absolute inset-0 w-full h-full dark:hidden group-hover:scale-110 transition-transform" 
+                <img
+                  src="/app/welcome/logo-light.svg"
+                  alt=""
+                  className="absolute inset-0 w-full h-full dark:hidden group-hover:scale-110 transition-transform"
                 />
-                <img 
-                  src="/app/welcome/logo-dark.svg" 
-                  alt="" 
-                  className="absolute inset-0 w-full h-full hidden dark:block group-hover:scale-110 transition-transform" 
+                <img
+                  src="/app/welcome/logo-dark.svg"
+                  alt=""
+                  className="absolute inset-0 w-full h-full hidden dark:block group-hover:scale-110 transition-transform"
                 />
               </div>
               <span className="font-black text-xl hover:opacity-80 transition-opacity tracking-tighter uppercase">

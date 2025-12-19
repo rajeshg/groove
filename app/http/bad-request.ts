@@ -8,3 +8,10 @@ export function badRequest(body: string) {
     statusText: "Bad Request",
   });
 }
+
+export function forbidden(body: string = "Access Denied") {
+  return new Response(body, {
+    status: 403,
+    statusText: "Forbidden",
+  });
+}

@@ -1,6 +1,6 @@
 import { redirect } from "react-router";
 import { Form, Link, useFetcher, useNavigation } from "react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Board } from "@prisma/client";
 
 import { requireAuthCookie } from "../auth/auth";
@@ -33,7 +33,14 @@ export const meta = () => {
 export async function loader({ request }: { request: Request }) {
   let userId = await requireAuthCookie(request);
   let boards = await getHomeData(userId);
-  return { boards, accountId: userId };
+
+  // Handle invitation acceptance success message
+  const url = new URL(request.url);
+  const invitationAccepted =
+    url.searchParams.get("invitationAccepted") === "true";
+  const invitationError = null;
+
+  return { boards, accountId: userId, invitationAccepted, invitationError };
 }
 
 export async function action({ request }: { request: Request }) {
@@ -64,6 +71,21 @@ export async function action({ request }: { request: Request }) {
 }
 
 export default function Projects({ loaderData }: Route.ComponentProps) {
+  const { invitationAccepted, invitationError } = loaderData;
+  const [showSuccessMessage, setShowSuccessMessage] = useState(
+    invitationAccepted ?? false
+  );
+
+  useEffect(() => {
+    if (!showSuccessMessage) return;
+
+    const timer = setTimeout(() => {
+      setShowSuccessMessage(false);
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [showSuccessMessage]);
+
   return (
     <div className="min-h-full bg-white dark:bg-slate-950 flex flex-col items-center overflow-y-auto">
       <div className="w-full max-w-[1600px] px-0 sm:px-4">
@@ -77,6 +99,53 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
             </h1>
           </div>
         </header>
+
+        {/* Invitation feedback */}
+        {showSuccessMessage && invitationAccepted && (
+          <div className="w-full max-w-4xl mx-4 mb-4 transition-opacity duration-300">
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 flex items-start gap-3 justify-between">
+              <div className="flex items-start gap-3 flex-1">
+                <div className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0">
+                  <Icon name="check" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-green-800 dark:text-green-200">
+                    Invitation accepted!
+                  </h3>
+                  <p className="text-sm text-green-700 dark:text-green-300 mt-1">
+                    You've successfully joined the board. You can now start
+                    collaborating!
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowSuccessMessage(false)}
+                className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200 transition-colors p-1 flex-shrink-0"
+                aria-label="Dismiss message"
+              >
+                <Icon name="x" className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {invitationError && (
+          <div className="w-full max-w-4xl mx-4 mb-4">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-start gap-3">
+              <div className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5">
+                <Icon name="x" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-red-800 dark:text-red-200">
+                  Invitation error
+                </h3>
+                <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                  {invitationError}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 lg:gap-8 items-start">
           {/* Sidebar Area: Your Boards (1/3 on desktop, 1st on mobile) */}

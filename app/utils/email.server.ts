@@ -1,4 +1,4 @@
-import { SMTPClient } from "emailjs"
+import { SMTPClient } from "emailjs";
 
 /**
  * Modern, runtime-agnostic SMTP utility using emailjs.
@@ -7,13 +7,13 @@ import { SMTPClient } from "emailjs"
  */
 
 const getClient = () => {
-  const host = process.env.SMTP_HOST || "smtp.gmail.com"
-  const port = Number(process.env.SMTP_PORT) || 587
-  const user = process.env.SMTP_USER
-  const password = process.env.SMTP_PASS
+  const host = process.env.SMTP_HOST || "smtp.gmail.com";
+  const port = Number(process.env.SMTP_PORT) || 587;
+  const user = process.env.SMTP_USER;
+  const password = process.env.SMTP_PASS;
 
   if (!user || !password) {
-    return null
+    return null;
   }
 
   return new SMTPClient({
@@ -22,24 +22,24 @@ const getClient = () => {
     host,
     ssl: port === 465,
     tls: port === 587 || port === 25,
-  })
-}
+  });
+};
 
 export async function sendEmail({
   to,
   subject,
   html,
 }: {
-  to: string
-  subject: string
-  html: string
+  to: string;
+  subject: string;
+  html: string;
 }) {
-  const client = getClient()
-  const from = process.env.EMAIL_FROM || `Groove <${process.env.SMTP_USER}>`
+  const client = getClient();
+  const from = process.env.EMAIL_FROM || `Groove <${process.env.SMTP_USER}>`;
 
   if (!client) {
-    console.warn("SMTP credentials are not set. Skipping email.")
-    return
+    console.warn("SMTP credentials are not set. Skipping email.");
+    return;
   }
 
   try {
@@ -49,10 +49,10 @@ export async function sendEmail({
       to,
       subject,
       attachment: [{ data: html, alternative: true }],
-    })
-    return message
+    });
+    return message;
   } catch (err) {
-    console.error("Failed to send email:", err)
+    console.error("Failed to send email:", err);
   }
 }
 
@@ -96,15 +96,15 @@ export const emailTemplates = {
               🚀 Go to Your Dashboard
             </a>
           </div>
-
-          <p style="color: #6b7280; font-size: 14px; text-align: center; margin: 24px 0 0 0;">
-            Need help getting started? Check out our <a href="#" style="color: #3b82f6; text-decoration: underline;">quick start guide</a>.
-          </p>
         </div>
       </div>
     `,
   }),
-  invitation: (boardName: string, inviterName: string) => ({
+  invitation: (
+    boardName: string,
+    inviterName: string,
+    invitationId: string
+  ) => ({
     subject: `You've been invited to collaborate on ${boardName}`,
     html: `
       <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
@@ -126,7 +126,7 @@ export const emailTemplates = {
           </div>
 
           <div style="text-align: center; margin: 32px 0;">
-            <a href="${process.env.APP_URL || "http://localhost:5173"}/home"
+            <a href="${process.env.APP_URL || "http://localhost:5173"}/invite?id=${invitationId}"
                style="display: inline-block; padding: 16px 32px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.3);">
               ✅ Accept Invitation
             </a>
@@ -176,4 +176,4 @@ export const emailTemplates = {
       </div>
     `,
   }),
-}
+};

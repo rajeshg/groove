@@ -14,6 +14,10 @@ import { getBoardData, inviteUserToBoard, removeBoardMember } from "./queries";
 import { getDisplayName, getInitials, getAvatarColor } from "../utils/avatar";
 import { inviteUserSchema, tryParseFormData } from "./validation";
 import { sendEmail, emailTemplates } from "~/utils/email.server";
+import {
+  assertBoardAccess,
+  getPermissionErrorMessage,
+} from "../utils/permissions";
 
 export async function loader(args: Route.LoaderArgs) {
   const { request, params } = args;
@@ -24,17 +28,15 @@ export async function loader(args: Route.LoaderArgs) {
   const board = await getBoardData(boardId, accountId);
   if (!board) throw notFound();
 
-  // Get current user's role in this board
-  const currentUserMember = board.members.find(
-    (m) => m.accountId === accountId
-  );
+  // Check if user has access to this board
+  assertBoardAccess(board, accountId);
+
+  // Simplified: Only board owner can manage members
   const isOwner = board.accountId === accountId;
-  const isAdmin = currentUserMember?.role === "admin" || isOwner;
 
   return {
     board,
     accountId,
-    isAdmin,
     isOwner,
   };
 }
@@ -60,15 +62,25 @@ export async function action({
     const board = await getBoardData(boardId, accountId);
     if (!board) throw notFound();
 
-    await inviteUserToBoard(
+    // Check if user is board owner (only owners can invite in simplified model)
+    const isOwner = board.accountId === accountId;
+    if (!isOwner) {
+      throw badRequest(getPermissionErrorMessage("manageMembers"));
+    }
+
+    const invitation = await inviteUserToBoard(
       boardId,
       result.data.email,
       accountId,
-      result.data.role || "editor"
+      "editor" // Always invite as editor in simplified model
     );
 
     // Send invitation email
-    const template = emailTemplates.invitation(board.name, "A team member");
+    const template = emailTemplates.invitation(
+      board.name,
+      "A team member",
+      invitation.id
+    );
     await sendEmail({
       to: result.data.email,
       subject: template.subject,
@@ -82,7 +94,7 @@ export async function action({
     const memberAccountId = formData.get("memberAccountId") as string;
     if (!memberAccountId) throw badRequest("Missing member account ID");
 
-    // Check if the board exists and the current user is an admin/owner
+    // Check if the board exists and the current user is the owner
     const board = await prisma.board.findUnique({
       where: { id: boardId },
       select: { accountId: true },
@@ -91,12 +103,10 @@ export async function action({
     if (!board) throw notFound();
 
     const isOwner = board.accountId === accountId;
-    const currentUserMember = await prisma.boardMember.findUnique({
-      where: { accountId_boardId: { accountId, boardId } },
-    });
 
-    if (!isOwner && currentUserMember?.role !== "admin") {
-      throw badRequest("Unauthorized: Only admins can remove members");
+    // Only owners can remove members
+    if (!isOwner) {
+      throw badRequest(getPermissionErrorMessage("manageMembers"));
     }
 
     // Cannot remove the owner
@@ -112,7 +122,7 @@ export async function action({
 }
 
 export default function BoardMembers({ loaderData }: Route.ComponentProps) {
-  const { board, accountId, isAdmin } = loaderData;
+  const { board, accountId, isOwner } = loaderData;
   const fetcher = useFetcher();
   const inviteFetcher = useFetcher();
 
@@ -183,7 +193,7 @@ export default function BoardMembers({ loaderData }: Route.ComponentProps) {
                           </div>
                         </div>
 
-                        {isAdmin && !isOwner && !isCurrentUser && (
+                        {isOwner && !isCurrentUser && (
                           <fetcher.Form method="post">
                             <input
                               type="hidden"
@@ -244,7 +254,7 @@ export default function BoardMembers({ loaderData }: Route.ComponentProps) {
             </div>
 
             {/* Right Side: Invite Form */}
-            {isAdmin && (
+            {isOwner && (
               <div className="space-y-6 sticky top-8">
                 <section className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
                   <h2 className="text-xl font-black mb-6 uppercase tracking-tighter">
@@ -266,25 +276,6 @@ export default function BoardMembers({ loaderData }: Route.ComponentProps) {
                         placeholder="colleague@example.com"
                         required
                       />
-
-                      <div>
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">
-                          Role
-                        </label>
-                        <select
-                          name="role"
-                          className="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                          defaultValue="editor"
-                        >
-                          <option value="editor">
-                            Editor (Can edit cards)
-                          </option>
-                          <option value="admin">
-                            Admin (Can manage members)
-                          </option>
-                          <option value="viewer">Viewer (Read-only)</option>
-                        </select>
-                      </div>
 
                       <Button
                         type="submit"

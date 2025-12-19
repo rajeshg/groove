@@ -5,9 +5,10 @@ import { redirectIfLoggedInLoader, setAuthOnResponse } from "../auth/auth";
 import { Label, Input } from "../components/input";
 import { Button } from "../components/button";
 
-import { createAccount } from "./signup.queries";
+import { createAccount, accountExists } from "./signup.queries";
 import { signupSchema, tryParseFormData } from "./validation";
 import { sendEmail, emailTemplates } from "~/utils/email.server";
+import { acceptBoardInvitation, getPendingInvitationsForUser } from "./queries";
 
 export const loader = redirectIfLoggedInLoader;
 
@@ -17,11 +18,28 @@ export const meta = () => {
 
 export async function action({ request }: { request: Request }) {
   let formData = await request.formData();
+  const url = new URL(request.url);
+  const invitationId = url.searchParams.get("invitationId");
 
   const result = tryParseFormData(formData, signupSchema);
   if (!result.success) {
     return new Response(
       JSON.stringify({ ok: false, errors: { general: result.error } }),
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+
+  // Check if account already exists
+  const emailExists = await accountExists(result.data.email);
+  if (emailExists) {
+    return new Response(
+      JSON.stringify({
+        ok: false,
+        errors: { email: "An account with this email address already exists" },
+      }),
       {
         status: 400,
         headers: { "Content-Type": "application/json" },
@@ -36,6 +54,19 @@ export async function action({ request }: { request: Request }) {
     result.data.lastName
   );
 
+  // Check for and accept any pending invitations for this email
+  const pendingInvitations = await getPendingInvitationsForUser(
+    result.data.email
+  );
+  for (const invitation of pendingInvitations) {
+    try {
+      await acceptBoardInvitation(invitation.id, user.id);
+    } catch (error) {
+      // Log but don't fail signup if invitation acceptance fails
+      console.error(`Failed to accept invitation ${invitation.id}:`, error);
+    }
+  }
+
   // Send welcome email
   const template = emailTemplates.welcome(result.data.firstName);
   await sendEmail({
@@ -44,7 +75,9 @@ export async function action({ request }: { request: Request }) {
     html: template.html,
   });
 
-  return setAuthOnResponse(redirect("/home"), user.id);
+  // If there's a specific invitation, redirect to accept it
+  const redirectUrl = invitationId ? `/invite?id=${invitationId}` : "/home";
+  return setAuthOnResponse(redirect(redirectUrl), user.id);
 }
 
 export default function Signup() {
@@ -58,6 +91,10 @@ export default function Signup() {
     };
   }>();
 
+  const urlParams = new URLSearchParams(window.location.search);
+  const invitationId = urlParams.get("invitationId");
+  const hasInvitationContext = !!invitationId;
+
   return (
     <div className="flex min-h-full flex-1 flex-col mt-20 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -67,6 +104,11 @@ export default function Signup() {
         >
           Sign up
         </h2>
+        <p className="mt-2 text-center text-sm text-slate-600">
+          {hasInvitationContext
+            ? "Create your account to accept the board invitation"
+            : "Join Groove and start collaborating"}
+        </p>
       </div>
 
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-[480px]">
@@ -175,8 +217,14 @@ export default function Signup() {
             <div className="text-sm text-slate-500">
               Already have an account?{" "}
               <Link
-                className="text-blue-600 hover:text-blue-700 underline"
-                to="/login"
+                className={`text-blue-600 hover:text-blue-700 underline ${
+                  urlParams.get("invitationId") ? "underline" : ""
+                }`}
+                to={
+                  hasInvitationContext
+                    ? `/login?invitationId=${invitationId}`
+                    : "/login"
+                }
               >
                 Log in
               </Link>

@@ -24,6 +24,17 @@ import {
   updateItemAssignee,
 } from "./queries";
 import { createOrGetAssignee } from "../utils/assignee";
+import {
+  canCreateColumn,
+  canDeleteColumn,
+  canUpdateColumnColor,
+  canMoveColumn,
+  canUpdateBoardName,
+  canManageMembers,
+  assertBoardAccess,
+  getPermissionErrorMessage,
+  type UserRole,
+} from "../utils/permissions";
 import Board from "./board/board";
 import type { Board as BoardType } from "@prisma/client";
 import type { Route } from "./+types/board.$id";
@@ -45,6 +56,7 @@ import {
   createAndAssignVirtualAssigneeSchema,
   tryParseFormData,
 } from "./validation";
+
 export async function loader({
   request,
   params,
@@ -59,6 +71,9 @@ export async function loader({
 
   let board = await getBoardData(id, accountId);
   if (!board) throw notFound();
+
+  // Check if user has access to this board
+  assertBoardAccess(board, accountId);
 
   let allBoards = await getHomeData(accountId);
 
@@ -77,6 +92,44 @@ export default function BoardPage({ loaderData }: Route.ComponentProps) {
   return <Board board={loaderData.board} />;
 }
 
+/**
+ * Get the current user's role in a board
+ * Returns "owner" if user is board owner, "editor" if they're a member, null if not a member
+ */
+function getUserBoardRole(board: unknown, accountId: string): UserRole | null {
+  interface BoardLike {
+    accountId: string;
+    members: Array<{ role?: string; accountId: string }>;
+  }
+
+  function isBoardLike(value: unknown): value is BoardLike {
+    return (
+      typeof value === "object" &&
+      value !== null &&
+      "accountId" in value &&
+      "members" in value &&
+      Array.isArray((value as unknown as BoardLike).members)
+    );
+  }
+
+  if (!isBoardLike(board)) {
+    return null;
+  }
+
+  // Owner has full permissions
+  if (board.accountId === accountId) {
+    return "owner";
+  }
+
+  // Check if user is a member
+  const member = board.members.find((m) => m.accountId === accountId);
+  if (member?.role === "editor" || member?.role === "admin") {
+    return "editor"; // Editors have limited permissions
+  }
+
+  return null; // Not a member
+}
+
 export async function action({
   request,
   params,
@@ -88,6 +141,12 @@ export async function action({
   let boardId = Number(params.id);
   invariant(boardId, "Missing boardId");
 
+  // Get board data for permission checks
+  const board = await getBoardData(boardId, accountId);
+  if (!board) throw notFound();
+
+  const userRole = getUserBoardRole(board, accountId);
+
   let formData = await request.formData();
   let intent = formData.get("intent");
 
@@ -97,15 +156,29 @@ export async function action({
     case INTENTS.deleteCard: {
       const result = tryParseFormData(formData, deleteCardSchema);
       if (!result.success) throw badRequest(result.error);
+
+      // Check if editor can delete this card (must be creator)
+      if (userRole === "editor") {
+        const card = await getItem(result.data.itemId, accountId);
+        if (!card || card.createdBy !== accountId) {
+          throw badRequest(getPermissionErrorMessage("deleteCard"));
+        }
+      }
+
       await deleteCard(result.data.itemId, accountId);
       break;
     }
+
     case INTENTS.updateBoardName: {
+      if (!canUpdateBoardName(userRole)) {
+        throw badRequest(getPermissionErrorMessage("updateBoardName"));
+      }
       const result = tryParseFormData(formData, updateBoardNameSchema);
       if (!result.success) throw badRequest(result.error);
       await updateBoardName(boardId, result.data.name, accountId);
       break;
     }
+
     case INTENTS.moveItem: {
       const result = tryParseFormData(formData, moveItemSchema);
       if (!result.success) throw badRequest(result.error);
@@ -128,6 +201,7 @@ export async function action({
       );
       break;
     }
+
     case INTENTS.createItem: {
       const result = tryParseFormData(formData, itemMutationSchema);
       if (!result.success) throw badRequest(result.error);
@@ -141,18 +215,24 @@ export async function action({
       );
       break;
     }
+
     case INTENTS.updateItem: {
       const result = tryParseFormData(formData, itemMutationSchema);
       if (!result.success) throw badRequest(result.error);
       await upsertItem({ ...result.data, boardId }, accountId);
       break;
     }
+
     case INTENTS.createColumn: {
+      if (!canCreateColumn(userRole)) {
+        throw badRequest(getPermissionErrorMessage("createColumn"));
+      }
       const result = tryParseFormData(formData, createColumnSchema);
       if (!result.success) throw badRequest(result.error);
       await createColumn(boardId, result.data.name, result.data.id, accountId);
       break;
     }
+
     case INTENTS.updateColumn: {
       const result = tryParseFormData(formData, updateColumnSchema);
       if (!result.success) throw badRequest(result.error);
@@ -164,6 +244,9 @@ export async function action({
       }
 
       if (color) {
+        if (!canUpdateColumnColor(userRole)) {
+          throw badRequest(getPermissionErrorMessage("updateColumnColor"));
+        }
         await updateColumnColor(columnId, color, accountId);
       }
 
@@ -173,33 +256,47 @@ export async function action({
       }
       break;
     }
+
     case INTENTS.moveColumn: {
+      if (!canMoveColumn(userRole)) {
+        throw badRequest(getPermissionErrorMessage("moveColumn"));
+      }
       const result = tryParseFormData(formData, moveColumnSchema);
       if (!result.success) throw badRequest(result.error);
       await updateColumnOrder(result.data.id, result.data.order, accountId);
       break;
     }
+
     case INTENTS.deleteColumn: {
+      if (!canDeleteColumn(userRole)) {
+        throw badRequest(getPermissionErrorMessage("deleteColumn"));
+      }
       const result = tryParseFormData(formData, deleteColumnSchema);
       if (!result.success) throw badRequest(result.error);
       await deleteColumn(result.data.columnId, boardId, accountId);
       break;
     }
+
     case INTENTS.inviteUser: {
+      if (!canManageMembers(userRole)) {
+        throw badRequest(getPermissionErrorMessage("manageMembers"));
+      }
       const result = tryParseFormData(formData, inviteUserSchema);
       if (!result.success) throw badRequest(result.error);
-      // Check that user is owner or admin
-      const board = await getBoardData(boardId, accountId);
-      if (!board) throw notFound();
-      await inviteUserToBoard(
+
+      const invitation = await inviteUserToBoard(
         boardId,
         result.data.email,
         accountId,
-        result.data.role
+        "editor" // Always invite as editor in simplified model
       );
 
       // Send invitation email
-      const template = emailTemplates.invitation(board.name, "A team member");
+      const template = emailTemplates.invitation(
+        board.name,
+        "A team member",
+        invitation.id
+      );
       await sendEmail({
         to: result.data.email,
         subject: template.subject,
@@ -207,18 +304,21 @@ export async function action({
       });
       break;
     }
+
     case INTENTS.acceptInvitation: {
       const result = tryParseFormData(formData, acceptInvitationSchema);
       if (!result.success) throw badRequest(result.error);
       await acceptBoardInvitation(result.data.invitationId, accountId);
       break;
     }
+
     case INTENTS.declineInvitation: {
       const result = tryParseFormData(formData, declineInvitationSchema);
       if (!result.success) throw badRequest(result.error);
       await declineBoardInvitation(result.data.invitationId);
       break;
     }
+
     case INTENTS.updateItemAssignee: {
       const result = tryParseFormData(formData, updateItemAssigneeSchema);
       if (!result.success) throw badRequest(result.error);
@@ -229,12 +329,14 @@ export async function action({
       );
       break;
     }
+
     case INTENTS.createVirtualAssignee: {
       const result = tryParseFormData(formData, createVirtualAssigneeSchema);
       if (!result.success) throw badRequest(result.error);
       await createOrGetAssignee(boardId, result.data.name);
       break;
     }
+
     case INTENTS.createAndAssignVirtualAssignee: {
       const result = tryParseFormData(
         formData,
@@ -245,6 +347,7 @@ export async function action({
       await updateItemAssignee(result.data.itemId, assignee.id, accountId);
       break;
     }
+
     default: {
       throw badRequest(`Unknown intent: ${intent}`);
     }

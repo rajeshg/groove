@@ -16,6 +16,8 @@ export const meta = () => {
 
 export async function action({ request }: { request: Request }) {
   let formData = await request.formData();
+  const url = new URL(request.url);
+  const invitationId = url.searchParams.get("invitationId");
 
   const result = tryParseFormData(formData, loginSchema);
   if (!result.success) {
@@ -39,15 +41,21 @@ export async function action({ request }: { request: Request }) {
     );
   }
 
-  let response = redirect("/home");
+  // If there's an invitation, redirect to accept it
+  const redirectUrl = invitationId ? `/invite?id=${invitationId}` : "/home";
+  let response = redirect(redirectUrl);
   return setAuthOnResponse(response, userId);
 }
 
-export default function Signup() {
+export default function Login() {
   let actionResult = useActionData<{
     ok?: boolean;
     errors?: { email?: string; password?: string };
   }>();
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const invitationId = urlParams.get("invitationId");
+  const hasInvitationContext = !!invitationId;
 
   return (
     <div className="flex min-h-full flex-1 flex-col mt-20 sm:px-6 lg:px-8">
@@ -58,6 +66,11 @@ export default function Signup() {
         >
           Log in
         </h2>
+        <p className="mt-2 text-center text-sm text-slate-600">
+          {hasInvitationContext
+            ? "Sign in to accept your board invitation"
+            : "Welcome back to Groove"}
+        </p>
       </div>
 
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-[480px]">
@@ -113,8 +126,14 @@ export default function Signup() {
             <div className="text-sm text-slate-500">
               Don't have an account?{" "}
               <Link
-                className="text-blue-600 hover:text-blue-700 underline"
-                to="/signup"
+                className={`text-blue-600 hover:text-blue-700 underline ${
+                  urlParams.get("invitationId") ? "underline" : ""
+                }`}
+                to={
+                  hasInvitationContext
+                    ? `/signup?invitationId=${invitationId}`
+                    : "/signup"
+                }
               >
                 Sign up
               </Link>

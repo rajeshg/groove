@@ -12,6 +12,12 @@ import type { Column } from "@prisma/client";
 import { getInitials, getAvatarColor, getDisplayName } from "../utils/avatar";
 import type { Route } from "./+types/card.$cardId";
 
+import { requireAuthCookie } from "../auth/auth";
+import { notFound, badRequest } from "../http/bad-request";
+import { prisma } from "../db/prisma";
+import { assertBoardAccess } from "../utils/permissions";
+import { updateComment, deleteComment, createComment } from "./queries";
+
 export async function loader({
   request,
   params,
@@ -19,10 +25,6 @@ export async function loader({
   request: Request;
   params: Record<string, string>;
 }) {
-  const { requireAuthCookie } = await import("../auth/auth");
-  const { notFound, badRequest } = await import("../http/bad-request");
-  const { prisma } = await import("../db/prisma");
-
   const accountId = await requireAuthCookie(request);
   invariant(params.cardId, "Missing card ID");
 
@@ -30,7 +32,11 @@ export async function loader({
     where: { id: params.cardId },
     include: {
       Column: true,
-      Board: true,
+      Board: {
+        include: {
+          members: true,
+        },
+      },
       Assignee: { select: { id: true, name: true, userId: true } },
       createdByUser: {
         select: { id: true, firstName: true, lastName: true },
@@ -47,7 +53,9 @@ export async function loader({
   });
 
   if (!card) throw notFound();
-  if (card.Board.accountId !== accountId) throw badRequest("Unauthorized");
+
+  // Check if user has access to this board (owner or member)
+  assertBoardAccess(card.Board as unknown, accountId);
 
   const columns = await prisma.column.findMany({
     where: { boardId: card.Board.id },
@@ -77,11 +85,6 @@ export async function action({
   request: Request;
   params: Record<string, string>;
 }) {
-  const { requireAuthCookie } = await import("../auth/auth");
-  const { badRequest } = await import("../http/bad-request");
-  const { createComment, updateComment, deleteComment } =
-    await import("./queries");
-
   const accountId = await requireAuthCookie(request);
   const cardId = params.cardId;
   invariant(cardId, "Missing card ID");

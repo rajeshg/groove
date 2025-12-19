@@ -25,6 +25,7 @@ export async function isBoardMember(
 
 /**
  * Get board with membership check
+ * User must be either the board owner or an invited member
  */
 export async function getBoardData(
   boardId: number,
@@ -52,9 +53,23 @@ export async function getBoardData(
     };
   };
 }> | null> {
-  // Check membership
+  // First fetch board to check if user is owner or member
+  const board = await prisma.board.findUnique({
+    where: { id: boardId },
+    select: { id: true, accountId: true },
+  });
+
+  if (!board) return null;
+
+  // Check if user is the owner
+  const isOwner = board.accountId === accountId;
+
+  // Check if user is a member
   const isMember = await isBoardMember(boardId, accountId);
-  if (!isMember) throw new Error("Unauthorized: Not a board member");
+
+  // User must be either owner or member
+  if (!isOwner && !isMember)
+    throw new Error("Unauthorized: Not a board member");
 
   return prisma.board.findUnique({
     where: { id: boardId },
@@ -700,7 +715,9 @@ export async function acceptBoardInvitation(
   });
 
   if (!acceptingUser || acceptingUser.email !== invitation.email) {
-    throw new Error("Unauthorized: You can only accept invitations sent to your email address");
+    throw new Error(
+      "Unauthorized: You can only accept invitations sent to your email address"
+    );
   }
 
   // Create board member record

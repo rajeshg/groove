@@ -23,7 +23,8 @@ export function Welcome() {
               Groove
             </h1>
             <p className="text-xl text-slate-500 dark:text-slate-400 font-medium text-center max-w-lg">
-              Find your rhythm. Organize your projects with the refined flow of a professional kanban.
+              Find your rhythm. Organize your projects with the refined flow of
+              a professional kanban.
             </p>
           </div>
         </header>

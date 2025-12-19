@@ -11,3 +11,4 @@
 # React Router
 /.react-router/
 /build/
+/prisma/dev.db*

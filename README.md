@@ -22,6 +22,50 @@ Groove is a refined, high-performance Kanban board application built with React 
   - **Template System**: Jumpstart projects with pre-defined board templates.
   - **Optimistic UI**: Instant updates for a zero-latency feel using React Router's fetchers.
 
+## 🔐 Simplified Permission Model
+
+Groove uses a streamlined 2-role permission system designed for clarity and ease of use:
+
+### Roles
+
+| Role       | Permissions                                                                                                              |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **Owner**  | Full control: Create/delete columns, change column colors, manage members, invite users, delete board, update board name |
+| **Editor** | Limited control: Create/edit/delete own cards, edit column names, assign cards to team members                           |
+
+### Permission Matrix
+
+| Action               | Owner | Editor |
+| -------------------- | ----- | ------ |
+| Create columns       | ✅    | ❌     |
+| Delete columns       | ✅    | ❌     |
+| Change column colors | ✅    | ❌     |
+| Edit column names    | ✅    | ✅     |
+| Reorder columns      | ✅    | ❌     |
+| Create cards         | ✅    | ✅     |
+| Edit cards           | ✅    | ✅     |
+| Delete own cards     | ✅    | ✅     |
+| Delete others' cards | ✅    | ❌     |
+| Assign cards         | ✅    | ✅     |
+| Invite team members  | ✅    | ❌     |
+| Remove members       | ✅    | ❌     |
+| Delete board         | ✅    | ❌     |
+| Update board name    | ✅    | ❌     |
+
+### Membership
+
+- **Board Owner**: The user who created the board has full owner permissions
+- **Editors**: Team members invited to the board are granted editor role by default
+- **Access Control**: Only board owners and invited members can view board details. Non-members receive a 403 Forbidden error.
+
+### Implementation
+
+Permissions are centrally managed in `app/utils/permissions.ts` with these key functions:
+
+- `assertBoardAccess(board, accountId)`: Validates board membership, throws 403 if denied
+- Permission gates like `canCreateColumn()`, `canDeleteCard()`, etc. for fine-grained control
+- `getPermissionErrorMessage()` for consistent user-facing error messages
+
 ## 🛠️ Tech Stack
 
 - **Framework**: [React Router v7](https://reactrouter.com/) (Vite-based)
@@ -42,17 +86,20 @@ Groove is a refined, high-performance Kanban board application built with React 
 ### Installation
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/your-username/groove.git
    cd groove
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
 
 3. Set up the database:
+
    ```bash
    npx prisma migrate dev
    ```
@@ -79,6 +126,7 @@ Groove aims for a "Goldilocks" balance between a simple list and a complex proje
 ## ❤️ Credits
 
 Inspired by:
+
 - **Fizzy** ([fizzy.do](https://fizzy.do)): For the unique "guitar string" aesthetic and proportional progress design.
 - **Ryan Florence's Trellix**: For the foundational Kanban logic and React Router patterns.
 
