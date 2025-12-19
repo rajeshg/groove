@@ -36,7 +36,7 @@ import {
   type UserRole,
 } from "../utils/permissions";
 import Board from "./board/board";
-import type { Board as BoardType } from "@prisma/client";
+import type { Board as BoardType } from "../../prisma/client";
 import type { Route } from "./+types/board.$id";
 import { sendEmail, emailTemplates } from "~/utils/email.server";
 import {

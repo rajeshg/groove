@@ -4,7 +4,7 @@ import { requireAuthCookie } from "../auth/auth";
 import { prisma } from "../../prisma/client";
 import { Icon } from "../icons/icons";
 import { BoardHeader } from "./board/board-header";
-import type { Item, Board } from "@prisma/client";
+import type { Item, Board } from "../../prisma/client";
 
 export async function loader({ request }: { request: Request }) {
   const accountId = await requireAuthCookie(request);

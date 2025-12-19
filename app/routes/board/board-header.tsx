@@ -3,7 +3,7 @@ import { useRef, useEffect } from "react";
 import { Icon } from "../../icons/icons";
 import { EditableText } from "./components";
 import { INTENTS } from "../types";
-import type { Board } from "@prisma/client";
+import type { Board } from "../../../prisma/client";
 
 interface BoardHeaderProps {
   searchTerm?: string;

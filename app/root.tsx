@@ -14,7 +14,7 @@ import "./app.css";
 import { getAuthFromRequest } from "./auth/auth";
 import { ThemeProvider } from "./context/theme";
 import { BoardSwitcher } from "./routes/board/board-switcher";
-import type { Board } from "@prisma/client";
+import type { Board } from "../prisma/client";
 
 type SimpleBoardInfo = Pick<Board, "id" | "name" | "color">;
 

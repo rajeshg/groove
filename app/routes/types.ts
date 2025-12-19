@@ -1,4 +1,4 @@
-import type { Assignee } from "@prisma/client";
+import type { Assignee } from "../../prisma/client";
 
 export type RenderedAssignee = Pick<Assignee, "id" | "name"> & {
   userId: string | null;

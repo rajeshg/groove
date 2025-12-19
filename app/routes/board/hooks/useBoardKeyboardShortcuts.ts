@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import type { Column } from "@prisma/client";
+import type { Column } from "../../../../prisma/client";
 
 interface UseKeyboardShortcutsOptions {
   columns: Column[];

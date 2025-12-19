@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useSubmit } from "react-router";
 import { INTENTS } from "../../types";
-import type { Column } from "@prisma/client";
+import type { Column } from "../../../../prisma/client";
 
 interface UseBoardStateOptions {
   columns: Column[];

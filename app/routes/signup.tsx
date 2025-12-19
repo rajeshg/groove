@@ -1,9 +1,10 @@
-import { redirect, useSearchParams } from "react-router";
+import { redirect, useSearchParams, useNavigation } from "react-router";
 import { Form, Link, useActionData } from "react-router";
 
 import { redirectIfLoggedInLoader, setAuthOnResponse } from "../auth/auth";
 import { Label, Input } from "../components/input";
 import { Button } from "../components/button";
+import { Icon } from "../icons/icons";
 
 import { createAccount, accountExists } from "./signup.queries";
 import { signupSchema, tryParseFormData } from "./validation";
@@ -95,6 +96,9 @@ export default function Signup() {
   const invitationId = searchParams.get("invitationId");
   const hasInvitationContext = !!invitationId;
 
+  const navigation = useNavigation();
+  const isSubmitting = navigation.state !== "idle";
+
   return (
     <div className="flex min-h-full flex-1 flex-col mt-20 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -127,18 +131,19 @@ export default function Signup() {
                     </span>
                   )}
                 </Label>
-                <Input
-                  id="firstName"
-                  name="firstName"
-                  type="text"
-                  autoComplete="given-name"
-                  aria-describedby={
-                    actionResult?.errors?.firstName
-                      ? "firstName-error"
-                      : "signup-header"
-                  }
-                  required
-                />
+                 <Input
+                   id="firstName"
+                   name="firstName"
+                   type="text"
+                   autoComplete="given-name"
+                   aria-describedby={
+                     actionResult?.errors?.firstName
+                       ? "firstName-error"
+                       : "signup-header"
+                   }
+                   required
+                   disabled={isSubmitting}
+                 />
               </div>
 
               <div>
@@ -153,18 +158,19 @@ export default function Signup() {
                     </span>
                   )}
                 </Label>
-                <Input
-                  id="lastName"
-                  name="lastName"
-                  type="text"
-                  autoComplete="family-name"
-                  aria-describedby={
-                    actionResult?.errors?.lastName
-                      ? "lastName-error"
-                      : "signup-header"
-                  }
-                  required
-                />
+                 <Input
+                   id="lastName"
+                   name="lastName"
+                   type="text"
+                   autoComplete="family-name"
+                   aria-describedby={
+                     actionResult?.errors?.lastName
+                       ? "lastName-error"
+                       : "signup-header"
+                   }
+                   required
+                   disabled={isSubmitting}
+                 />
               </div>
             </div>
 
@@ -177,17 +183,18 @@ export default function Signup() {
                   </span>
                 )}
               </Label>
-              <Input
-                autoFocus
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                aria-describedby={
-                  actionResult?.errors?.email ? "email-error" : "signup-header"
-                }
-                required
-              />
+               <Input
+                 autoFocus
+                 id="email"
+                 name="email"
+                 type="email"
+                 autoComplete="email"
+                 aria-describedby={
+                   actionResult?.errors?.email ? "email-error" : "signup-header"
+                 }
+                 required
+                 disabled={isSubmitting}
+               />
             </div>
 
             <div>
@@ -202,17 +209,27 @@ export default function Signup() {
                   </span>
                 )}
               </Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                aria-describedby="password-error"
-                required
-              />
+               <Input
+                 id="password"
+                 name="password"
+                 type="password"
+                 autoComplete="current-password"
+                 aria-describedby="password-error"
+                 required
+                 disabled={isSubmitting}
+               />
             </div>
 
-            <Button type="submit">Sign up</Button>
+             <Button type="submit" disabled={isSubmitting}>
+               {isSubmitting ? (
+                 <span className="flex items-center justify-center gap-2">
+                   <Icon name="plus" className="w-4 h-4 animate-spin" />
+                   Creating account...
+                 </span>
+               ) : (
+                 "Sign up"
+               )}
+             </Button>
 
              <div className="text-sm text-slate-500">
                Already have an account?{" "}

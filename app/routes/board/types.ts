@@ -1,4 +1,4 @@
-import type { Column, Item } from "@prisma/client";
+import type { Column, Item } from "../../../prisma/client";
 import type { RenderedAssignee } from "../types";
 
 /**

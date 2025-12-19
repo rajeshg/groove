@@ -4,7 +4,7 @@ import { getBoardTemplate } from "../constants/templates";
 import { ensureAssigneeForUser } from "../utils/assignee";
 
 import type { ItemMutation } from "./types";
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "../../prisma/client";
 
 // Time threshold for editing/deleting comments (15 minutes in milliseconds)
 const COMMENT_EDIT_THRESHOLD_MS = 15 * 60 * 1000;

@@ -42,7 +42,6 @@ RUN groupadd -g 1001 nodejs && useradd -u 1001 -g nodejs groove
 # Copy only necessary files from previous stages
 COPY --chown=groove:nodejs package*.json ./
 COPY --from=prod-deps /app/node_modules ./node_modules
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/build ./build
 COPY --chown=groove:nodejs prisma ./prisma

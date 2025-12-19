@@ -8,7 +8,7 @@ import { CardMeta } from "./board/card-meta";
 import { BoardHeader } from "./board/board-header";
 import { EditableComment } from "./board/components";
 import { INTENTS, type RenderedComment } from "./types";
-import type { Column } from "@prisma/client";
+import type { Column } from "../../prisma/client";
 import { getInitials, getAvatarColor, getDisplayName } from "../utils/avatar";
 import type { Route } from "./+types/card.$cardId";
 

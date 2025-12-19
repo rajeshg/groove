@@ -1,4 +1,7 @@
-import { PrismaClient } from "@prisma/client"
+// Re-export all types from the generated Prisma client for convenience
+export * from "./generated/client.js"
+
+import { PrismaClient } from "./generated/client.js"
 import { PrismaLibSql } from "@prisma/adapter-libsql"
 
 type PrismaGlobal = {

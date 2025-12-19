@@ -1,7 +1,7 @@
 import { redirect } from "react-router";
 import { Form, Link, useFetcher, useNavigation } from "react-router";
 import { useState, useEffect } from "react";
-import type { Board } from "@prisma/client";
+import type { Board } from "../../prisma/client";
 
 import { requireAuthCookie } from "../auth/auth";
 import { Button } from "../components/button";

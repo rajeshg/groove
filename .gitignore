@@ -14,6 +14,8 @@
 /.react-router/
 /build/
 /prisma/dev.db*
+/prisma/data/
+/prisma/generated/
 
 # Nginx certificates (generated, not committed)
 /nginx/certs/
