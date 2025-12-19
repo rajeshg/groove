@@ -1,5 +1,6 @@
 .DS_Store
 .env
+.env.production
 /node_modules/
 
 # Databases
@@ -7,8 +8,13 @@
 *.db-journal
 *.sqlite
 *.sqlite-journal
+/data/
 
 # React Router
 /.react-router/
 /build/
 /prisma/dev.db*
+
+# Nginx certificates (generated, not committed)
+/nginx/certs/
+

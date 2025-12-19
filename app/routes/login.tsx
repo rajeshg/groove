@@ -1,5 +1,5 @@
 import { redirect } from "react-router";
-import { Form, Link, useActionData } from "react-router";
+import { Form, Link, useActionData, useSearchParams } from "react-router";
 
 import { redirectIfLoggedInLoader, setAuthOnResponse } from "../auth/auth";
 import { Button } from "../components/button";
@@ -53,8 +53,8 @@ export default function Login() {
     errors?: { email?: string; password?: string };
   }>();
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const invitationId = urlParams.get("invitationId");
+  const [searchParams] = useSearchParams();
+  const invitationId = searchParams.get("invitationId");
   const hasInvitationContext = !!invitationId;
 
   return (
@@ -127,7 +127,7 @@ export default function Login() {
               Don't have an account?{" "}
               <Link
                 className={`text-blue-600 hover:text-blue-700 underline ${
-                  urlParams.get("invitationId") ? "underline" : ""
+                  searchParams.get("invitationId") ? "underline" : ""
                 }`}
                 to={
                   hasInvitationContext

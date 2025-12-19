@@ -1,4 +1,4 @@
-import { redirect } from "react-router";
+import { redirect, useSearchParams } from "react-router";
 import { Form, Link, useActionData } from "react-router";
 
 import { redirectIfLoggedInLoader, setAuthOnResponse } from "../auth/auth";
@@ -91,8 +91,8 @@ export default function Signup() {
     };
   }>();
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const invitationId = urlParams.get("invitationId");
+  const [searchParams] = useSearchParams();
+  const invitationId = searchParams.get("invitationId");
   const hasInvitationContext = !!invitationId;
 
   return (
@@ -214,21 +214,21 @@ export default function Signup() {
 
             <Button type="submit">Sign up</Button>
 
-            <div className="text-sm text-slate-500">
-              Already have an account?{" "}
-              <Link
-                className={`text-blue-600 hover:text-blue-700 underline ${
-                  urlParams.get("invitationId") ? "underline" : ""
-                }`}
-                to={
-                  hasInvitationContext
-                    ? `/login?invitationId=${invitationId}`
-                    : "/login"
-                }
-              >
-                Log in
-              </Link>
-              .
+             <div className="text-sm text-slate-500">
+               Already have an account?{" "}
+               <Link
+                 className={`text-blue-600 hover:text-blue-700 ${
+                   hasInvitationContext ? "underline" : ""
+                 }`}
+                 to={
+                   hasInvitationContext
+                     ? `/login?invitationId=${invitationId}`
+                     : "/login"
+                 }
+               >
+                 Log in
+               </Link>
+               .
             </div>
           </Form>
         </div>

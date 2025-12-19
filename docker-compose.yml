@@ -1,0 +1,30 @@
+services:
+  groove:
+    build: .
+    image: groove:latest
+    container_name: groove-app
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:./prisma/data/data.db
+      - COOKIE_SECRET=${COOKIE_SECRET:-change-me-in-production}
+    volumes:
+      - ./data:/app/prisma/data
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    networks:
+      main_network:
+        aliases:
+          - groove-app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+networks:
+  main_network:
+    driver: bridge
+    external: true
+    name: main_network

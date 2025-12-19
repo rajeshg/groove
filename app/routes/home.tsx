@@ -16,7 +16,7 @@ import { getBoardTemplates } from "../constants/templates";
 import type { Route } from "./+types/home";
 
 type BoardData = {
-  id: number;
+  id: string;
   name: string;
   color: string;
   accountId: string;
