@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect } from "react";
-import { useSubmit } from "react-router";
+import { useSubmit, Link } from "react-router";
 import invariant from "tiny-invariant";
 
 import { Icon } from "../../icons/icons";
-import { ColumnMenu } from "./column-menu";
 
 import {
   type ItemMutation,
@@ -130,21 +129,9 @@ export function Column({
       >
         <div className="flex items-center justify-between gap-2">
           {isExpanded ? (
-            <EditableText
-              fieldName="name"
-              value={name}
-              inputLabel="Edit column name"
-              buttonLabel={`Edit column "${name}" name`}
-              inputClassName="border border-slate-300 dark:border-slate-500 flex-1 rounded px-2 py-1 font-bold text-slate-900 dark:text-slate-50 dark:bg-slate-700 text-sm text-center uppercase"
-              buttonClassName="block rounded text-center flex-1 border border-transparent py-1 px-2 font-bold text-slate-900 dark:text-slate-50 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 uppercase"
-              placeholder="Column name..."
-              hiddenFields={{
-                intent: INTENTS.updateColumn,
-                columnId: columnId,
-              }}
-            >
-              <></>
-            </EditableText>
+            <h2 className="flex-1 text-center py-1 px-2 font-bold text-slate-900 dark:text-slate-50 text-sm uppercase">
+              {name}
+            </h2>
           ) : (
             <button
               onClick={onToggle}
@@ -172,13 +159,15 @@ export function Column({
                 <Icon name="shrink" size="md" />
               </button>
 
-              <ColumnMenu
-                columnId={columnId}
-                columnName={name}
-                currentColor={color}
-                isDefault={isDefault}
-                isExpanded={true}
-              />
+              {/* Link to column detail page */}
+              <Link
+                to={`/board/${boardId}/column/${columnId}`}
+                className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+                title="View column details"
+                aria-label="View column details"
+              >
+                <Icon name="chevron-right" size="md" />
+              </Link>
             </>
           )}
         </div>

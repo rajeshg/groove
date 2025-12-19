@@ -83,15 +83,12 @@ export async function action({
   request: Request;
   params: Record<string, string>;
 }) {
-  console.log("Board action called, method:", request.method);
   let accountId = await requireAuthCookie(request);
   let boardId = Number(params.id);
   invariant(boardId, "Missing boardId");
 
   let formData = await request.formData();
   let intent = formData.get("intent");
-
-  console.log("Board action: intent =", intent, "from POST");
 
   if (!intent) throw badRequest("Missing intent");
 
@@ -183,11 +180,8 @@ export async function action({
     }
     case INTENTS.deleteColumn: {
       const result = tryParseFormData(formData, deleteColumnSchema);
-      console.log("[DELETE_COLUMN] validation result:", result);
       if (!result.success) throw badRequest(result.error);
-      console.log("[DELETE_COLUMN] Deleting column ID:", result.data.columnId);
       await deleteColumn(result.data.columnId, boardId, accountId);
-      console.log("[DELETE_COLUMN] Column deleted successfully");
       break;
     }
     case INTENTS.inviteUser: {

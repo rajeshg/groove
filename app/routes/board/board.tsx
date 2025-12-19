@@ -1,29 +1,21 @@
-import { useRef, useState, useEffect, useMemo } from "react";
+import { useRef, useState, useMemo } from "react";
 import invariant from "tiny-invariant";
-import { useFetchers, useSubmit } from "react-router";
+import { useSubmit, Link } from "react-router";
 
-import {
-  INTENTS,
-  type RenderedItem,
-  type RenderedAssignee,
-  CONTENT_TYPES,
-} from "../types";
-import type { Column as ColumnType, Item } from "@prisma/client";
+import { INTENTS, CONTENT_TYPES } from "../types";
 import type { getBoardData } from "../queries";
 
-type ColumnWithItems = ColumnType & {
-  items: Array<Item & { Assignee: RenderedAssignee | null }>;
-  order: number;
-};
 import { Column } from "./column";
 import { NewColumn } from "./new-column";
 import { BoardHeader } from "./board-header";
+import { useBoardData } from "./hooks/useBoardData";
+import { useBoardState } from "./hooks/useBoardState";
+import { useBoardKeyboardShortcuts } from "./hooks/useBoardKeyboardShortcuts";
+import { BOARD_CONSTANTS, calculateColumnMetrics } from "./utils";
 import "./columns.css";
 
 // Constants for proportional calculation of collapsed column height
-const MAX_VISIBLE_CARDS = 20;
-const COLUMN_WIDTH_COLLAPSED = 40; // pixels
-const PROGRESS_MAX_HEIGHT = 300; // pixels
+const { MAX_VISIBLE_CARDS, COLUMN_WIDTH_COLLAPSED, PROGRESS_MAX_HEIGHT } = BOARD_CONSTANTS;
 const PROGRESS_INCREMENT = PROGRESS_MAX_HEIGHT / MAX_VISIBLE_CARDS; // pixels per card
 
 type BoardData = NonNullable<Awaited<ReturnType<typeof getBoardData>>>;
@@ -33,128 +25,28 @@ interface BoardProps {
 }
 
 export default function Board({ board }: BoardProps) {
-  let submit = useSubmit();
-  let [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
-  let [expandedColumnIds, setExpandedColumnIds] = useState<Set<string>>(
-    new Set()
+  const submit = useSubmit();
+  const [searchTerm, setSearchTerm] = useState("");
+  const addCardCallbackRef = useRef<(() => void) | null>(null);
+
+  // Use custom hooks for state management
+  const { expandedColumnIds, handleColumnToggle, draggedColumnId, setDraggedColumnId } = 
+    useBoardState({ boardId: board.id, columns: board.columns });
+  
+  useBoardKeyboardShortcuts({ columns: board.columns, addCardCallbackRef });
+
+  // Use custom hook for data merging (pending items/columns + search filtering)
+  const { columnArray, itemsById } = useBoardData(board, searchTerm);
+
+  // Memoize column metrics calculations for performance
+  const columnMetrics = useMemo(
+    () => calculateColumnMetrics(columnArray),
+    [columnArray]
   );
-  let [searchTerm, setSearchTerm] = useState("");
-  let addCardCallbackRef = useRef<(() => void) | null>(null);
-
-  const handleColumnToggle = (columnId: string) => {
-    const willBeExpanded = !expandedColumnIds.has(columnId);
-
-    // Update local state immediately for responsive UI
-    setExpandedColumnIds((prev) => {
-      const updated = new Set(prev);
-      if (updated.has(columnId)) {
-        updated.delete(columnId);
-      } else {
-        updated.add(columnId);
-      }
-      // Save to localStorage
-      localStorage.setItem(
-        `board-${board.id}-expanded`,
-        JSON.stringify(Array.from(updated))
-      );
-      return updated;
-    });
-
-    // Update database
-    submit(
-      {
-        intent: INTENTS.updateColumn,
-        columnId,
-        isExpanded: willBeExpanded ? "1" : "0",
-      },
-      {
-        method: "post",
-        navigate: false,
-      }
-    );
-  };
-
-  // Initialize expanded columns from database on mount
-  useEffect(() => {
-    const expandedFromDB = board.columns
-      .filter((col: ColumnType) => col.isExpanded !== false)
-      .map((col: ColumnType) => col.id);
-
-    setExpandedColumnIds(new Set(expandedFromDB));
-    // Also save to localStorage for quick access
-    localStorage.setItem(
-      `board-${board.id}-expanded`,
-      JSON.stringify(expandedFromDB)
-    );
-  }, [board.columns, board.id]);
-
-  // Handle 'c' key to open "add a card" dialog on the column with shortcut "c"
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Only trigger on 'c' key, not when typing in input fields
-      if (
-        e.key === "c" &&
-        !e.ctrlKey &&
-        !e.metaKey &&
-        !e.shiftKey &&
-        !(e.target instanceof HTMLInputElement) &&
-        !(e.target instanceof HTMLTextAreaElement) &&
-        !(
-          e.target instanceof HTMLDivElement &&
-          (e.target as HTMLElement).closest('[role="textbox"]')
-        )
-      ) {
-        e.preventDefault();
-        e.stopPropagation();
-        // Find the column with shortcut "c" and trigger its callback
-        const shortcutColumn = board.columns.find(
-          (col: ColumnType) => col.shortcut === "c"
-        );
-        if (shortcutColumn && addCardCallbackRef.current) {
-          addCardCallbackRef.current();
-        }
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [board.columns, addCardCallbackRef]);
-
-  let itemsById = new Map(board.items.map((item: Item) => [item.id, item]));
-
-  let pendingItems = usePendingItems();
-
-  // merge pending items and existing items
-  for (const pendingItem of pendingItems) {
-    let item = itemsById.get(pendingItem.id);
-    let merged = item
-      ? ({ ...item, ...pendingItem } as unknown as Item)
-      : ({
-          ...pendingItem,
-          boardId: board.id,
-          _count: { comments: 0 },
-        } as unknown as Item);
-    itemsById.set(pendingItem.id, merged);
-  }
-
-  // merge pending and existing columns
-  let optAddingColumns = usePendingColumns();
-  let columns = new Map<string, unknown>();
-  for (let column of [...board.columns, ...optAddingColumns]) {
-    columns.set(column.id, {
-      ...column,
-      items: [],
-      order: (column as unknown as { order?: number }).order || 0,
-    });
-  }
-
-  // add items to their columns
-  for (const item of itemsById.values()) {
-    let columnId = (item as RenderedItem).columnId;
-    let column = columns.get(columnId) as ColumnWithItems;
-    invariant(column, "missing column");
-    column.items.push(item as Item & { Assignee: RenderedAssignee | null });
-  }
+  const metricsById = useMemo(
+    () => new Map(columnMetrics.map((m) => [m.id, m])),
+    [columnMetrics]
+  );
 
   // scroll right when new columns are added
   let scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -163,25 +55,6 @@ export default function Board({ board }: BoardProps) {
     scrollContainerRef.current.scrollLeft =
       scrollContainerRef.current.scrollWidth;
   }
-
-  // Get sorted columns for rendering
-  const columnArray = useMemo(() => {
-    const sorted = [...(columns as Map<string, ColumnWithItems>).values()].sort(
-      (a, b) => (a.order || 0) - (b.order || 0)
-    );
-
-    if (!searchTerm) return sorted;
-
-    const lowerSearchTerm = searchTerm.toLowerCase();
-    return sorted.map((col) => ({
-      ...col,
-      items: col.items.filter(
-        (item: Item) =>
-          item.title.toLowerCase().includes(lowerSearchTerm) ||
-          (item.content && item.content.toLowerCase().includes(lowerSearchTerm))
-      ),
-    }));
-  }, [columns, searchTerm]);
 
   return (
     <div className="flex-1 flex flex-col relative bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 min-h-full">
@@ -195,9 +68,9 @@ export default function Board({ board }: BoardProps) {
         <BoardHeader searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
       </div>
 
-      {/* Canvas area */}
+      {/* Canvas area - Desktop view (hidden on mobile) */}
       <div
-        className="flex-1 w-full overflow-x-auto relative flex flex-col"
+        className="hidden md:flex flex-1 w-full overflow-x-auto relative flex-col"
         ref={scrollContainerRef}
       >
         {/* Left color accent bar - spans the whole scrollable height */}
@@ -338,14 +211,8 @@ export default function Board({ board }: BoardProps) {
                       name={col.name}
                       columnId={col.id}
                       items={col.items}
-                      color={
-                        (col as unknown as { color?: string }).color ||
-                        "#94a3b8"
-                      }
-                      isDefault={
-                        (col as unknown as { isDefault?: boolean }).isDefault ||
-                        false
-                      }
+                      color={col.color}
+                      isDefault={col.isDefault}
                       isExpanded={true}
                       onToggle={() => handleColumnToggle(col.id)}
                       boardName={board.name}
@@ -368,10 +235,8 @@ export default function Board({ board }: BoardProps) {
                     className="column-collapsed"
                     style={
                       {
-                        color:
-                          (col as unknown as { color?: string }).color ||
-                          "#94a3b8",
-                        "--collapse-height": `${COLUMN_WIDTH_COLLAPSED + Math.min(col.items.length, MAX_VISIBLE_CARDS) * PROGRESS_INCREMENT}px`,
+                        color: col.color,
+                        "--collapse-height": `${metricsById.get(col.id)?.collapseHeight}px`,
                       } as Record<string, unknown>
                     }
                     title={`Click to expand "${col.name}" (${col.items.length} cards)`}
@@ -380,12 +245,12 @@ export default function Board({ board }: BoardProps) {
                     <div
                       className="column-collapsed-content"
                       style={{
-                        height: `${COLUMN_WIDTH_COLLAPSED + Math.min(col.items.length, MAX_VISIBLE_CARDS) * PROGRESS_INCREMENT}px`,
+                        height: `${metricsById.get(col.id)?.collapseHeight}px`,
                       }}
                     >
                       {/* Card count badge */}
                       <div className="column-collapsed-count">
-                        {Math.min(col.items.length, MAX_VISIBLE_CARDS)}
+                        {metricsById.get(col.id)?.displayCardCount}
                       </div>
 
                       {/* Vertical title text */}
@@ -407,59 +272,55 @@ export default function Board({ board }: BoardProps) {
           <div data-lol className="w-8 h-1 flex-shrink-0" />
         </div>
       </div>
+
+      {/* Mobile view - Horizontal guitar string cards with proportional gradients */}
+      <div className="md:hidden flex-1 overflow-y-auto px-4 py-6">
+        <div className="space-y-4">
+          {columnArray.map((col) => {
+            const metrics = metricsById.get(col.id);
+            if (!metrics) return null;
+
+            return (
+              <Link
+                key={col.id}
+                to={`/board/${board.id}/column/${col.id}`}
+                className="column-mobile-card block"
+                style={
+                  {
+                    color: col.color,
+                    "--card-progress-width": `${metrics.progressPercent}%`,
+                  } as Record<string, unknown>
+                }
+              >
+                <div className="column-mobile-card-content">
+                  <div className="column-mobile-card-count">
+                    {metrics.cardCount > 99 ? "99+" : metrics.cardCount}
+                  </div>
+                  <div className="column-mobile-card-name">{col.name}</div>
+                </div>
+                <div className="column-mobile-card-icon">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </div>
+              </Link>
+            )
+          })}
+        </div>
+      </div>
     </div>
-  );
+  )
 }
 
 // These are the inflight columns that are being created, instead of managing
 // state ourselves, we just ask Remix for the state
-function usePendingColumns() {
-  type CreateColumnFetcher = ReturnType<typeof useFetchers>[number] & {
-    formData: FormData;
-  };
-
-  return useFetchers()
-    .filter((fetcher): fetcher is CreateColumnFetcher => {
-      return fetcher.formData?.get("intent") === INTENTS.createColumn;
-    })
-    .map((fetcher) => {
-      let name = String(fetcher.formData.get("name"));
-      let id = String(fetcher.formData.get("id"));
-      return { name, id };
-    });
-}
-
-// These are the inflight items that are being created or moved, instead of
-// managing state ourselves, we just ask Remix for the state
-function usePendingItems() {
-  type PendingItem = ReturnType<typeof useFetchers>[number] & {
-    formData: FormData;
-  };
-  return useFetchers()
-    .filter((fetcher): fetcher is PendingItem => {
-      if (!fetcher.formData) return false;
-      let intent = fetcher.formData.get("intent");
-      return intent === INTENTS.createItem || intent === INTENTS.moveItem;
-    })
-    .map((fetcher) => {
-      let columnId = String(fetcher.formData.get("columnId"));
-      let title = String(fetcher.formData.get("title"));
-      let id = String(fetcher.formData.get("id"));
-      let order = Number(fetcher.formData.get("order"));
-      let item: RenderedItem = {
-        title,
-        id,
-        order,
-        columnId,
-        content: null,
-        createdBy: null,
-        assigneeId: null,
-        Assignee: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        lastActiveAt: new Date(),
-        boardId: 0,
-      };
-      return item;
-    });
-}
