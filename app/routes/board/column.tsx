@@ -13,7 +13,7 @@ import {
 import { NewCard } from "./new-card";
 import { flushSync } from "react-dom";
 import { Card } from "./card";
-import { EditableText } from "./components";
+// EditableText is unused in this file. Import removed to satisfy lint rules
 
 interface ColumnProps {
   name: string;
@@ -35,7 +35,6 @@ export function Column({
   columnId,
   items,
   color = "#94a3b8",
-  isDefault = false,
   isExpanded = true,
   onToggle,
   boardName,

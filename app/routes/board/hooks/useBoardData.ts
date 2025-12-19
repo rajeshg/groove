@@ -2,11 +2,7 @@ import { useMemo } from "react";
 import { useFetchers } from "react-router";
 import invariant from "tiny-invariant";
 import type { Item } from "@prisma/client";
-import {
-  INTENTS,
-  type RenderedItem,
-  type RenderedAssignee,
-} from "../../types";
+import { INTENTS, type RenderedItem, type RenderedAssignee } from "../../types";
 import type { getBoardData } from "../../queries";
 import type { BoardColumn } from "../types";
 
@@ -46,7 +42,7 @@ export function useBoardData(
 
     // Merge pending and existing columns
     const columnsMap = new Map<string, BoardColumn>();
-    
+
     // Add existing columns from board
     for (const column of board.columns) {
       columnsMap.set(column.id, {
@@ -54,7 +50,7 @@ export function useBoardData(
         items: [],
       });
     }
-    
+
     // Add pending columns (optimistic UI)
     for (const pendingColumn of pendingColumns) {
       if (!columnsMap.has(pendingColumn.id)) {

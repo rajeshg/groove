@@ -1,102 +1,113 @@
-import { useLoaderData, useNavigate } from "react-router"
-import invariant from "tiny-invariant"
-import { requireAuthCookie } from "~/auth/auth"
-import { badRequest } from "~/http/bad-request"
-import { getBoardData, updateColumnName, updateColumnColor } from "./queries"
-import { Icon } from "~/icons/icons"
-import { Card } from "./board/card"
-import { BoardHeader } from "./board/board-header"
-import { EditableText } from "./board/components"
-import { ColumnColorPicker } from "./board/column-color-picker"
-import { INTENTS } from "./types"
-import { updateColumnSchema, tryParseFormData } from "./validation"
+import { useLoaderData, useNavigate } from "react-router";
+import { requireAuthCookie } from "~/auth/auth";
+import { badRequest } from "~/http/bad-request";
+import { getBoardData, updateColumnName, updateColumnColor } from "./queries";
+import { Icon } from "~/icons/icons";
+import { Card } from "./board/card";
+import { BoardHeader } from "./board/board-header";
+import { EditableText } from "./board/components";
+import { ColumnColorPicker } from "./board/column-color-picker";
+import { INTENTS } from "./types";
+import { updateColumnSchema, tryParseFormData } from "./validation";
 
-export async function action({ request, params }: { request: Request; params: { id: string; columnId: string } }) {
-  const accountId = await requireAuthCookie(request)
-  const boardId = Number(params.id)
-  const columnId = params.columnId
+export async function action({
+  request,
+  params,
+}: {
+  request: Request;
+  params: { id: string; columnId: string };
+}) {
+  const accountId = await requireAuthCookie(request);
+  const boardId = Number(params.id);
+  const columnId = params.columnId;
 
   if (Number.isNaN(boardId)) {
-    throw badRequest("Invalid board ID")
+    throw badRequest("Invalid board ID");
   }
 
   if (!columnId) {
-    throw badRequest("Invalid column ID")
+    throw badRequest("Invalid column ID");
   }
 
-  const formData = await request.formData()
-  const intent = formData.get("intent")
+  const formData = await request.formData();
+  const intent = formData.get("intent");
 
-  if (!intent) throw badRequest("Missing intent")
+  if (!intent) throw badRequest("Missing intent");
 
   switch (intent) {
     case INTENTS.updateColumn: {
-      const result = tryParseFormData(formData, updateColumnSchema)
-      if (!result.success) throw badRequest(result.error)
+      const result = tryParseFormData(formData, updateColumnSchema);
+      if (!result.success) throw badRequest(result.error);
 
-      const { name, color } = result.data
+      const { name, color } = result.data;
 
       if (name) {
-        await updateColumnName(columnId, name, accountId)
+        await updateColumnName(columnId, name, accountId);
       }
 
       if (color) {
-        await updateColumnColor(columnId, color, accountId)
+        await updateColumnColor(columnId, color, accountId);
       }
-      break
+      break;
     }
     default: {
-      throw badRequest(`Unknown intent: ${intent}`)
+      throw badRequest(`Unknown intent: ${intent}`);
     }
   }
 
-  return { ok: true }
+  return { ok: true };
 }
 
-export async function loader({ request, params }: { request: Request; params: { id: string; columnId: string } }) {
-  const accountId = await requireAuthCookie(request)
-  const boardId = Number(params.id)
-  const columnId = params.columnId
+export async function loader({
+  request,
+  params,
+}: {
+  request: Request;
+  params: { id: string; columnId: string };
+}) {
+  const accountId = await requireAuthCookie(request);
+  const boardId = Number(params.id);
+  const columnId = params.columnId;
 
   if (Number.isNaN(boardId)) {
-    throw badRequest("Invalid board ID")
+    throw badRequest("Invalid board ID");
   }
 
   if (!columnId) {
-    throw badRequest("Invalid column ID")
+    throw badRequest("Invalid column ID");
   }
 
-  const board = await getBoardData(boardId, accountId)
+  const board = await getBoardData(boardId, accountId);
 
   if (!board) {
-    throw new Response("Board not found", { status: 404 })
+    throw new Response("Board not found", { status: 404 });
   }
 
-  const column = board.columns.find((col) => col.id === columnId)
+  const column = board.columns.find((col) => col.id === columnId);
 
   if (!column) {
-    throw new Response("Column not found", { status: 404 })
+    throw new Response("Column not found", { status: 404 });
   }
 
   // Get items for this column
-  const items = board.items.filter((item) => item.columnId === columnId)
+  const items = board.items.filter((item) => item.columnId === columnId);
 
-  return { board, column, items }
+  return { board, column, items };
 }
 
 export default function ColumnDetail() {
-  const { board, column, items } = useLoaderData<typeof loader>()
-  const navigate = useNavigate()
+  const { board, column, items } = useLoaderData<typeof loader>();
+  const navigate = useNavigate();
 
   // Sort items by order
-  const sortedItems = [...items].sort((a, b) => a.order - b.order)
+  const sortedItems = [...items].sort((a, b) => a.order - b.order);
 
   // Calculate next and previous orders for each card
   const itemsWithOrders = sortedItems.map((item, index) => {
-    const previousOrder = sortedItems[index - 1]?.order ?? item.order - 1
-    const nextOrder = sortedItems[index + 1]?.order ?? item.order + 1
-    return { ...item, previousOrder, nextOrder }
-  })
+    const previousOrder = sortedItems[index - 1]?.order ?? item.order - 1;
+    const nextOrder = sortedItems[index + 1]?.order ?? item.order + 1;
+    return { ...item, previousOrder, nextOrder };
+  });
 
   return (
     <div className="h-full flex flex-col overflow-hidden bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-50">
@@ -115,7 +126,7 @@ export default function ColumnDetail() {
               <Icon name="chevron-left" className="w-5 h-5" />
               <span className="text-sm font-medium">Back</span>
             </button>
-            
+
             {/* Center: Editable column name */}
             <div className="flex-1 flex items-center justify-center">
               <EditableText
@@ -145,7 +156,7 @@ export default function ColumnDetail() {
                   {items.length === 1 ? "card" : "cards"}
                 </span>
               </div>
-              
+
               <ColumnColorPicker
                 columnId={column.id}
                 columnName={column.name}
@@ -159,7 +170,10 @@ export default function ColumnDetail() {
           {items.length === 0 ? (
             <div className="bg-white dark:bg-slate-800 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-700 p-10">
               <div className="text-center py-12 text-slate-500 dark:text-slate-400">
-                <Icon name="inbox" className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <Icon
+                  name="inbox"
+                  className="w-12 h-12 mx-auto mb-3 opacity-50"
+                />
                 <p>No cards in this column yet</p>
               </div>
             </div>
@@ -191,5 +205,5 @@ export default function ColumnDetail() {
         </div>
       </div>
     </div>
-  )
+  );
 }

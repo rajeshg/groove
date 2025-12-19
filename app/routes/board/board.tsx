@@ -11,12 +11,10 @@ import { BoardHeader } from "./board-header";
 import { useBoardData } from "./hooks/useBoardData";
 import { useBoardState } from "./hooks/useBoardState";
 import { useBoardKeyboardShortcuts } from "./hooks/useBoardKeyboardShortcuts";
-import { BOARD_CONSTANTS, calculateColumnMetrics } from "./utils";
+import { calculateColumnMetrics } from "./utils";
 import "./columns.css";
 
-// Constants for proportional calculation of collapsed column height
-const { MAX_VISIBLE_CARDS, COLUMN_WIDTH_COLLAPSED, PROGRESS_MAX_HEIGHT } = BOARD_CONSTANTS;
-const PROGRESS_INCREMENT = PROGRESS_MAX_HEIGHT / MAX_VISIBLE_CARDS; // pixels per card
+// Note: BOARD_CONSTANTS are available but not currently used in this component
 
 type BoardData = NonNullable<Awaited<ReturnType<typeof getBoardData>>>;
 
@@ -30,13 +28,17 @@ export default function Board({ board }: BoardProps) {
   const addCardCallbackRef = useRef<(() => void) | null>(null);
 
   // Use custom hooks for state management
-  const { expandedColumnIds, handleColumnToggle, draggedColumnId, setDraggedColumnId } = 
-    useBoardState({ boardId: board.id, columns: board.columns });
-  
+  const {
+    expandedColumnIds,
+    handleColumnToggle,
+    draggedColumnId,
+    setDraggedColumnId,
+  } = useBoardState({ boardId: board.id, columns: board.columns });
+
   useBoardKeyboardShortcuts({ columns: board.columns, addCardCallbackRef });
 
   // Use custom hook for data merging (pending items/columns + search filtering)
-  const { columnArray, itemsById } = useBoardData(board, searchTerm);
+  const { columnArray } = useBoardData(board, searchTerm);
 
   // Memoize column metrics calculations for performance
   const columnMetrics = useMemo(
@@ -314,12 +316,12 @@ export default function Board({ board }: BoardProps) {
                   </svg>
                 </div>
               </Link>
-            )
+            );
           })}
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 // These are the inflight columns that are being created, instead of managing

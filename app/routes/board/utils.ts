@@ -54,7 +54,10 @@ export function calculateColumnMetrics(
 ): ColumnMetrics[] {
   return columns.map((col) => {
     const cardCount = col.items.length;
-    const displayCardCount = Math.min(cardCount, BOARD_CONSTANTS.MAX_VISIBLE_CARDS);
+    const displayCardCount = Math.min(
+      cardCount,
+      BOARD_CONSTANTS.MAX_VISIBLE_CARDS
+    );
     return {
       id: col.id,
       cardCount,
