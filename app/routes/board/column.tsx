@@ -28,6 +28,7 @@ interface ColumnProps {
   boardId: number; // Board ID number for cards
   className?: string;
   onAddCardKeydown?: (callback: () => void) => void;
+  shortcut?: string;
 }
 
 export function Column({
@@ -42,6 +43,7 @@ export function Column({
   boardId,
   className = "",
   onAddCardKeydown,
+  shortcut,
 }: ColumnProps) {
   let submit = useSubmit();
 
@@ -204,10 +206,10 @@ export function Column({
           >
             <Icon name="plus" /> Add a card
           </button>
-          {name === "May be?" && (
-            <kbd className="text-xs px-2 py-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-600 font-mono">
-              c
-            </kbd>
+          {shortcut && (
+            <div className="flex items-center justify-center w-5 h-5 rounded border border-slate-300 dark:border-slate-600 text-[10px] font-black text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 shadow-sm uppercase">
+              {shortcut}
+            </div>
           )}
         </div>
       )}

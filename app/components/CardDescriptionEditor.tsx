@@ -279,10 +279,7 @@ export function CardDescriptionEditor({
                 type="text"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && e.currentTarget.value) {
-                    execCommand(
-                      "insertImage",
-                      e.currentTarget.value
-                    );
+                    execCommand("insertImage", e.currentTarget.value);
                     e.currentTarget.value = "";
                   }
                 }}
@@ -294,7 +291,9 @@ export function CardDescriptionEditor({
               type="button"
               onMouseDown={(e) => {
                 e.preventDefault();
-                const input = (e.target as HTMLElement).parentElement?.querySelector("input") as HTMLInputElement;
+                const input = (
+                  e.target as HTMLElement
+                ).parentElement?.querySelector("input") as HTMLInputElement;
                 if (input?.value) {
                   execCommand("insertImage", input.value);
                   input.value = "";

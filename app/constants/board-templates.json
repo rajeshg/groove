@@ -1,0 +1,342 @@
+[
+  {
+    "name": "Default",
+    "columns": [
+      {
+        "name": "Not Now",
+        "color": "#cbd5e1",
+        "order": 1,
+        "isDefault": false,
+        "isExpanded": true
+      },
+      {
+        "name": "May be?",
+        "color": "#ec4899",
+        "order": 2,
+        "isDefault": true,
+        "shortcut": "c",
+        "isExpanded": true
+      },
+      {
+        "name": "Done",
+        "color": "#06b6d4",
+        "order": 3,
+        "isDefault": false,
+        "isExpanded": false
+      }
+    ]
+  },
+  {
+    "name": "Yes, No, Maybe",
+    "columns": [
+      {
+        "name": "Yes",
+        "color": "#16a34a",
+        "order": 1,
+        "isDefault": false,
+        "isExpanded": true
+      },
+      {
+        "name": "No",
+        "color": "#dc2626",
+        "order": 2,
+        "isDefault": false,
+        "isExpanded": true
+      },
+      {
+        "name": "Maybe",
+        "color": "#ea580c",
+        "order": 3,
+        "isDefault": true,
+        "shortcut": "c",
+        "isExpanded": true
+      }
+    ]
+  },
+  {
+    "name": "Workflow",
+    "columns": [
+      {
+        "name": "To Do",
+        "color": "#64748b",
+        "order": 1,
+        "isDefault": false,
+        "isExpanded": true
+      },
+      {
+        "name": "In Progress",
+        "color": "#2563eb",
+        "order": 2,
+        "isDefault": true,
+        "shortcut": "c",
+        "isExpanded": true
+      },
+      {
+        "name": "Done",
+        "color": "#16a34a",
+        "order": 3,
+        "isDefault": false,
+        "isExpanded": false
+      },
+      {
+        "name": "Blocked",
+        "color": "#dc2626",
+        "order": 4,
+        "isDefault": false,
+        "isExpanded": false
+      }
+    ]
+  },
+  {
+    "name": "Agile",
+    "columns": [
+      {
+        "name": "Backlog",
+        "color": "#6b7280",
+        "order": 1,
+        "isDefault": false,
+        "isExpanded": true,
+        "shortcut": "c"
+      },
+      {
+        "name": "Ready",
+        "color": "#ca8a04",
+        "order": 2,
+        "isDefault": false,
+        "isExpanded": true
+      },
+      {
+        "name": "In Progress",
+        "color": "#2563eb",
+        "order": 3,
+        "isDefault": true,
+        "isExpanded": true
+      },
+      {
+        "name": "Done",
+        "color": "#16a34a",
+        "order": 4,
+        "isDefault": false,
+        "isExpanded": false
+      },
+      {
+        "name": "Archived",
+        "color": "#94a3b8",
+        "order": 5,
+        "isDefault": false,
+        "isExpanded": false
+      }
+    ]
+  },
+  {
+    "name": "Product Launch",
+    "columns": [
+      {
+        "name": "Idea",
+        "color": "#8b5cf6",
+        "order": 1,
+        "isDefault": false,
+        "isExpanded": true,
+        "shortcut": "c"
+      },
+      {
+        "name": "Design",
+        "color": "#2563eb",
+        "order": 2,
+        "isDefault": false,
+        "isExpanded": true
+      },
+      {
+        "name": "Development",
+        "color": "#0891b2",
+        "order": 3,
+        "isDefault": true,
+        "isExpanded": true
+      },
+      {
+        "name": "Review",
+        "color": "#ca8a04",
+        "order": 4,
+        "isDefault": false,
+        "isExpanded": false
+      },
+      {
+        "name": "Live",
+        "color": "#16a34a",
+        "order": 5,
+        "isDefault": false,
+        "isExpanded": false
+      }
+    ]
+  },
+  {
+    "name": "Priority Levels",
+    "columns": [
+      {
+        "name": "P0 - Critical",
+        "color": "#dc2626",
+        "order": 1,
+        "isDefault": false,
+        "isExpanded": true
+      },
+      {
+        "name": "P1 - High",
+        "color": "#ea580c",
+        "order": 2,
+        "isDefault": true,
+        "shortcut": "c",
+        "isExpanded": true
+      },
+      {
+        "name": "P2 - Medium",
+        "color": "#ca8a04",
+        "order": 3,
+        "isDefault": false,
+        "isExpanded": false
+      },
+      {
+        "name": "P3 - Low",
+        "color": "#6b7280",
+        "order": 4,
+        "isDefault": false,
+        "isExpanded": false
+      }
+    ]
+  },
+  {
+    "name": "Urgency Matrix",
+    "columns": [
+      {
+        "name": "Low Priority",
+        "color": "#94a3b8",
+        "order": 1,
+        "isDefault": false,
+        "isExpanded": false
+      },
+      {
+        "name": "Medium Priority",
+        "color": "#ca8a04",
+        "order": 2,
+        "isDefault": false,
+        "isExpanded": true
+      },
+      {
+        "name": "High Priority",
+        "color": "#ea580c",
+        "order": 3,
+        "isDefault": false,
+        "isExpanded": true
+      },
+      {
+        "name": "Urgent",
+        "color": "#dc2626",
+        "order": 4,
+        "isDefault": true,
+        "shortcut": "c",
+        "isExpanded": true
+      }
+    ]
+  },
+  {
+    "name": "Sales Pipeline",
+    "columns": [
+      {
+        "name": "Cold Lead",
+        "color": "#6b7280",
+        "order": 1,
+        "isDefault": false,
+        "isExpanded": true
+      },
+      {
+        "name": "Warm Lead",
+        "color": "#2563eb",
+        "order": 2,
+        "isDefault": true,
+        "shortcut": "c",
+        "isExpanded": true
+      },
+      {
+        "name": "Hot Lead",
+        "color": "#ea580c",
+        "order": 3,
+        "isDefault": false,
+        "isExpanded": false
+      },
+      {
+        "name": "Won",
+        "color": "#16a34a",
+        "order": 4,
+        "isDefault": false,
+        "isExpanded": false
+      }
+    ]
+  },
+  {
+    "name": "Sprint Board",
+    "columns": [
+      {
+        "name": "Sprint Backlog",
+        "color": "#64748b",
+        "order": 1,
+        "isDefault": false,
+        "shortcut": "c",
+        "isExpanded": true
+      },
+      {
+        "name": "Current Sprint",
+        "color": "#2563eb",
+        "order": 2,
+        "isDefault": true,
+        "isExpanded": true
+      },
+      {
+        "name": "Review",
+        "color": "#ca8a04",
+        "order": 3,
+        "isDefault": false,
+        "isExpanded": false
+      },
+      {
+        "name": "Done",
+        "color": "#16a34a",
+        "order": 4,
+        "isDefault": false,
+        "isExpanded": false
+      }
+    ]
+  },
+  {
+    "name": "Research to Launch",
+    "columns": [
+      {
+        "name": "Research",
+        "color": "#8b5cf6",
+        "order": 1,
+        "isDefault": false,
+        "shortcut": "c",
+        "isExpanded": true
+      },
+      {
+        "name": "Prototype",
+        "color": "#2563eb",
+        "order": 2,
+        "isDefault": false,
+        "isExpanded": true
+      },
+      {
+        "name": "MVP",
+        "color": "#0891b2",
+        "order": 3,
+        "isDefault": true,
+        "isExpanded": true
+      },
+      {
+        "name": "Launch",
+        "color": "#16a34a",
+        "order": 4,
+        "isDefault": false,
+        "isExpanded": false
+      }
+    ]
+  }
+]

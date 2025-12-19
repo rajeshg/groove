@@ -88,7 +88,7 @@ export default function Board({ board }: BoardProps) {
     );
   }, [board.columns, board.id]);
 
-  // Handle 'c' key to open "add a card" dialog on the first expanded column
+  // Handle 'c' key to open "add a card" dialog on the column with shortcut "c"
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Only trigger on 'c' key, not when typing in input fields
@@ -106,9 +106,11 @@ export default function Board({ board }: BoardProps) {
       ) {
         e.preventDefault();
         e.stopPropagation();
-        // Find the "May be?" column and trigger its callback
-        const maybeColumn = document.querySelector(".column-may-be");
-        if (maybeColumn && addCardCallbackRef.current) {
+        // Find the column with shortcut "c" and trigger its callback
+        const shortcutColumn = board.columns.find(
+          (col: ColumnType) => col.shortcut === "c"
+        );
+        if (shortcutColumn && addCardCallbackRef.current) {
           addCardCallbackRef.current();
         }
       }
@@ -116,7 +118,7 @@ export default function Board({ board }: BoardProps) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [board.columns, addCardCallbackRef]);
 
   let itemsById = new Map(board.items.map((item: Item) => [item.id, item]));
 
@@ -349,8 +351,9 @@ export default function Board({ board }: BoardProps) {
                       boardName={board.name}
                       boardId={board.id}
                       className="h-full"
+                      shortcut={col.shortcut || undefined}
                       onAddCardKeydown={
-                        col.name === "May be?"
+                        col.shortcut === "c"
                           ? (callback) => {
                               addCardCallbackRef.current = callback;
                             }

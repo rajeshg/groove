@@ -1,5 +1,6 @@
 import { prisma } from "../db/prisma";
 import { DEFAULT_COLUMN_COLORS } from "../constants/colors";
+import { getBoardTemplate } from "../constants/templates";
 import { ensureAssigneeForUser } from "../utils/assignee";
 
 import type { ItemMutation } from "./types";
@@ -426,6 +427,12 @@ export async function getHomeData(accountId: string) {
       name: true,
       color: true,
       accountId: true,
+      _count: {
+        select: {
+          items: true,
+          members: true,
+        },
+      },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -437,8 +444,19 @@ export async function getHomeData(accountId: string) {
 export async function createBoard(
   accountId: string,
   name: string,
-  color: string
+  color: string,
+  templateName?: string
 ) {
+  // Verify account exists before creating board
+  const account = await prisma.account.findUnique({
+    where: { id: accountId },
+    select: { id: true },
+  });
+
+  if (!account) {
+    throw new Error("Unauthorized: Account not found");
+  }
+
   const board = await prisma.board.create({
     data: {
       name,
@@ -466,29 +484,51 @@ export async function createBoard(
     await ensureAssigneeForUser(board.id, accountId, ownerAccount.email);
   }
 
-  // Create default columns
-  const defaultColumns = [
-    {
-      name: "Not Now",
-      order: 1,
-      isDefault: false,
-      color: DEFAULT_COLUMN_COLORS.notNow,
-    },
-    {
-      name: "May be?",
-      order: 2,
-      isDefault: true,
-      color: DEFAULT_COLUMN_COLORS.mayBe,
-    },
-    {
-      name: "Done",
-      order: 3,
-      isDefault: false,
-      color: DEFAULT_COLUMN_COLORS.done,
-    },
-  ];
+  // Use template if provided, otherwise use Classic template
+  let columnsToCreate: Array<{
+    name: string;
+    order: number;
+    isDefault: boolean;
+    color: string;
+    shortcut?: string;
+    isExpanded?: boolean;
+  }> = [];
+  if (templateName) {
+    const template = getBoardTemplate(templateName);
+    if (template) {
+      columnsToCreate = template.columns;
+    }
+  }
 
-  for (const col of defaultColumns) {
+  // Fallback to default columns if no template
+  if (columnsToCreate.length === 0) {
+    columnsToCreate = [
+      {
+        name: "Not Now",
+        order: 1,
+        isDefault: false,
+        color: DEFAULT_COLUMN_COLORS.notNow,
+        isExpanded: true,
+      },
+      {
+        name: "May be?",
+        order: 2,
+        isDefault: true,
+        color: DEFAULT_COLUMN_COLORS.mayBe,
+        shortcut: "c",
+        isExpanded: true,
+      },
+      {
+        name: "Done",
+        order: 3,
+        isDefault: false,
+        color: DEFAULT_COLUMN_COLORS.done,
+        isExpanded: false,
+      },
+    ];
+  }
+
+  for (const col of columnsToCreate) {
     await prisma.column.create({
       data: {
         id: `col-${board.id}-${col.order}`,
@@ -497,7 +537,8 @@ export async function createBoard(
         order: col.order,
         isDefault: col.isDefault,
         color: col.color,
-        isExpanded: true,
+        shortcut: col.shortcut || null,
+        isExpanded: col.isExpanded ?? true,
       },
     });
   }

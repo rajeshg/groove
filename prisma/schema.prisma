@@ -54,6 +54,7 @@ model Column {
   order     Float    @default(0)
   isDefault Boolean  @default(false)
   isExpanded Boolean @default(true)
+  shortcut  String?  @default("c")
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
   items     Item[]

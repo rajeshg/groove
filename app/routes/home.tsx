@@ -1,5 +1,6 @@
 import { redirect } from "react-router";
 import { Form, Link, useFetcher, useNavigation } from "react-router";
+import { useState } from "react";
 import type { Board } from "@prisma/client";
 
 import { requireAuthCookie } from "../auth/auth";
@@ -10,12 +11,23 @@ import { badRequest } from "../http/bad-request";
 import { getHomeData, createBoard, deleteBoard } from "./queries";
 import { INTENTS } from "./types";
 import { Icon } from "../icons/icons";
+import { ColorPicker } from "../components/ColorPicker";
+import { getBoardTemplates } from "../constants/templates";
 import type { Route } from "./+types/home";
 
-type BoardData = Pick<Board, "id" | "name" | "color" | "accountId">;
+type BoardData = {
+  id: number;
+  name: string;
+  color: string;
+  accountId: string;
+  _count: {
+    items: number;
+    members: number;
+  };
+};
 
 export const meta = () => {
-  return [{ title: "Boards" }];
+  return [{ title: "Dashboard | Trello Clone" }];
 };
 
 export async function loader({ request }: { request: Request }) {
@@ -32,8 +44,11 @@ export async function action({ request }: { request: Request }) {
     case INTENTS.createBoard: {
       let name = String(formData.get("name") || "");
       let color = String(formData.get("color") || "");
+      let templateName = formData.get("template")
+        ? String(formData.get("template"))
+        : undefined;
       if (!name) throw badRequest("Bad request");
-      let board = await createBoard(accountId, name, color);
+      let board = await createBoard(accountId, name, color, templateName);
       return redirect(`/board/${board.id}`);
     }
     case INTENTS.deleteBoard: {
@@ -50,10 +65,30 @@ export async function action({ request }: { request: Request }) {
 
 export default function Projects({ loaderData }: Route.ComponentProps) {
   return (
-    <div className="h-full flex flex-col items-center overflow-y-auto">
-      <div className="w-full max-w-6xl">
-        <NewBoard />
-        <Boards loaderData={loaderData} />
+    <div className="min-h-full bg-white dark:bg-slate-950 flex flex-col items-center overflow-y-auto">
+      <div className="w-full max-w-[1600px] px-0 sm:px-4">
+        <header className="py-6 px-4 border-b border-slate-100 dark:border-slate-900 mb-0 lg:mb-6">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-blue-600 rounded text-white">
+              <Icon name="layout" className="w-5 h-5" />
+            </div>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+              Trellix Dashboard
+            </h1>
+          </div>
+        </header>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 lg:gap-8 items-start">
+          {/* Sidebar Area: Your Boards (1/3 on desktop, 1st on mobile) */}
+          <aside className="lg:col-span-4 xl:col-span-3 order-1 p-4 lg:p-0">
+            <Boards loaderData={loaderData} />
+          </aside>
+
+          {/* Main Area: Create New Board (2/3 on desktop, 2nd on mobile) */}
+          <main className="lg:col-span-8 xl:col-span-9 order-2 p-4 lg:p-0">
+            <NewBoard />
+          </main>
+        </div>
       </div>
     </div>
   );
@@ -66,124 +101,218 @@ function Boards({
 }) {
   let { boards, accountId } = loaderData;
   return (
-    <div className="p-8 flex flex-col items-center">
-      <div className="w-full">
-        <h2 className="font-bold mb-6 text-2xl text-slate-900 dark:text-slate-100">
+    <div className="bg-slate-50 dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 space-y-5">
+      <div className="flex items-center justify-between">
+        <h2 className="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
           Your Boards
+          <span className="text-[10px] px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded font-black uppercase tracking-widest">
+            {boards.length}
+          </span>
         </h2>
-        {boards.length === 0 ? (
-          <p className="text-slate-600 dark:text-slate-400">
-            No boards yet. Create one to get started!
-          </p>
-        ) : (
-          <nav className="flex flex-wrap gap-6">
-            {boards.map(
-              (board: {
-                id: number;
-                name: string;
-                color: string;
-                accountId: string;
-              }) => (
-                <Board
-                  key={board.id}
-                  name={board.name}
-                  id={board.id}
-                  color={board.color}
-                  ownerId={board.accountId}
-                  currentUserId={accountId}
-                />
-              )
-            )}
-          </nav>
-        )}
       </div>
+
+      {boards.length === 0 ? (
+        <div className="py-10 flex flex-col items-center justify-center bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
+          <p className="text-slate-400 dark:text-slate-500 text-sm font-medium">
+            No boards found
+          </p>
+        </div>
+      ) : (
+        <nav className="space-y-3">
+          {boards.map((board) => (
+            <Board key={board.id} board={board} currentUserId={accountId} />
+          ))}
+        </nav>
+      )}
     </div>
   );
 }
 
 function Board({
-  name,
-  id,
-  color,
-  ownerId,
+  board,
   currentUserId,
 }: {
-  name: string;
-  id: number;
-  color: string;
-  ownerId: string;
+  board: BoardData;
   currentUserId: string;
 }) {
   let fetcher = useFetcher();
   let isDeleting = fetcher.state !== "idle";
-  return isDeleting ? null : (
+
+  if (isDeleting) return null;
+
+  return (
     <Link
-      to={`/board/${id}`}
-      className="group w-60 h-40 p-4 block border-b-4 shadow-md rounded-lg hover:shadow-lg bg-white dark:bg-slate-800 transition-all hover:scale-105 relative"
-      style={{ borderColor: color }}
+      to={`/board/${board.id}`}
+      className="group flex flex-col bg-white dark:bg-slate-900 rounded-xl shadow-sm hover:shadow-md border border-slate-200 dark:border-slate-800 transition-all overflow-hidden"
     >
-      <div className="font-bold text-slate-900 dark:text-slate-100 text-lg">
-        {name}
+      <div className="p-4 flex flex-col h-full">
+        <div className="flex justify-between items-center mb-2">
+          <div className="flex items-center gap-2 overflow-hidden">
+            <div
+              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+              style={{ backgroundColor: board.color }}
+            />
+            <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm line-clamp-1 group-hover:text-blue-600 transition-colors">
+              {board.name}
+            </h3>
+          </div>
+
+          {board.accountId === currentUserId && (
+            <fetcher.Form method="post">
+              <input type="hidden" name="intent" value={INTENTS.deleteBoard} />
+              <input type="hidden" name="boardId" value={board.id} />
+              <button
+                className="p-1 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                type="submit"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!confirm(`Delete "${board.name}"?`)) e.preventDefault();
+                }}
+              >
+                <Icon name="trash" className="w-3.5 h-3.5" />
+              </button>
+            </fetcher.Form>
+          )}
+        </div>
+
+        <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+          <span className="flex items-center gap-1">
+            <Icon name="layout" className="w-3 h-3" />
+            {board._count.items} cards
+          </span>
+          <span className="flex items-center gap-1">
+            <Icon name="user" className="w-3 h-3" />
+            {board._count.members}
+          </span>
+        </div>
       </div>
-      {ownerId === currentUserId && (
-        <fetcher.Form method="post">
-          <input type="hidden" name="intent" value={INTENTS.deleteBoard} />
-          <input type="hidden" name="boardId" value={id} />
-          <button
-            aria-label="Delete board"
-            className="absolute top-4 right-4 text-slate-400 hover:text-red-600 transition-colors opacity-50 group-hover:opacity-100 disabled:opacity-50"
-            type="submit"
-            disabled={fetcher.state !== "idle"}
-            onClick={(event) => {
-              event.stopPropagation();
-              if (
-                !confirm(
-                  `Are you sure you want to delete the board "${name}"? This action cannot be undone.`
-                )
-              ) {
-                event.preventDefault();
-              }
-            }}
-          >
-            <Icon name="trash" />
-          </button>
-        </fetcher.Form>
-      )}
     </Link>
   );
 }
 
 function NewBoard() {
   let navigation = useNavigation();
-  let isCreating = navigation.formData?.get("intent") === "createBoard";
+  let isCreating =
+    navigation.state !== "idle" &&
+    navigation.formData?.get("intent") === INTENTS.createBoard;
+  let templates = getBoardTemplates();
+  let [selectedColor, setSelectedColor] = useState("#2563eb");
+  let [boardTitle, setBoardTitle] = useState("");
+
+  const handleTemplateChange = (templateName: string) => {
+    if (!boardTitle.trim()) {
+      setBoardTitle(templateName);
+    }
+  };
 
   return (
-    <div className="flex justify-center border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
-      <Form method="post" className="p-8 w-full max-w-md">
-        <input type="hidden" name="intent" value="createBoard" />
-        <div>
-          <h2 className="font-bold mb-4 text-xl text-slate-900 dark:text-slate-100">
-            Create New Board
-          </h2>
-          <LabeledInput label="Name" name="name" type="text" required />
-        </div>
+    <div className="bg-slate-50 dark:bg-slate-900/20 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 lg:p-8">
+      <div className="flex items-center justify-between mb-8">
+        <h2 className="font-bold text-2xl text-slate-900 dark:text-white flex items-center gap-3">
+          Start a new board
+          <span className="h-px bg-slate-200 dark:bg-slate-800 flex-1 min-w-[50px] lg:min-w-[200px]" />
+        </h2>
+      </div>
 
-        <div className="mt-6 flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Label htmlFor="board-color" className="mb-0 dark:text-slate-300">
-              Color
-            </Label>
-            <input
-              id="board-color"
-              name="color"
-              type="color"
-              defaultValue="#2563eb"
-              className="h-10 w-14 rounded border border-slate-300 dark:border-slate-600 cursor-pointer bg-white dark:bg-slate-800"
+      <Form method="post" className="space-y-8">
+        <input type="hidden" name="intent" value={INTENTS.createBoard} />
+
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+          <div className="xl:col-span-4 space-y-6">
+            <LabeledInput
+              label="What's the project name?"
+              name="name"
+              type="text"
+              required
+              placeholder="e.g. Vacation Planning"
+              className="h-12 text-base font-medium rounded-xl border-slate-200 focus:border-blue-500"
+              disabled={isCreating}
+              value={boardTitle}
+              onChange={(e) => setBoardTitle(e.target.value)}
             />
+
+            <div className="space-y-3">
+              <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                Pick a color
+              </Label>
+              <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <ColorPicker
+                  value={selectedColor}
+                  onChange={(color) => {
+                    setSelectedColor(color);
+                    const input = document.querySelector(
+                      'input[name="color"]'
+                    ) as HTMLInputElement;
+                    if (input) input.value = color;
+                  }}
+                />
+                <input type="hidden" name="color" value={selectedColor} />
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full h-12 text-base font-bold rounded-xl shadow-lg shadow-blue-500/20"
+              disabled={isCreating}
+            >
+              {isCreating ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Icon name="plus" className="w-4 h-4 animate-spin" />
+                  Creating...
+                </span>
+              ) : (
+                "Create Project"
+              )}
+            </Button>
           </div>
-          <Button type="submit" className="flex-1" disabled={isCreating}>
-            {isCreating ? "Creating..." : "Create"}
-          </Button>
+
+          <div className="xl:col-span-8 space-y-4">
+            <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">
+              Select a workflow template
+            </Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-4">
+              {templates.map((template) => (
+                <label
+                  key={template.name}
+                  className="relative group cursor-pointer"
+                >
+                  <input
+                    type="radio"
+                    name="template"
+                    value={template.name}
+                    defaultChecked={template.name === "Default"}
+                    className="sr-only peer"
+                    disabled={isCreating}
+                    onChange={() => handleTemplateChange(template.name)}
+                  />
+
+                  <div className="h-full p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 transition-all peer-checked:ring-2 peer-checked:ring-blue-500 peer-checked:border-transparent group-hover:shadow-md">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-bold text-slate-900 dark:text-white">
+                        {template.name}
+                      </span>
+                      <div className="w-4 h-4 rounded-full border border-slate-300 dark:border-slate-700 flex items-center justify-center group-has-[:checked]:bg-blue-500 group-has-[:checked]:border-blue-500 transition-colors">
+                        <div className="w-1.5 h-1.5 rounded-full bg-white opacity-0 group-has-[:checked]:opacity-100 transition-opacity" />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-1 mb-2">
+                      {template.columns.map((col) => (
+                        <div
+                          key={col.name}
+                          className="h-1.5 flex-1 rounded-full opacity-60"
+                          style={{ backgroundColor: col.color }}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-slate-400 font-medium truncate">
+                      {template.columns.map((c) => c.name).join(" • ")}
+                    </p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
         </div>
       </Form>
     </div>
