@@ -24,23 +24,14 @@ export function useBoardState({
 }: UseBoardStateOptions): UseBoardStateResult {
   const submit = useSubmit();
   const [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
+  // Initialize expanded columns from database values immediately (prevents visual shift)
   const [expandedColumnIds, setExpandedColumnIds] = useState<Set<string>>(
-    new Set()
+    () => new Set(columns
+      .filter((col) => col.isExpanded !== false)
+      .map((col) => col.id))
   );
 
-  // Initialize expanded columns from database on mount
-  useEffect(() => {
-    const expandedFromDB = columns
-      .filter((col) => col.isExpanded !== false)
-      .map((col) => col.id);
 
-    setExpandedColumnIds(new Set(expandedFromDB));
-    // Also save to localStorage for quick access
-    localStorage.setItem(
-      `board-${boardId}-expanded`,
-      JSON.stringify(expandedFromDB)
-    );
-  }, [columns, boardId]);
 
   const handleColumnToggle = (columnId: string) => {
     const willBeExpanded = !expandedColumnIds.has(columnId);
@@ -53,11 +44,6 @@ export function useBoardState({
       } else {
         updated.add(columnId);
       }
-      // Save to localStorage
-      localStorage.setItem(
-        `board-${boardId}-expanded`,
-        JSON.stringify(Array.from(updated))
-      );
       return updated;
     });
 
