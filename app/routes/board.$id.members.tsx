@@ -13,6 +13,7 @@ import { INTENTS } from "./types";
 import { getBoardData, inviteUserToBoard, removeBoardMember } from "./queries";
 import { getDisplayName, getInitials, getAvatarColor } from "../utils/avatar";
 import { inviteUserSchema, tryParseFormData } from "./validation";
+import { sendEmail, emailTemplates } from "~/utils/email.server";
 
 export async function loader(args: Route.LoaderArgs) {
   const { request, params } = args;
@@ -56,12 +57,24 @@ export async function action({
     const result = tryParseFormData(formData, inviteUserSchema);
     if (!result.success) throw badRequest(result.error);
 
+    const board = await getBoardData(boardId, accountId);
+    if (!board) throw notFound();
+
     await inviteUserToBoard(
       boardId,
       result.data.email,
       accountId,
       result.data.role || "editor"
     );
+
+    // Send invitation email
+    const template = emailTemplates.invitation(board.name, "A team member");
+    await sendEmail({
+      to: result.data.email,
+      subject: template.subject,
+      html: template.html,
+    });
+
     return { ok: true };
   }
 

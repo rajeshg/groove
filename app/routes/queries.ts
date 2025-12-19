@@ -77,7 +77,12 @@ export async function getBoardData(
         include: { Account: { select: { id: true, email: true } } },
       },
       invitations: {
-        where: { status: "pending" },
+        where: {
+          status: "pending",
+          createdAt: {
+            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
+          },
+        },
         include: { Account: { select: { email: true } } },
       },
       assignees: {
@@ -681,6 +686,23 @@ export async function acceptBoardInvitation(
     throw new Error("Invitation already processed");
   }
 
+  // SECURITY: Check if invitation has expired (7 days)
+  const invitationAge = Date.now() - invitation.createdAt.getTime();
+  const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
+  if (invitationAge > sevenDaysInMs) {
+    throw new Error("Invitation has expired. Please request a new invitation.");
+  }
+
+  // SECURITY: Verify the accepting user owns the invited email
+  const acceptingUser = await prisma.account.findUnique({
+    where: { id: userId },
+    select: { email: true },
+  });
+
+  if (!acceptingUser || acceptingUser.email !== invitation.email) {
+    throw new Error("Unauthorized: You can only accept invitations sent to your email address");
+  }
+
   // Create board member record
   await prisma.boardMember.create({
     data: {
@@ -737,10 +759,15 @@ export async function declineBoardInvitation(invitationId: string) {
  * Get all pending invitations for a user (by email)
  */
 export async function getPendingInvitationsForUser(email: string) {
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
   return prisma.boardInvitation.findMany({
     where: {
       email,
       status: "pending",
+      createdAt: {
+        gte: sevenDaysAgo, // Only show invitations from the last 7 days
+      },
     },
     include: {
       Board: {
@@ -758,10 +785,15 @@ export async function getPendingInvitationsForUser(email: string) {
  * Get all pending invitations for a board
  */
 export async function getPendingInvitationsForBoard(boardId: number) {
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
   return prisma.boardInvitation.findMany({
     where: {
       boardId,
       status: "pending",
+      createdAt: {
+        gte: sevenDaysAgo, // Only show invitations from the last 7 days
+      },
     },
     include: {
       Account: {

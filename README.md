@@ -1,87 +1,87 @@
-# Welcome to React Router!
+# Groove
 
-A modern, production-ready template for building full-stack React applications using React Router.
+Groove is a refined, high-performance Kanban board application built with React Router v7. It combines the sophisticated aesthetics of [fizzy.do](https://fizzy.do) with the core Kanban principles established in Ryan Florence's Trellix work.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
+## ✨ Features
 
-## Features
+- **Intuitive Board Management**: Create, customize, and organize multiple boards with distinct color identities.
+- **Sophisticated Column Interactions**:
+  - **Expand/Collapse**: Focus on what matters by collapsing columns into minimalist "guitar strings".
+  - **Guitar Strings**: Collapsed columns feature vertical progress indicators inspired by Fizzy's unique design language.
+  - **Dynamic Reordering**: Fluid drag-and-drop for both columns and cards.
+- **Advanced Card System**:
+  - **Rich Content**: Full card detail view with support for descriptions and metadata.
+  - **Assignments**: Assign team members to cards for clear ownership.
+  - **Comments**: Track discussions directly on cards.
+- **Mobile-Responsive by Design**:
+  - **Horizontal Guitar Cards**: A specialized mobile view that converts vertical columns into horizontal progress cards.
+  - **Proportional Gradients**: Mobile cards show proportional gradient fills based on card count.
+  - **Optimized Navigation**: Dedicated column detail views for small screens.
+- **Productivity First**:
+  - **Keyboard Shortcuts**: Quickly add cards with the 'c' shortcut and navigate with ease.
+  - **Template System**: Jumpstart projects with pre-defined board templates.
+  - **Optimistic UI**: Instant updates for a zero-latency feel using React Router's fetchers.
 
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
+## 🛠️ Tech Stack
 
-## Getting Started
+- **Framework**: [React Router v7](https://reactrouter.com/) (Vite-based)
+- **Language**: [TypeScript](https://www.typescriptlang.org/) (Strict mode)
+- **Database**: [Prisma](https://www.prisma.io/) with SQLite
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **State Management**: React Router Loaders, Actions, and Fetchers
+- **Build Tool**: [Vite](https://vitejs.dev/)
+- **Linting/Formatting**: [oxlint](https://oxlint.dev/) and [oxfmt](https://github.com/oxc-project/oxfmt)
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js (Latest LTS recommended)
+- npm or pnpm
 
 ### Installation
 
-Install the dependencies:
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-username/groove.git
+   cd groove
+   ```
 
-```bash
-npm install
-```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-### Development
+3. Set up the database:
+   ```bash
+   npx prisma migrate dev
+   ```
 
-Start the development server with HMR:
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-```bash
-npm run dev
-```
+## 📜 Development Commands
 
-Your application will be available at `http://localhost:5173`.
+- `npm run dev`: Start development server
+- `npm run build`: Build for production
+- `npm run start`: Start production server
+- `npm run typecheck`: Run TypeScript compiler check
+- `npm run lint`: Run oxlint for fast code analysis
+- `npm run format`: Format code using oxfmt
+- `npm test`: Run vitest suite
 
-## Building for Production
+## 🎨 Design Philosophy
 
-Create a production build:
+Groove aims for a "Goldilocks" balance between a simple list and a complex project management tool. It uses verticality and color-mixed gradients to provide subconscious cues about project health and progress.
 
-```bash
-npm run build
-```
+## ❤️ Credits
 
-## Deployment
-
-### Docker Deployment
-
-To build and run using Docker:
-
-```bash
-docker build -t my-app .
-
-# Run the container
-docker run -p 3000:3000 my-app
-```
-
-The containerized application can be deployed to any platform that supports Docker, including:
-
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
-
-### DIY Deployment
-
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
-
-```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
-```
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
+Inspired by:
+- **Fizzy** ([fizzy.do](https://fizzy.do)): For the unique "guitar string" aesthetic and proportional progress design.
+- **Ryan Florence's Trellix**: For the foundational Kanban logic and React Router patterns.
 
 ---
 
-Built with ❤️ using React Router.
+Built with precision and rhythm.

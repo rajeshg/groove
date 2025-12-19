@@ -2,6 +2,12 @@
 .env
 /node_modules/
 
+# Databases
+*.db
+*.db-journal
+*.sqlite
+*.sqlite-journal
+
 # React Router
 /.react-router/
 /build/

@@ -11,7 +11,7 @@ import { loginSchema, tryParseFormData } from "./validation";
 export const loader = redirectIfLoggedInLoader;
 
 export const meta = () => {
-  return [{ title: "Trellix Login" }];
+  return [{ title: "Groove Login" }];
 };
 
 export async function action({ request }: { request: Request }) {

@@ -93,16 +93,30 @@ function AppContent({
         <div className="grid grid-cols-3 items-center h-14 px-6">
           {/* Left section: Switcher (only on board pages) */}
           <div className="flex items-center">
-            {/* Space left empty to keep Trellix centered, or could put switcher here if desired */}
+            {/* Space left empty to keep Groove centered, or could put switcher here if desired */}
           </div>
 
           {/* Center: Brand Logo + Optional Board Switcher */}
-          <div className="flex justify-center items-center gap-2">
+          <div className="flex justify-center items-center gap-3">
             <Link
               to="/home"
-              className="font-bold text-xl hover:opacity-80 transition-opacity tracking-tighter uppercase flex items-center gap-2"
+              className="group flex items-center gap-2.5 transition-all"
             >
-              Trellix
+              <div className="relative w-7 h-7">
+                <img 
+                  src="/app/welcome/logo-light.svg" 
+                  alt="" 
+                  className="absolute inset-0 w-full h-full dark:hidden group-hover:scale-110 transition-transform" 
+                />
+                <img 
+                  src="/app/welcome/logo-dark.svg" 
+                  alt="" 
+                  className="absolute inset-0 w-full h-full hidden dark:block group-hover:scale-110 transition-transform" 
+                />
+              </div>
+              <span className="font-black text-xl hover:opacity-80 transition-opacity tracking-tighter uppercase">
+                Groove
+              </span>
             </Link>
             {userId && (
               <BoardSwitcher

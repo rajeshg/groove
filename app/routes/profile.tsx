@@ -109,7 +109,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
             <div className="w-full pt-8 border-t border-slate-100 dark:border-slate-700 flex justify-center">
               <form action="/logout" method="post">
                 <button className="py-2 px-6 border border-slate-200 dark:border-slate-600 rounded-full text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
-                  Sign out of Trellix on this device
+                  Sign out of Groove on this device
                 </button>
               </form>
             </div>
@@ -164,7 +164,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
                 <button className="text-blue-500 hover:underline">
                   personal access tokens
                 </button>{" "}
-                used with the Trellix developer API.
+                used with the Groove developer API.
               </p>
             </section>
           </div>

@@ -1,4 +1,8 @@
 .react-router
 build
 node_modules
+*.db
+*.db-journal
+*.sqlite
+*.sqlite-journal
 README.md

@@ -27,6 +27,7 @@ import { createOrGetAssignee } from "../utils/assignee";
 import Board from "./board/board";
 import type { Board as BoardType } from "@prisma/client";
 import type { Route } from "./+types/board.$id";
+import { sendEmail, emailTemplates } from "~/utils/email.server";
 import {
   updateBoardNameSchema,
   itemMutationSchema,
@@ -67,7 +68,7 @@ export async function loader({
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   return [
     {
-      title: `${data ? (data as { board: BoardType }).board.name : "Board"} | Trellix`,
+      title: `${data ? (data as { board: BoardType }).board.name : "Board"} | Groove`,
     },
   ];
 };
@@ -196,6 +197,14 @@ export async function action({
         accountId,
         result.data.role
       );
+
+      // Send invitation email
+      const template = emailTemplates.invitation(board.name, "A team member");
+      await sendEmail({
+        to: result.data.email,
+        subject: template.subject,
+        html: template.html,
+      });
       break;
     }
     case INTENTS.acceptInvitation: {

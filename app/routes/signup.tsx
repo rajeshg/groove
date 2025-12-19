@@ -7,11 +7,12 @@ import { Button } from "../components/button";
 
 import { createAccount } from "./signup.queries";
 import { signupSchema, tryParseFormData } from "./validation";
+import { sendEmail, emailTemplates } from "~/utils/email.server";
 
 export const loader = redirectIfLoggedInLoader;
 
 export const meta = () => {
-  return [{ title: "Trellix Signup" }];
+  return [{ title: "Groove Signup" }];
 };
 
 export async function action({ request }: { request: Request }) {
@@ -34,6 +35,15 @@ export async function action({ request }: { request: Request }) {
     result.data.firstName,
     result.data.lastName
   );
+
+  // Send welcome email
+  const template = emailTemplates.welcome(result.data.firstName);
+  await sendEmail({
+    to: result.data.email,
+    subject: template.subject,
+    html: template.html,
+  });
+
   return setAuthOnResponse(redirect("/home"), user.id);
 }
 

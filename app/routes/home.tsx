@@ -73,7 +73,7 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
               <Icon name="layout" className="w-5 h-5" />
             </div>
             <h1 className="text-xl font-bold text-slate-900 dark:text-white">
-              Trellix Dashboard
+              Groove Dashboard
             </h1>
           </div>
         </header>
