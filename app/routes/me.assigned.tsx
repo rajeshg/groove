@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import type { Route } from "./+types/me.assigned";
 import { requireAuthCookie } from "../auth/auth";
-import { prisma } from "../db/prisma";
+import { prisma } from "../../prisma/client";
 import { Icon } from "../icons/icons";
 import { BoardHeader } from "./board/board-header";
 import type { Item, Board } from "@prisma/client";
@@ -18,7 +18,7 @@ export async function loader({ request }: { request: Request }) {
   const assignedCards = await prisma.item.findMany({
     where: {
       assigneeId: {
-        in: userAssignees.map((a) => a.id),
+        in: userAssignees.map((a: { id: string }) => a.id),
       },
     },
     include: { Board: true },

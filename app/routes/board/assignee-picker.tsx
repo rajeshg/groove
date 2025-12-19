@@ -6,7 +6,7 @@ import type { RenderedAssignee } from "../types";
 
 interface AssigneePickerProps {
   itemId: string;
-  boardId: number;
+  boardId: string;
   currentAssignee: RenderedAssignee | null;
   availableAssignees: RenderedAssignee[];
   isOpen: boolean;

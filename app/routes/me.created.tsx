@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import type { Route } from "./+types/me.created";
 import { requireAuthCookie } from "../auth/auth";
-import { prisma } from "../db/prisma";
+import { prisma } from "../../prisma/client";
 import { Icon } from "../icons/icons";
 import { BoardHeader } from "./board/board-header";
 import type { Item, Board } from "@prisma/client";

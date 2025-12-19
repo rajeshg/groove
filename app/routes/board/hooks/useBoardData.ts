@@ -153,7 +153,7 @@ function usePendingItems() {
         createdAt: new Date(),
         updatedAt: new Date(),
         lastActiveAt: new Date(),
-        boardId: 0,
+        boardId: "",
       };
       return item;
     });

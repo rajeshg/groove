@@ -24,7 +24,7 @@ interface ColumnProps {
   isExpanded?: boolean;
   onToggle?: () => void;
   boardName: string; // Board name for cards
-  boardId: number; // Board ID number for cards
+  boardId: string; // Board ID number for cards
   className?: string;
   onAddCardKeydown?: (callback: () => void) => void;
   shortcut?: string;

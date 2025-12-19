@@ -67,7 +67,7 @@ export async function loader({
   let accountId = await requireAuthCookie(request);
 
   invariant(params.id, "Missing board ID");
-  let id = Number(params.id);
+  let id = params.id;
 
   let board = await getBoardData(id, accountId);
   if (!board) throw notFound();
@@ -138,7 +138,7 @@ export async function action({
   params: Record<string, string>;
 }) {
   let accountId = await requireAuthCookie(request);
-  let boardId = Number(params.id);
+  let boardId = params.id;
   invariant(boardId, "Missing boardId");
 
   // Get board data for permission checks
@@ -208,7 +208,7 @@ export async function action({
       // Assign current user as creator when creating new card
       await upsertItem(
         { ...result.data, boardId, createdBy: accountId } as ItemMutation & {
-          boardId: number;
+          boardId: string;
           createdBy: string;
         },
         accountId

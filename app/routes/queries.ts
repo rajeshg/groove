@@ -1,4 +1,4 @@
-import { prisma } from "../db/prisma";
+import { prisma } from "../../prisma/client";
 import { DEFAULT_COLUMN_COLORS } from "../constants/colors";
 import { getBoardTemplate } from "../constants/templates";
 import { ensureAssigneeForUser } from "../utils/assignee";
@@ -14,7 +14,7 @@ const COMMENT_EDIT_THRESHOLD_MS = 15 * 60 * 1000;
  * With Option B: Owner is also in BoardMember table
  */
 export async function isBoardMember(
-  boardId: number,
+  boardId: string,
   accountId: string
 ): Promise<boolean> {
   const member = await prisma.boardMember.findUnique({
@@ -28,7 +28,7 @@ export async function isBoardMember(
  * User must be either the board owner or an invited member
  */
 export async function getBoardData(
-  boardId: number,
+  boardId: string,
   accountId: string
 ): Promise<Prisma.BoardGetPayload<{
   include: {
@@ -109,7 +109,7 @@ export async function getBoardData(
 }
 
 export async function updateBoardName(
-  boardId: number,
+  boardId: string,
   name: string,
   accountId: string
 ) {
@@ -130,7 +130,7 @@ export async function getItem(id: string, accountId: string) {
 
 export async function getCardDetail(
   cardId: string,
-  boardId: number,
+  boardId: string,
   accountId: string
 ) {
   return prisma.item.findUnique({
@@ -145,7 +145,7 @@ export async function getCardDetail(
 }
 
 export function upsertItem(
-  mutation: ItemMutation & { boardId: number },
+  mutation: ItemMutation & { boardId: string },
   _accountId: string
 ) {
   // Touch lastActiveAt on meaningful changes (content/title/column changes)
@@ -208,7 +208,7 @@ export async function updateColumnOrder(
 }
 
 export async function createColumn(
-  boardId: number,
+  boardId: string,
   name: string,
   id: string,
   accountId: string
@@ -229,7 +229,7 @@ export async function createColumn(
 
 export async function deleteColumn(
   columnId: string,
-  boardId: number,
+  boardId: string,
   _accountId: string
 ) {
   // Get the column to check if it's default
@@ -569,7 +569,7 @@ export async function createBoard(
 /**
  * Delete a board (owner only)
  */
-export async function deleteBoard(boardId: number, accountId: string) {
+export async function deleteBoard(boardId: string, accountId: string) {
   // Check if user is owner
   const board = await prisma.board.findUnique({
     where: { id: boardId },
@@ -624,7 +624,7 @@ export async function getProfileData(accountId: string) {
  * Add a board member (only for already-registered users)
  */
 export async function addBoardMember(
-  boardId: number,
+  boardId: string,
   accountId: string,
   role: string = "editor"
 ) {
@@ -640,7 +640,7 @@ export async function addBoardMember(
 /**
  * Remove a board member
  */
-export async function removeBoardMember(boardId: number, accountId: string) {
+export async function removeBoardMember(boardId: string, accountId: string) {
   return prisma.boardMember.delete({
     where: {
       accountId_boardId: { accountId, boardId },
@@ -651,7 +651,7 @@ export async function removeBoardMember(boardId: number, accountId: string) {
 /**
  * Get all members of a board (excluding owner if not in table)
  */
-export async function getBoardMembers(boardId: number) {
+export async function getBoardMembers(boardId: string) {
   return prisma.boardMember.findMany({
     where: { boardId },
     include: {
@@ -666,7 +666,7 @@ export async function getBoardMembers(boardId: number) {
  * Send invitation to email to join board
  */
 export async function inviteUserToBoard(
-  boardId: number,
+  boardId: string,
   email: string,
   invitedBy: string,
   role: string = "editor"
@@ -801,7 +801,7 @@ export async function getPendingInvitationsForUser(email: string) {
 /**
  * Get all pending invitations for a board
  */
-export async function getPendingInvitationsForBoard(boardId: number) {
+export async function getPendingInvitationsForBoard(boardId: string) {
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
   return prisma.boardInvitation.findMany({

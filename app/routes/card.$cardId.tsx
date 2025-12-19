@@ -14,7 +14,7 @@ import type { Route } from "./+types/card.$cardId";
 
 import { requireAuthCookie } from "../auth/auth";
 import { notFound, badRequest } from "../http/bad-request";
-import { prisma } from "../db/prisma";
+import { prisma } from "../../prisma/client";
 import { assertBoardAccess } from "../utils/permissions";
 import { updateComment, deleteComment, createComment } from "./queries";
 

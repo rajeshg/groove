@@ -18,7 +18,7 @@ interface CardProps {
   nextOrder: number;
   previousOrder: number;
   boardName: string;
-  boardId: number;
+  boardId: string;
   createdBy: string | null;
   createdByUser?: {
     id: string;

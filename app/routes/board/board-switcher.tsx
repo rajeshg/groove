@@ -3,12 +3,12 @@ import { Link } from "react-router";
 import { Icon } from "../../icons/icons";
 
 interface Board {
-  id: number;
+  id: string;
   name: string;
 }
 
 interface BoardSwitcherProps {
-  currentBoardId?: number;
+  currentBoardId?: string;
   allBoards: Board[];
   userId?: string;
 }

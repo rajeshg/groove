@@ -20,7 +20,7 @@ interface CardMetaProps {
   lastActiveAt?: Date;
   columnColor?: string;
   itemId?: string;
-  boardId?: number;
+  boardId?: string;
   availableAssignees?: RenderedAssignee[];
   isCardDetail?: boolean;
 }

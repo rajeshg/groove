@@ -3,7 +3,7 @@ import type { Route } from "./+types/invite";
 import { requireAuthCookie } from "../auth/auth";
 import { acceptBoardInvitation } from "./queries";
 import { Icon } from "../icons/icons";
-import { prisma } from "../db/prisma";
+import { prisma } from "../../prisma/client";
 
 export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);

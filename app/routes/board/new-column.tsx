@@ -13,7 +13,7 @@ export function NewColumn({
   onAdd,
   editInitially,
 }: {
-  boardId: number;
+  boardId: string;
   onAdd: () => void;
   editInitially: boolean;
 }) {

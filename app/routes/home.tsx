@@ -61,7 +61,7 @@ export async function action({ request }: { request: Request }) {
     case INTENTS.deleteBoard: {
       let boardId = formData.get("boardId");
       if (!boardId) throw badRequest("Missing boardId");
-      await deleteBoard(Number(boardId), accountId);
+      await deleteBoard(String(boardId), accountId);
       return { ok: true };
     }
     default: {

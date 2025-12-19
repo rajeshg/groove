@@ -16,7 +16,7 @@ import { ThemeProvider } from "./context/theme";
 import { BoardSwitcher } from "./routes/board/board-switcher";
 import type { Board } from "@prisma/client";
 
-type SimpleBoardInfo = { id: number; name: string; color: string };
+type SimpleBoardInfo = Pick<Board, "id" | "name" | "color">;
 
 export const links = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },

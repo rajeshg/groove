@@ -1,8 +1,8 @@
-export interface RenderedAssignee {
-  id: string;
-  name: string;
+import type { Assignee } from "@prisma/client";
+
+export type RenderedAssignee = Pick<Assignee, "id" | "name"> & {
   userId: string | null;
-}
+};
 
 export interface RenderedItem {
   id: string;
@@ -21,7 +21,7 @@ export interface RenderedItem {
   createdAt: Date;
   updatedAt: Date;
   lastActiveAt: Date;
-  boardId: number;
+  boardId: string;
   comments?: RenderedComment[];
 }
 

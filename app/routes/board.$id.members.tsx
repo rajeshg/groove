@@ -3,7 +3,7 @@ import type { Route } from "./+types/board.$id.members";
 import invariant from "tiny-invariant";
 
 import { requireAuthCookie } from "../auth/auth";
-import { prisma } from "../db/prisma";
+import { prisma } from "../../prisma/client";
 import { badRequest, notFound } from "../http/bad-request";
 import { Icon } from "../icons/icons";
 import { BoardHeader } from "./board/board-header";
@@ -22,7 +22,7 @@ import {
 export async function loader(args: Route.LoaderArgs) {
   const { request, params } = args;
   const accountId = await requireAuthCookie(request);
-  const boardId = Number(params.id);
+  const boardId = params.id;
   invariant(boardId, "Missing board ID");
 
   const board = await getBoardData(boardId, accountId);
@@ -49,7 +49,7 @@ export async function action({
   params: Record<string, string>;
 }) {
   const accountId = await requireAuthCookie(request);
-  const boardId = Number(params.id);
+  const boardId = params.id;
   invariant(boardId, "Missing board ID");
 
   const formData = await request.formData();

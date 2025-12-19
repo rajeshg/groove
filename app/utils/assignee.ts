@@ -1,4 +1,4 @@
-import { prisma } from "../db/prisma";
+import { prisma } from "../../prisma/client";
 
 /**
  * Extract first and last names from email or full name
@@ -21,7 +21,7 @@ export function parseNameFromEmail(email: string): string {
  * - If name exists, append last 4 chars of UUID (8 total)
  */
 export async function generateUniqueAssigneeName(
-  boardId: number,
+  boardId: string,
   baseName: string
 ): Promise<string> {
   const normalizedName = baseName.trim();
@@ -48,7 +48,7 @@ export async function generateUniqueAssigneeName(
  * Prefers using firstName + lastName from Account, falls back to email parsing
  */
 export async function ensureAssigneeForUser(
-  boardId: number,
+  boardId: string,
   userId: string,
   email: string
 ): Promise<{
@@ -95,7 +95,7 @@ export async function ensureAssigneeForUser(
  * Create assignee without requiring a user (e.g., "Support Team")
  */
 export async function createOrGetAssignee(
-  boardId: number,
+  boardId: string,
   name: string
 ): Promise<{
   id: string;
@@ -109,7 +109,8 @@ export async function createOrGetAssignee(
   });
 
   const existing = allAssignees.find(
-    (a) => a.name.toLowerCase() === normalizedName.toLowerCase()
+    (a: (typeof allAssignees)[number]) =>
+      a.name.toLowerCase() === normalizedName.toLowerCase()
   );
 
   if (existing) {
@@ -132,7 +133,7 @@ export async function createOrGetAssignee(
 /**
  * Get all assignees for a board
  */
-export async function getBoardAssignees(boardId: number) {
+export async function getBoardAssignees(boardId: string) {
   return prisma.assignee.findMany({
     where: { boardId },
     include: { Account: { select: { email: true } } },

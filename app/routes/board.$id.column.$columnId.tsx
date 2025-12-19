@@ -19,7 +19,7 @@ export async function action({
   params: { id: string; columnId: string };
 }) {
   const accountId = await requireAuthCookie(request);
-  const boardId = Number(params.id);
+  const boardId = params.id;
   const columnId = params.columnId;
 
   if (Number.isNaN(boardId)) {
@@ -67,7 +67,7 @@ export async function loader({
   params: { id: string; columnId: string };
 }) {
   const accountId = await requireAuthCookie(request);
-  const boardId = Number(params.id);
+  const boardId = params.id;
   const columnId = params.columnId;
 
   if (Number.isNaN(boardId)) {
