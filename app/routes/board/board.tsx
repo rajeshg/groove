@@ -211,7 +211,7 @@ export default function Board({ board }: BoardProps) {
         />
 
         <div
-          className="flex w-max items-stretch gap-2 px-8 pb-10 pt-4 relative z-10"
+          className="flex w-max min-h-[calc(100vh-120px)] items-stretch gap-2 px-8 pb-10 pt-4 relative z-10"
           onDragEnd={() => {
             // Reset all drag states when any drag ends
             setDraggedColumnId(null);

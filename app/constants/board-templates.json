@@ -338,5 +338,77 @@
         "isExpanded": false
       }
     ]
+  },
+  {
+    "name": "Eisenhower Matrix",
+    "columns": [
+      {
+        "name": "Do (Urgent & Important)",
+        "color": "#dc2626",
+        "order": 1,
+        "isDefault": true,
+        "shortcut": "c",
+        "isExpanded": true
+      },
+      {
+        "name": "Schedule (Important)",
+        "color": "#2563eb",
+        "order": 2,
+        "isDefault": false,
+        "isExpanded": true
+      },
+      {
+        "name": "Delegate (Urgent)",
+        "color": "#ca8a04",
+        "order": 3,
+        "isDefault": false,
+        "isExpanded": true
+      },
+      {
+        "name": "Eliminate",
+        "color": "#64748b",
+        "order": 4,
+        "isDefault": false,
+        "isExpanded": false
+      }
+    ]
+  },
+  {
+    "name": "Hiring Pipeline",
+    "columns": [
+      { "name": "Sourcing", "color": "#64748b", "order": 1, "isDefault": false, "shortcut": "c", "isExpanded": true },
+      { "name": "Phone Screen", "color": "#2563eb", "order": 2, "isDefault": false, "isExpanded": true },
+      { "name": "Interviewing", "color": "#ea580c", "order": 3, "isDefault": true, "isExpanded": true },
+      { "name": "Offer", "color": "#16a34a", "order": 4, "isDefault": false, "isExpanded": true },
+      { "name": "Hired", "color": "#06b6d4", "order": 5, "isDefault": false, "isExpanded": false }
+    ]
+  },
+  {
+    "name": "Content Calendar",
+    "columns": [
+      { "name": "Idea Pool", "color": "#8b5cf6", "order": 1, "isDefault": true, "shortcut": "c", "isExpanded": true },
+      { "name": "Writing", "color": "#2563eb", "order": 2, "isDefault": false, "isExpanded": true },
+      { "name": "Review", "color": "#ca8a04", "order": 3, "isDefault": false, "isExpanded": true },
+      { "name": "Scheduled", "color": "#0891b2", "order": 4, "isDefault": false, "isExpanded": true },
+      { "name": "Published", "color": "#16a34a", "order": 5, "isDefault": false, "isExpanded": false }
+    ]
+  },
+  {
+    "name": "IT Support",
+    "columns": [
+      { "name": "New Tickets", "color": "#dc2626", "order": 1, "isDefault": true, "shortcut": "c", "isExpanded": true },
+      { "name": "In Progress", "color": "#2563eb", "order": 2, "isDefault": false, "isExpanded": true },
+      { "name": "Waiting on User", "color": "#64748b", "order": 3, "isDefault": false, "isExpanded": true },
+      { "name": "Resolved", "color": "#16a34a", "order": 4, "isDefault": false, "isExpanded": false }
+    ]
+  },
+  {
+    "name": "Reading List",
+    "columns": [
+      { "name": "To Read", "color": "#8b5cf6", "order": 1, "isDefault": true, "shortcut": "c", "isExpanded": true },
+      { "name": "Reading", "color": "#2563eb", "order": 2, "isDefault": false, "isExpanded": true },
+      { "name": "Finished", "color": "#16a34a", "order": 3, "isDefault": false, "isExpanded": true },
+      { "name": "Reference", "color": "#64748b", "order": 4, "isDefault": false, "isExpanded": false }
+    ]
   }
 ]
