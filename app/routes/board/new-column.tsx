@@ -1,10 +1,9 @@
 import { useState, useRef } from "react";
 import { flushSync } from "react-dom";
-import invariant from "tiny-invariant";
+import { invariant } from "@epic-web/invariant";
 import { Icon } from "../../icons/icons";
-import { Form, useSubmit } from "react-router";
+import { useFetcher } from "react-router";
 
-import { INTENTS } from "../types";
 import { CancelButton, SaveButton } from "./components";
 import { Input } from "../../components/input";
 
@@ -19,23 +18,19 @@ export function NewColumn({
 }) {
   let [editing, setEditing] = useState(editInitially);
   let inputRef = useRef<HTMLInputElement>(null);
-  let submit = useSubmit();
+  let fetcher = useFetcher();
 
   return editing ? (
-    <Form
+    <fetcher.Form
       method="post"
-      navigate={false}
+      action="/resources/new-column"
       className="p-3 flex-shrink-0 flex flex-col gap-3 overflow-hidden max-h-full w-[24rem] border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm bg-white dark:bg-slate-800"
       onSubmit={(event) => {
         event.preventDefault();
         let formData = new FormData(event.currentTarget);
         // Generate temporary client ID for optimistic updates (server will generate nanoid(12))
         formData.set("id", `temp-${Math.random().toString(36).slice(2, 9)}`);
-        submit(formData, {
-          navigate: false,
-          method: "post",
-          flushSync: true,
-        });
+        fetcher.submit(formData);
         onAdd();
         invariant(inputRef.current, "missing input ref");
         inputRef.current.value = "";
@@ -46,7 +41,6 @@ export function NewColumn({
         }
       }}
     >
-      <input type="hidden" name="intent" value={INTENTS.createColumn} />
       <input type="hidden" name="boardId" value={boardId} />
       <Input
         autoFocus
@@ -61,7 +55,7 @@ export function NewColumn({
         <SaveButton>Save Column</SaveButton>
         <CancelButton onClick={() => setEditing(false)}>Cancel</CancelButton>
       </div>
-    </Form>
+    </fetcher.Form>
   ) : (
     <button
       onClick={() => {

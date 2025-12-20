@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useFetchers } from "react-router";
-import invariant from "tiny-invariant";
+import { invariant } from "@epic-web/invariant";
 import type { Item } from "../../../../prisma/client";
 import { INTENTS, type RenderedItem, type RenderedAssignee } from "../../types";
 import type { getBoardData } from "../../queries";

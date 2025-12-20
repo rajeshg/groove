@@ -1,6 +1,6 @@
 import { useNavigate, useFetcher, useParams } from "react-router";
 import { useState, useRef } from "react";
-import invariant from "tiny-invariant";
+import { invariant } from "@epic-web/invariant";
 
 import { CardDescriptionEditor } from "../components/CardDescriptionEditor";
 import { Input } from "../components/input";

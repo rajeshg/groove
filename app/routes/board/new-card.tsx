@@ -1,8 +1,8 @@
 import { useRef } from "react";
-import invariant from "tiny-invariant";
-import { Form, useSubmit } from "react-router";
+import { invariant } from "@epic-web/invariant";
+import { useFetcher, useParams } from "react-router";
 
-import { INTENTS, ItemMutationFields } from "../types";
+import { ItemMutationFields } from "../types";
 import { SaveButton, CancelButton } from "./components";
 import { Textarea } from "../../components/textarea";
 
@@ -19,21 +19,18 @@ export function NewCard({
 }) {
   let textAreaRef = useRef<HTMLTextAreaElement>(null);
   let buttonRef = useRef<HTMLButtonElement>(null);
-  let submit = useSubmit();
+  let fetcher = useFetcher();
+  let params = useParams();
 
-   return (
-     <Form
-       method="post"
-       className="flex flex-col gap-2.5 p-2 pt-1"
+  return (
+    <fetcher.Form
+      method="post"
+      action="/resources/new-card"
+      className="flex flex-col gap-2.5 p-2 pt-1"
       onSubmit={(event) => {
         event.preventDefault();
         let formData = new FormData(event.currentTarget);
-        // We don't send an ID for creation, the server will generate nanoid(12)
-        submit(formData, {
-          navigate: false,
-          method: "post",
-          flushSync: true,
-        });
+        fetcher.submit(formData);
         onAddCard();
         invariant(textAreaRef.current, "missing textarea ref");
         textAreaRef.current.value = "";
@@ -44,7 +41,7 @@ export function NewCard({
         }
       }}
     >
-      <input type="hidden" name="intent" value={INTENTS.createItem} />
+      <input type="hidden" name="boardId" value={params.id} />
       <input
         type="hidden"
         name={ItemMutationFields.columnId.name}
@@ -83,6 +80,6 @@ export function NewCard({
         <SaveButton ref={buttonRef}>Save Card</SaveButton>
         <CancelButton onClick={onComplete}>Cancel</CancelButton>
       </div>
-    </Form>
+    </fetcher.Form>
   );
 }

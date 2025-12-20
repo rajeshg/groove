@@ -1,4 +1,4 @@
-import invariant from "tiny-invariant";
+import { invariant } from "@epic-web/invariant";
 import { useFetcher, useSubmit, useNavigate } from "react-router";
 import { useState, useRef, useEffect } from "react";
 

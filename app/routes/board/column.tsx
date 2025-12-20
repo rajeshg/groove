@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useSubmit, Link } from "react-router";
-import invariant from "tiny-invariant";
+import { invariant } from "@epic-web/invariant";
 
 import { Icon } from "../../icons/icons";
 
@@ -62,7 +62,7 @@ export function Column({
   }, [onAddCardKeydown, isExpanded]);
 
   function scrollList() {
-    invariant(listRef.current);
+    invariant(listRef.current, "List ref is required");
     listRef.current.scrollTop = listRef.current.scrollHeight;
   }
 

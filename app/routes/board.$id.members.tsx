@@ -1,6 +1,6 @@
 import { useFetcher, Link } from "react-router";
 import type { Route } from "./+types/board.$id.members";
-import invariant from "tiny-invariant";
+import { invariant, invariantResponse } from "@epic-web/invariant";
 
 import { requireAuthCookie } from "../auth/auth";
 import { prisma } from "../../prisma/client";

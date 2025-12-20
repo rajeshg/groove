@@ -1,5 +1,5 @@
 import { useRef, useState, useMemo } from "react";
-import invariant from "tiny-invariant";
+import { invariant } from "@epic-web/invariant";
 import { useSubmit, Link } from "react-router";
 
 import { INTENTS, CONTENT_TYPES } from "../types";

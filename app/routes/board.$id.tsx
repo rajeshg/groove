@@ -1,5 +1,5 @@
 import { type MetaFunction } from "react-router";
-import invariant from "tiny-invariant";
+import { invariant, invariantResponse } from "@epic-web/invariant";
 
 import { badRequest, notFound } from "../http/bad-request";
 import { requireAuthCookie } from "../auth/auth";
@@ -71,7 +71,7 @@ export async function loader({
   let id = params.id;
 
   let board = await getBoardData(id, accountId);
-  if (!board) throw notFound();
+  invariantResponse(board, "Board not found", { status: 404 });
 
   // Check if user has access to this board
   assertBoardAccess(board, accountId);
@@ -151,7 +151,7 @@ export async function action({
 
   // Get board data for permission checks
   const board = await getBoardData(boardId, accountId);
-  if (!board) throw notFound();
+  invariantResponse(board, "Board not found", { status: 404 });
 
   const userRole = getUserBoardRole(board, accountId);
 
@@ -215,17 +215,6 @@ export async function action({
       break;
     }
 
-    case INTENTS.createItem: {
-      const result = tryParseFormData(formData, createItemSchema);
-      if (!result.success) throw badRequest(result.error);
-      // Assign current user as creator when creating new card
-      await upsertItem(
-        { ...result.data, boardId, createdBy: accountId } as any,
-        accountId
-      );
-      break;
-    }
-
     case INTENTS.updateItem: {
       console.log('🔍 Debug - updateItem case triggered');
       const result = tryParseFormData(formData, updateItemSchema);
@@ -233,16 +222,6 @@ export async function action({
       console.log('🔍 Debug - parsed data:', result.data);
       await upsertItem({ ...result.data, boardId }, accountId);
       console.log('🔍 Debug - updateItem completed successfully');
-      break;
-    }
-
-    case INTENTS.createColumn: {
-      if (!canCreateColumn(userRole)) {
-        throw badRequest(getPermissionErrorMessage("createColumn"));
-      }
-      const result = tryParseFormData(formData, createColumnSchema);
-      if (!result.success) throw badRequest(result.error);
-      await createColumn(boardId, result.data.name, result.data.id, accountId);
       break;
     }
 
