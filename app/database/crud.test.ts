@@ -13,6 +13,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest"
 import { prisma } from "../../prisma/client"
 import { generateId } from "../utils/id"
+import { upsertItem } from "../routes/queries"
 import type { Board, Column, Item, Comment, Account } from "../../prisma/client"
 
 // ============================================================================
@@ -39,11 +40,25 @@ beforeAll(async () => {
 
 afterAll(async () => {
   // Clean up in order (respecting foreign keys)
-  if (testComment) await prisma.comment.delete({ where: { id: testComment.id } })
-  if (testItem) await prisma.item.delete({ where: { id: testItem.id } })
-  if (testColumn) await prisma.column.delete({ where: { id: testColumn.id } })
-  if (testBoard) await prisma.board.delete({ where: { id: testBoard.id } })
-  if (testAccount) await prisma.account.delete({ where: { id: testAccount.id } })
+  if (testComment) await prisma.comment.delete({ where: { id: testComment.id } }).catch(() => {})
+  if (testItem) await prisma.item.delete({ where: { id: testItem.id } }).catch(() => {})
+  if (testColumn) await prisma.column.delete({ where: { id: testColumn.id } }).catch(() => {})
+  if (testBoard) await prisma.board.delete({ where: { id: testBoard.id } }).catch(() => {})
+  if (testAccount) await prisma.account.delete({ where: { id: testAccount.id } }).catch(() => {})
+
+  // Clean up test database
+  const testDbPath = process.env.TEST_DB_PATH
+  if (testDbPath) {
+    try {
+      const fs = require('fs')
+      if (fs.existsSync(testDbPath)) {
+        fs.unlinkSync(testDbPath)
+        console.log(`🧹 Test database cleaned up: ${process.env.TEST_DB_NAME}`)
+      }
+    } catch (error: any) {
+      console.warn(`⚠️  Could not clean up test database: ${error?.message || 'Unknown error'}`)
+    }
+  }
 })
 
 // ============================================================================
@@ -187,6 +202,24 @@ describe("Column CRUD", { timeout: 30000 }, () => {
     await prisma.column.delete({ where: { id: column2.id } })
     console.log("✓ Column with properties created successfully")
   })
+
+  it("CREATE: should handle createColumn function properly", async () => {
+    if (!testBoard || !testAccount) throw new Error("Prerequisites not created")
+
+    // Import the function we want to test
+    const { createColumn } = await import("../routes/queries")
+
+    const column = await createColumn(testBoard.id, "Test CreateColumn", "dummy-id", testAccount.id)
+
+    expect(column.id).toHaveLength(11) // ab###-cd### format
+    expect(column.name).toBe("Test CreateColumn")
+    expect(column.boardId).toBe(testBoard.id)
+    expect(column.order).toBeGreaterThan(0)
+
+    // Clean up
+    await prisma.column.delete({ where: { id: column.id } })
+    console.log("✓ createColumn function works correctly")
+  })
 })
 
 // ============================================================================
@@ -288,6 +321,50 @@ describe("Item (Card) CRUD", { timeout: 30000 }, () => {
 
     expect(updated.lastActiveAt.getTime()).toBeGreaterThanOrEqual(beforeUpdate.getTime())
     console.log("✓ lastActiveAt updated on modification")
+  })
+
+  it("UPSERT: should handle upsertItem with existing ID (update case)", async () => {
+    if (!testItem || !testBoard || !testColumn || !testAccount) throw new Error("Prerequisites not created")
+
+    // Test upserting an existing item (should update)
+    const updatedItem = await upsertItem({
+      id: testItem.id,
+      boardId: testBoard.id,
+      columnId: testColumn.id,
+      title: "Upsert Updated Title",
+      order: 99,
+      content: "Upsert updated content",
+      createdBy: testAccount.id,
+    }, testAccount.id)
+
+    expect(updatedItem.id).toBe(testItem.id)
+    expect(updatedItem.title).toBe("Upsert Updated Title")
+    expect(updatedItem.content).toBe("Upsert updated content")
+    expect(updatedItem.order).toBe(99)
+    console.log("✓ upsertItem with existing ID works correctly")
+  })
+
+  it("UPSERT: should handle upsertItem without ID (create case)", async () => {
+    if (!testBoard || !testColumn || !testAccount) throw new Error("Prerequisites not created")
+
+    // Test upserting a new item (should create)
+    const newItem = await upsertItem({
+      boardId: testBoard.id,
+      columnId: testColumn.id,
+      title: "New Upsert Item",
+      order: 100,
+      content: "New upsert content",
+      createdBy: testAccount.id,
+    }, testAccount.id)
+
+    expect(newItem.id).toHaveLength(11) // ab###-cd### format
+    expect(newItem.title).toBe("New Upsert Item")
+    expect(newItem.content).toBe("New upsert content")
+    expect(newItem.order).toBe(100)
+
+    // Clean up
+    await prisma.item.delete({ where: { id: newItem.id } })
+    console.log("✓ upsertItem without ID creates new item correctly")
   })
 })
 

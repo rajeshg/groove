@@ -178,6 +178,16 @@ export default function CardDetail({ loaderData }: Route.ComponentProps) {
   };
 
   const changeColumn = (newColumnId: string) => {
+    const actionUrl = `/board/${boardId}`;
+    console.log('🔍 Debug - changeColumn:', {
+      cardId,
+      newColumnId,
+      boardId,
+      actionUrl,
+      localTitle,
+      cardOrder: card.order
+    });
+
     editFetcher.submit(
       {
         intent: INTENTS.updateItem,
@@ -187,7 +197,7 @@ export default function CardDetail({ loaderData }: Route.ComponentProps) {
         order: String(card.order),
         content: localContent || "",
       },
-      { method: "post", action: `/board/${boardId}` }
+      { method: "post", action: actionUrl }
     );
     setLocalColumnId(newColumnId);
   };

@@ -3,9 +3,9 @@ import path from "node:path"
 
 export default defineConfig({
   test: {
-    // Disable parallel execution to prevent SQLite database timeouts
-    fileParallelism: false,
-    maxConcurrency: 1,
+    // Enable concurrent execution with unique databases per run
+    fileParallelism: true,
+    maxConcurrency: 4,
     // Include all test files
     include: ["**/*.test.ts"],
     // Set a reasonable timeout for database operations
@@ -13,6 +13,7 @@ export default defineConfig({
     hookTimeout: 30000,
     // Setup environment before tests
     setupFiles: [path.resolve(__dirname, "tests/setup.ts")],
+    globalSetup: [path.resolve(__dirname, "tests/global-setup.ts")],
   },
   resolve: {
     alias: {

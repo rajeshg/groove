@@ -138,6 +138,13 @@ export async function action({
   request: Request;
   params: Record<string, string>;
 }) {
+  console.log('🔍 Debug - board action:', {
+    url: request.url,
+    method: request.method,
+    params,
+    contentType: request.headers.get('content-type')
+  });
+
   let accountId = await requireAuthCookie(request);
   let boardId = params.id;
   invariant(boardId, "Missing boardId");
@@ -150,6 +157,11 @@ export async function action({
 
   let formData = await request.formData();
   let intent = formData.get("intent");
+
+  console.log('🔍 Debug - form data:', {
+    intent,
+    formDataEntries: Array.from(formData.entries())
+  });
 
   if (!intent) throw badRequest("Missing intent");
 
@@ -215,9 +227,12 @@ export async function action({
     }
 
     case INTENTS.updateItem: {
+      console.log('🔍 Debug - updateItem case triggered');
       const result = tryParseFormData(formData, updateItemSchema);
       if (!result.success) throw badRequest(result.error);
+      console.log('🔍 Debug - parsed data:', result.data);
       await upsertItem({ ...result.data, boardId }, accountId);
+      console.log('🔍 Debug - updateItem completed successfully');
       break;
     }
 

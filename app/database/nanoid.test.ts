@@ -26,6 +26,20 @@ describe("ID generation with Board model", { timeout: 30000 }, () => {
     if (testAccount) {
       await prisma.account.delete({ where: { id: testAccount.id } }).catch(() => {})
     }
+
+    // Clean up test database
+    const testDbPath = process.env.TEST_DB_PATH
+    if (testDbPath) {
+      try {
+        const fs = require('fs')
+        if (fs.existsSync(testDbPath)) {
+          fs.unlinkSync(testDbPath)
+          console.log(`🧹 Test database cleaned up: ${process.env.TEST_DB_NAME}`)
+        }
+      } catch (error: any) {
+        console.warn(`⚠️  Could not clean up test database: ${error?.message || 'Unknown error'}`)
+      }
+    }
   })
 
 //  it("generateId() generates beautiful 11-character IDs", () => {

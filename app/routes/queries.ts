@@ -181,8 +181,8 @@ export function upsertItem(
       id: id,
       Board: { accountId: _accountId },
     },
-    create: baseData as Prisma.ItemCreateInput,
-    update: baseData as Prisma.ItemUpdateInput,
+    create: { ...baseData, id }, // Include the id for the create case
+    update: baseData,
   });
 }
 
@@ -240,20 +240,15 @@ export async function createColumn(
     where: { boardId, Board: { accountId } },
   });
 
-  const data: Prisma.ColumnCreateInput = {
-    Board: { connect: { id: boardId } },
-    name,
-    order: columnCount + 1,
-    isExpanded: true,
-  };
-
-  // If id is not a temporary client ID, use it (though usually it is)
-  // If it is a temp ID, omit it so Prisma generates a nanoid(12)
-  if (!id.startsWith("temp-")) {
-    data.id = id;
-  }
-
-  return prisma.column.create({ data: { ...data, id: generateId() } });
+  return prisma.column.create({
+    data: {
+      id: generateId(),
+      Board: { connect: { id: boardId } },
+      name,
+      order: columnCount + 1,
+      isExpanded: true,
+    },
+  });
 }
 
 export async function deleteColumn(

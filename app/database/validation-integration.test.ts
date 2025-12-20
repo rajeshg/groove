@@ -34,11 +34,25 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
-  if (testColumn) await prisma.column.delete({ where: { id: testColumn.id } })
+  if (testColumn) await prisma.column.delete({ where: { id: testColumn.id } }).catch(() => {})
   if (testAccount) {
     const board = await prisma.board.findFirst({ where: { accountId: testAccount.id } })
-    if (board) await prisma.board.delete({ where: { id: board.id } })
-    await prisma.account.delete({ where: { id: testAccount.id } })
+    if (board) await prisma.board.delete({ where: { id: board.id } }).catch(() => {})
+    await prisma.account.delete({ where: { id: testAccount.id } }).catch(() => {})
+  }
+
+  // Clean up test database
+  const testDbPath = process.env.TEST_DB_PATH
+  if (testDbPath) {
+    try {
+      const fs = require('fs')
+      if (fs.existsSync(testDbPath)) {
+        fs.unlinkSync(testDbPath)
+        console.log(`🧹 Test database cleaned up: ${process.env.TEST_DB_NAME}`)
+      }
+    } catch (error: any) {
+      console.warn(`⚠️  Could not clean up test database: ${error?.message || 'Unknown error'}`)
+    }
   }
 })
 
