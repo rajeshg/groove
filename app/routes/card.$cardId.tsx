@@ -7,16 +7,15 @@ import { Input } from "../components/input";
 import { CardMeta } from "./board/card-meta";
 import { BoardHeader } from "./board/board-header";
 import { EditableComment } from "./board/components";
-import { INTENTS, type RenderedComment } from "./types";
+import { type RenderedComment } from "./types";
 import type { Column } from "../../prisma/client";
 import { getInitials, getAvatarColor, getDisplayName } from "../utils/avatar";
 import type { Route } from "./+types/card.$cardId";
 
 import { requireAuthCookie } from "../auth/auth";
-import { notFound, badRequest } from "../http/bad-request";
+import { notFound } from "../http/bad-request";
 import { prisma } from "../../prisma/client";
 import { assertBoardAccess } from "../utils/permissions";
-import { updateComment, deleteComment, createComment } from "./queries";
 
 export async function loader({
   request,
@@ -78,47 +77,6 @@ export async function loader({
   };
 }
 
-export async function action({
-  request,
-  params,
-}: {
-  request: Request;
-  params: Record<string, string>;
-}) {
-  const accountId = await requireAuthCookie(request);
-  const cardId = params.cardId;
-  invariant(cardId, "Missing card ID");
-
-  const formData = await request.formData();
-  const intent = formData.get("intent");
-
-  if (intent === INTENTS.createComment) {
-    const content = formData.get("content");
-    if (!content || typeof content !== "string" || !content.trim()) {
-      throw badRequest("Comment content is required");
-    }
-    await createComment(cardId, content, accountId, accountId);
-  } else if (intent === INTENTS.updateComment) {
-    const commentId = formData.get("commentId");
-    const content = formData.get("content");
-    if (!commentId || typeof commentId !== "string") {
-      throw badRequest("Missing comment ID");
-    }
-    if (!content || typeof content !== "string" || !content.trim()) {
-      throw badRequest("Comment content is required");
-    }
-    await updateComment(commentId, content, accountId);
-  } else if (intent === INTENTS.deleteComment) {
-    const commentId = formData.get("commentId");
-    if (!commentId || typeof commentId !== "string") {
-      throw badRequest("Missing comment ID");
-    }
-    await deleteComment(commentId, accountId);
-  }
-
-  return { success: true };
-}
-
 export default function CardDetail({ loaderData }: Route.ComponentProps) {
   const { cardId } = useParams();
   const navigate = useNavigate();
@@ -147,14 +105,14 @@ export default function CardDetail({ loaderData }: Route.ComponentProps) {
     }
     editFetcher.submit(
       {
-        intent: INTENTS.updateItem,
         id: cardId,
+        boardId: boardId,
         columnId: localColumnId,
         title: localTitle,
         order: String(card.order),
         content: newContent,
       },
-      { method: "post", action: `/board/${boardId}` }
+      { method: "post", action: "/resources/update-card" }
     );
     setLocalContent(newContent);
     return true;
@@ -165,39 +123,27 @@ export default function CardDetail({ loaderData }: Route.ComponentProps) {
     if (val === card.title || val === "") return;
     editFetcher.submit(
       {
-        intent: INTENTS.updateItem,
         id: cardId,
+        boardId: boardId,
         columnId: localColumnId,
         title: val,
         order: String(card.order),
         content: localContent || "",
       },
-      { method: "post", action: `/board/${boardId}` }
+      { method: "post", action: "/resources/update-card" }
     );
     setLocalTitle(val);
   };
 
   const changeColumn = (newColumnId: string) => {
-    const actionUrl = `/board/${boardId}`;
-    console.log('🔍 Debug - changeColumn:', {
-      cardId,
-      newColumnId,
-      boardId,
-      actionUrl,
-      localTitle,
-      cardOrder: card.order
-    });
-
     editFetcher.submit(
       {
-        intent: INTENTS.updateItem,
         id: cardId,
+        boardId: boardId,
         columnId: newColumnId,
-        title: localTitle,
         order: String(card.order),
-        content: localContent || "",
       },
-      { method: "post", action: actionUrl }
+      { method: "post", action: "/resources/move-card" }
     );
     setLocalColumnId(newColumnId);
   };
@@ -404,11 +350,13 @@ export default function CardDetail({ loaderData }: Route.ComponentProps) {
                                 onSubmit={(newContent) => {
                                   commentFetcher.submit(
                                     {
-                                      intent: INTENTS.updateComment,
                                       commentId: comment.id,
                                       content: newContent,
                                     },
-                                    { method: "post" }
+                                    {
+                                      method: "post",
+                                      action: "/resources/update-comment",
+                                    }
                                   );
                                   setEditingCommentId(null);
                                 }}
@@ -433,10 +381,12 @@ export default function CardDetail({ loaderData }: Route.ComponentProps) {
                                       onClick={() => {
                                         commentFetcher.submit(
                                           {
-                                            intent: INTENTS.deleteComment,
                                             commentId: comment.id,
                                           },
-                                          { method: "post" }
+                                          {
+                                            method: "post",
+                                            action: "/resources/delete-comment",
+                                          }
                                         );
                                       }}
                                       className="text-xs text-red-500 hover:text-red-700 font-medium"
@@ -452,12 +402,12 @@ export default function CardDetail({ loaderData }: Route.ComponentProps) {
                       );
                     })}
                   </div>
-                  <commentFetcher.Form method="post" className="flex gap-2">
-                    <input
-                      type="hidden"
-                      name="intent"
-                      value={INTENTS.createComment}
-                    />
+                  <commentFetcher.Form
+                    method="post"
+                    action="/resources/create-comment"
+                    className="flex gap-2"
+                  >
+                    <input type="hidden" name="cardId" value={cardId} />
                     <Input
                       type="text"
                       name="content"
@@ -469,10 +419,13 @@ export default function CardDetail({ loaderData }: Route.ComponentProps) {
                         if (e.key === "Enter" && commentInput.trim()) {
                           commentFetcher.submit(
                             {
-                              intent: INTENTS.createComment,
+                              cardId: cardId,
                               content: commentInput,
                             },
-                            { method: "post" }
+                            {
+                              method: "post",
+                              action: "/resources/create-comment",
+                            }
                           );
                           setCommentInput("");
                         }
@@ -489,10 +442,13 @@ export default function CardDetail({ loaderData }: Route.ComponentProps) {
                         if (commentInput.trim()) {
                           commentFetcher.submit(
                             {
-                              intent: INTENTS.createComment,
+                              cardId: cardId,
                               content: commentInput,
                             },
-                            { method: "post" }
+                            {
+                              method: "post",
+                              action: "/resources/create-comment",
+                            }
                           );
                           setCommentInput("");
                         } else {

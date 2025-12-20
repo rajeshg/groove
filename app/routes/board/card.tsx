@@ -5,8 +5,8 @@ import { useState, useRef, useEffect } from "react";
 import { Icon } from "../../icons/icons";
 import { CardMeta } from "./card-meta";
 
-import type { ItemMutation, RenderedAssignee } from "../types";
-import { INTENTS, CONTENT_TYPES } from "../types";
+import type { RenderedAssignee } from "../types";
+import { CONTENT_TYPES } from "../types";
 
 interface CardProps {
   title: string;
@@ -111,13 +111,14 @@ export function Card({
 
         submit(
           {
-            intent: INTENTS.moveItem,
             id: transfer.id,
+            boardId: _boardId,
             columnId: columnId,
             order: moveOrder,
-          } as unknown as ItemMutation,
+          },
           {
             method: "post",
+            action: "/resources/move-card",
             navigate: false,
             fetcherKey: `card:${transfer.id}`,
           }
@@ -212,8 +213,11 @@ export function Card({
           </div>
         )}
 
-        <deleteFetcher.Form method="post" className="absolute top-2 right-2">
-          <input type="hidden" name="intent" value={INTENTS.deleteCard} />
+        <deleteFetcher.Form
+          method="post"
+          action="/resources/delete-card"
+          className="absolute top-2 right-2"
+        >
           <input type="hidden" name="itemId" value={id} />
           <button
             aria-label="Delete card"

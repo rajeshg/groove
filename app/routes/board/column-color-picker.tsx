@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from "react";
 import { useFetcher } from "react-router";
 import { createPortal } from "react-dom";
 import { COLOR_PRESETS } from "../../constants/colors";
-import { INTENTS } from "../types";
 
 interface ColumnColorPickerProps {
   columnId: string;
@@ -26,10 +25,10 @@ export function ColumnColorPicker({
       const rect = buttonRef.current.getBoundingClientRect();
       const dropdownWidth = 176; // Approximate width: 4 cols * 32px + gaps + padding
       const viewportWidth = window.innerWidth;
-      
+
       // Check if dropdown would overflow on the right
       const wouldOverflowRight = rect.left + dropdownWidth > viewportWidth;
-      
+
       // Position dropdown
       let left = rect.left;
       if (wouldOverflowRight) {
@@ -38,7 +37,7 @@ export function ColumnColorPicker({
         // Ensure it doesn't go off the left edge
         left = Math.max(8, left);
       }
-      
+
       setDropdownPosition({
         top: rect.bottom + 4,
         left: left,
@@ -67,11 +66,10 @@ export function ColumnColorPicker({
   const handleColorSelect = (color: string) => {
     fetcher.submit(
       {
-        intent: INTENTS.updateColumn,
         columnId,
         color,
       },
-      { method: "post" }
+      { method: "post", action: "/resources/update-column" }
     );
     setIsOpen(false);
   };

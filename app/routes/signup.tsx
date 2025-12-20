@@ -131,19 +131,19 @@ export default function Signup() {
                     </span>
                   )}
                 </Label>
-                 <Input
-                   id="firstName"
-                   name="firstName"
-                   type="text"
-                   autoComplete="given-name"
-                   aria-describedby={
-                     actionResult?.errors?.firstName
-                       ? "firstName-error"
-                       : "signup-header"
-                   }
-                   required
-                   disabled={isSubmitting}
-                 />
+                <Input
+                  id="firstName"
+                  name="firstName"
+                  type="text"
+                  autoComplete="given-name"
+                  aria-describedby={
+                    actionResult?.errors?.firstName
+                      ? "firstName-error"
+                      : "signup-header"
+                  }
+                  required
+                  disabled={isSubmitting}
+                />
               </div>
 
               <div>
@@ -158,19 +158,19 @@ export default function Signup() {
                     </span>
                   )}
                 </Label>
-                 <Input
-                   id="lastName"
-                   name="lastName"
-                   type="text"
-                   autoComplete="family-name"
-                   aria-describedby={
-                     actionResult?.errors?.lastName
-                       ? "lastName-error"
-                       : "signup-header"
-                   }
-                   required
-                   disabled={isSubmitting}
-                 />
+                <Input
+                  id="lastName"
+                  name="lastName"
+                  type="text"
+                  autoComplete="family-name"
+                  aria-describedby={
+                    actionResult?.errors?.lastName
+                      ? "lastName-error"
+                      : "signup-header"
+                  }
+                  required
+                  disabled={isSubmitting}
+                />
               </div>
             </div>
 
@@ -183,18 +183,18 @@ export default function Signup() {
                   </span>
                 )}
               </Label>
-               <Input
-                 autoFocus
-                 id="email"
-                 name="email"
-                 type="email"
-                 autoComplete="email"
-                 aria-describedby={
-                   actionResult?.errors?.email ? "email-error" : "signup-header"
-                 }
-                 required
-                 disabled={isSubmitting}
-               />
+              <Input
+                autoFocus
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                aria-describedby={
+                  actionResult?.errors?.email ? "email-error" : "signup-header"
+                }
+                required
+                disabled={isSubmitting}
+              />
             </div>
 
             <div>
@@ -209,43 +209,43 @@ export default function Signup() {
                   </span>
                 )}
               </Label>
-               <Input
-                 id="password"
-                 name="password"
-                 type="password"
-                 autoComplete="current-password"
-                 aria-describedby="password-error"
-                 required
-                 disabled={isSubmitting}
-               />
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                aria-describedby="password-error"
+                required
+                disabled={isSubmitting}
+              />
             </div>
 
-             <Button type="submit" disabled={isSubmitting}>
-               {isSubmitting ? (
-                 <span className="flex items-center justify-center gap-2">
-                   <Icon name="plus" className="w-4 h-4 animate-spin" />
-                   Creating account...
-                 </span>
-               ) : (
-                 "Sign up"
-               )}
-             </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Icon name="plus" className="w-4 h-4 animate-spin" />
+                  Creating account...
+                </span>
+              ) : (
+                "Sign up"
+              )}
+            </Button>
 
-             <div className="text-sm text-slate-500">
-               Already have an account?{" "}
-               <Link
-                 className={`text-blue-600 hover:text-blue-700 ${
-                   hasInvitationContext ? "underline" : ""
-                 }`}
-                 to={
-                   hasInvitationContext
-                     ? `/login?invitationId=${invitationId}`
-                     : "/login"
-                 }
-               >
-                 Log in
-               </Link>
-               .
+            <div className="text-sm text-slate-500">
+              Already have an account?{" "}
+              <Link
+                className={`text-blue-600 hover:text-blue-700 ${
+                  hasInvitationContext ? "underline" : ""
+                }`}
+                to={
+                  hasInvitationContext
+                    ? `/login?invitationId=${invitationId}`
+                    : "/login"
+                }
+              >
+                Log in
+              </Link>
+              .
             </div>
           </Form>
         </div>

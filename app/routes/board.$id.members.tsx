@@ -1,23 +1,16 @@
 import { useFetcher, Link } from "react-router";
 import type { Route } from "./+types/board.$id.members";
-import { invariant, invariantResponse } from "@epic-web/invariant";
+import { invariant } from "@epic-web/invariant";
 
 import { requireAuthCookie } from "../auth/auth";
-import { prisma } from "../../prisma/client";
-import { badRequest, notFound } from "../http/bad-request";
+import { notFound } from "../http/bad-request";
 import { Icon } from "../icons/icons";
 import { BoardHeader } from "./board/board-header";
 import { Button } from "../components/button";
 import { LabeledInput } from "../components/input";
-import { INTENTS } from "./types";
-import { getBoardData, inviteUserToBoard, removeBoardMember } from "./queries";
+import { getBoardData } from "./queries";
 import { getDisplayName, getInitials, getAvatarColor } from "../utils/avatar";
-import { inviteUserSchema, tryParseFormData } from "./validation";
-import { sendEmail, emailTemplates } from "~/utils/email.server";
-import {
-  assertBoardAccess,
-  getPermissionErrorMessage,
-} from "../utils/permissions";
+import { assertBoardAccess } from "../utils/permissions";
 
 export async function loader(args: Route.LoaderArgs) {
   const { request, params } = args;
@@ -39,86 +32,6 @@ export async function loader(args: Route.LoaderArgs) {
     accountId,
     isOwner,
   };
-}
-
-export async function action({
-  request,
-  params,
-}: {
-  request: Request;
-  params: Record<string, string>;
-}) {
-  const accountId = await requireAuthCookie(request);
-  const boardId = params.id;
-  invariant(boardId, "Missing board ID");
-
-  const formData = await request.formData();
-  const intent = formData.get("intent");
-
-  if (intent === INTENTS.inviteUser) {
-    const result = tryParseFormData(formData, inviteUserSchema);
-    if (!result.success) throw badRequest(result.error);
-
-    const board = await getBoardData(boardId, accountId);
-    if (!board) throw notFound();
-
-    // Check if user is board owner (only owners can invite in simplified model)
-    const isOwner = board.accountId === accountId;
-    if (!isOwner) {
-      throw badRequest(getPermissionErrorMessage("manageMembers"));
-    }
-
-    const invitation = await inviteUserToBoard(
-      boardId,
-      result.data.email,
-      accountId,
-      "editor" // Always invite as editor in simplified model
-    );
-
-    // Send invitation email
-    const template = emailTemplates.invitation(
-      board.name,
-      "A team member",
-      invitation.id
-    );
-    await sendEmail({
-      to: result.data.email,
-      subject: template.subject,
-      html: template.html,
-    });
-
-    return { ok: true };
-  }
-
-  if (intent === "removeMember") {
-    const memberAccountId = formData.get("memberAccountId") as string;
-    if (!memberAccountId) throw badRequest("Missing member account ID");
-
-    // Check if the board exists and the current user is the owner
-    const board = await prisma.board.findUnique({
-      where: { id: boardId },
-      select: { accountId: true },
-    });
-
-    if (!board) throw notFound();
-
-    const isOwner = board.accountId === accountId;
-
-    // Only owners can remove members
-    if (!isOwner) {
-      throw badRequest(getPermissionErrorMessage("manageMembers"));
-    }
-
-    // Cannot remove the owner
-    if (memberAccountId === board.accountId) {
-      throw badRequest("Cannot remove the board owner");
-    }
-
-    await removeBoardMember(boardId, memberAccountId);
-    return { ok: true };
-  }
-
-  return badRequest("Invalid intent");
 }
 
 export default function BoardMembers({ loaderData }: Route.ComponentProps) {
@@ -194,11 +107,14 @@ export default function BoardMembers({ loaderData }: Route.ComponentProps) {
                         </div>
 
                         {isOwner && !isCurrentUser && (
-                          <fetcher.Form method="post">
+                          <fetcher.Form
+                            method="post"
+                            action="/resources/remove-member"
+                          >
                             <input
                               type="hidden"
-                              name="intent"
-                              value="removeMember"
+                              name="boardId"
+                              value={board.id}
                             />
                             <input
                               type="hidden"
@@ -261,12 +177,11 @@ export default function BoardMembers({ loaderData }: Route.ComponentProps) {
                     Invite People
                   </h2>
 
-                  <inviteFetcher.Form method="post">
-                    <input
-                      type="hidden"
-                      name="intent"
-                      value={INTENTS.inviteUser}
-                    />
+                  <inviteFetcher.Form
+                    method="post"
+                    action="/resources/invite-user"
+                  >
+                    <input type="hidden" name="boardId" value={board.id} />
 
                     <div className="space-y-4">
                       <LabeledInput

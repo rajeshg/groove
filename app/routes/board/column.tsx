@@ -4,12 +4,7 @@ import { invariant } from "@epic-web/invariant";
 
 import { Icon } from "../../icons/icons";
 
-import {
-  type ItemMutation,
-  INTENTS,
-  CONTENT_TYPES,
-  type RenderedItem,
-} from "../types";
+import { type ItemMutation, type RenderedItem, CONTENT_TYPES } from "../types";
 import { NewCard } from "./new-card";
 import { flushSync } from "react-dom";
 import { Card } from "./card";
@@ -28,6 +23,8 @@ interface ColumnProps {
   className?: string;
   onAddCardKeydown?: (callback: () => void) => void;
   shortcut?: string;
+  onDragStart?: (e: React.DragEvent) => void;
+  onDragEnd?: (e: React.DragEvent) => void;
 }
 
 export function Column({
@@ -42,6 +39,8 @@ export function Column({
   className = "",
   onAddCardKeydown,
   shortcut,
+  onDragStart,
+  onDragEnd,
 }: ColumnProps) {
   let submit = useSubmit();
 
@@ -109,9 +108,15 @@ export function Column({
         };
 
         submit(
-          { ...mutation, intent: INTENTS.moveItem },
+          {
+            id: transfer.id,
+            boardId: boardId,
+            columnId: columnId,
+            order: mutation.order,
+          },
           {
             method: "post",
+            action: "/resources/move-card",
             navigate: false,
             // use the same fetcher instance for any mutations on this card so
             // that interruptions cancel the earlier request and revalidation
@@ -127,6 +132,20 @@ export function Column({
         style={{ borderColor: color }}
       >
         <div className="flex items-center justify-between gap-2">
+          {/* Drag handle - only this area is draggable */}
+          {isExpanded && onDragStart && (
+            <div
+              className="cursor-grab active:cursor-grabbing p-1 -ml-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400"
+              draggable="true"
+              onDragStart={onDragStart}
+              onDragEnd={onDragEnd}
+              title="Drag to reorder column"
+              aria-label="Drag to reorder column"
+            >
+              <Icon name="grip-vertical" size="md" />
+            </div>
+          )}
+
           {isExpanded ? (
             <h2 className="flex-1 text-center py-1 px-2 font-bold text-slate-900 dark:text-slate-50 text-sm uppercase">
               {name}

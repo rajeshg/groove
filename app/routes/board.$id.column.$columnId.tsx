@@ -1,63 +1,13 @@
 import { useLoaderData, useNavigate } from "react-router";
 import { requireAuthCookie } from "~/auth/auth";
 import { badRequest, notFound } from "~/http/bad-request";
-import { getBoardData, updateColumnName, updateColumnColor } from "./queries";
+import { getBoardData } from "./queries";
 import { Icon } from "~/icons/icons";
 import { Card } from "./board/card";
 import { BoardHeader } from "./board/board-header";
 import { EditableText } from "./board/components";
 import { ColumnColorPicker } from "./board/column-color-picker";
-import { INTENTS } from "./types";
-import { updateColumnSchema, tryParseFormData } from "./validation";
 import { assertBoardAccess } from "~/utils/permissions";
-
-export async function action({
-  request,
-  params,
-}: {
-  request: Request;
-  params: { id: string; columnId: string };
-}) {
-  const accountId = await requireAuthCookie(request);
-  const boardId = params.id;
-  const columnId = params.columnId;
-
-  if (Number.isNaN(boardId)) {
-    throw badRequest("Invalid board ID");
-  }
-
-  if (!columnId) {
-    throw badRequest("Invalid column ID");
-  }
-
-  const formData = await request.formData();
-  const intent = formData.get("intent");
-
-  if (!intent) throw badRequest("Missing intent");
-
-  switch (intent) {
-    case INTENTS.updateColumn: {
-      const result = tryParseFormData(formData, updateColumnSchema);
-      if (!result.success) throw badRequest(result.error);
-
-      const { name, color } = result.data;
-
-      if (name) {
-        await updateColumnName(columnId, name, accountId);
-      }
-
-      if (color) {
-        await updateColumnColor(columnId, color, accountId);
-      }
-      break;
-    }
-    default: {
-      throw badRequest(`Unknown intent: ${intent}`);
-    }
-  }
-
-  return { ok: true };
-}
 
 export async function loader({
   request,
@@ -141,8 +91,8 @@ export default function ColumnDetail() {
                 inputClassName="border border-slate-300 dark:border-slate-500 rounded px-3 py-2 font-bold text-slate-900 dark:text-slate-50 dark:bg-slate-700 text-lg text-center uppercase"
                 buttonClassName="px-3 py-2 font-bold text-slate-900 dark:text-slate-50 text-lg hover:bg-slate-100 dark:hover:bg-slate-700 rounded uppercase"
                 placeholder="Column name..."
+                action="/resources/update-column"
                 hiddenFields={{
-                  intent: INTENTS.updateColumn,
                   columnId: column.id,
                 }}
               >

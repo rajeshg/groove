@@ -218,7 +218,6 @@ export function CardMeta({
               availableAssignees={availableAssignees}
               isOpen={pickerOpen}
               onOpenChange={setPickerOpen}
-              action={`/board/${boardId}`}
             />
           ) : assignee ? (
             <Avatar label={assignee.name} />

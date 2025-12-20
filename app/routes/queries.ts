@@ -120,12 +120,21 @@ export async function updateBoardName(
 }
 
 export async function getItem(id: string, accountId: string) {
-  return prisma.item.findUnique({
-    where: {
-      id,
-      Board: { accountId },
+  const item = await prisma.item.findUnique({
+    where: { id },
+    include: {
+      Board: {
+        select: { accountId: true },
+      },
     },
   });
+
+  // Check if item exists and belongs to user's board
+  if (!item || item.Board.accountId !== accountId) {
+    return null;
+  }
+
+  return item;
 }
 
 export async function getCardDetail(
@@ -133,18 +142,29 @@ export async function getCardDetail(
   boardId: string,
   accountId: string
 ) {
-  return prisma.item.findUnique({
-    where: {
-      id: cardId,
-      Board: { id: boardId, accountId },
-    },
+  const item = await prisma.item.findUnique({
+    where: { id: cardId },
     include: {
       Column: true,
+      Board: {
+        select: { id: true, accountId: true },
+      },
     },
   });
+
+  // Check if item exists and belongs to the correct board and user
+  if (
+    !item ||
+    item.Board.id !== boardId ||
+    item.Board.accountId !== accountId
+  ) {
+    return null;
+  }
+
+  return item;
 }
 
-export function upsertItem(
+export async function upsertItem(
   mutation: {
     id?: string;
     boardId: string;
@@ -155,11 +175,18 @@ export function upsertItem(
     createdBy?: string;
     intent?: string;
   },
-  _accountId: string
+  accountId: string
 ) {
-  const { intent: _intent, id, boardId, columnId, createdBy, ...rest } = mutation;
+  const {
+    intent: _intent,
+    id,
+    boardId,
+    columnId,
+    createdBy,
+    ...rest
+  } = mutation;
 
-  const baseData: any = {
+  const baseData: Omit<Prisma.ItemCreateInput, 'id'> = {
     ...rest,
     lastActiveAt: new Date(),
     Board: { connect: { id: boardId } },
@@ -176,13 +203,17 @@ export function upsertItem(
     });
   }
 
-  return prisma.item.upsert({
-    where: {
-      id: id,
-      Board: { accountId: _accountId },
-    },
-    create: { ...baseData, id }, // Include the id for the create case
-    update: baseData,
+  // For updates, verify the item exists and belongs to the user's board
+  const existingItem = await getItem(id, accountId);
+  if (!existingItem) {
+    // If item doesn't exist or user doesn't have permission, throw error
+    throw new Error("Item not found or access denied");
+  }
+
+  // Simple update with just the id
+  return prisma.item.update({
+    where: { id },
+    data: baseData,
   });
 }
 

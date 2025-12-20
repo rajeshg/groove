@@ -51,19 +51,12 @@ export const INTENTS = {
   updateItem: "updateItem" as const,
   moveItem: "moveItem" as const,
   moveColumn: "moveColumn" as const,
-  updateBoardName: "updateBoardName" as const,
   deleteBoard: "deleteBoard" as const,
   createBoard: "createBoard" as const,
   deleteCard: "deleteCard" as const,
   createComment: "createComment" as const,
   updateComment: "updateComment" as const,
   deleteComment: "deleteComment" as const,
-  inviteUser: "inviteUser" as const,
-  acceptInvitation: "acceptInvitation" as const,
-  declineInvitation: "declineInvitation" as const,
-  updateItemAssignee: "updateItemAssignee" as const,
-  createVirtualAssignee: "createVirtualAssignee" as const,
-  createAndAssignVirtualAssignee: "createAndAssignVirtualAssignee" as const,
 };
 
 export const ItemMutationFields = {

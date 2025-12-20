@@ -50,7 +50,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
         <link rel="icon" href="/logo-light.svg" type="image/svg+xml" />
-        <link rel="icon" href="/logo-dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)" />
+        <link
+          rel="icon"
+          href="/logo-dark.svg"
+          type="image/svg+xml"
+          media="(prefers-color-scheme: dark)"
+        />
       </head>
       <body>
         {children}
@@ -105,16 +110,16 @@ function AppContent({
               className="group flex items-center gap-2.5 transition-all"
             >
               <div className="relative w-7 h-7">
-               <img
-                   src="/logo-light.svg"
-                   alt=""
-                   className="absolute inset-0 w-full h-full dark:hidden group-hover:scale-110 transition-transform"
-                 />
-                 <img
-                   src="/logo-dark.svg"
-                   alt=""
-                   className="absolute inset-0 w-full h-full hidden dark:block group-hover:scale-110 transition-transform"
-                 />
+                <img
+                  src="/logo-light.svg"
+                  alt=""
+                  className="absolute inset-0 w-full h-full dark:hidden group-hover:scale-110 transition-transform"
+                />
+                <img
+                  src="/logo-dark.svg"
+                  alt=""
+                  className="absolute inset-0 w-full h-full hidden dark:block group-hover:scale-110 transition-transform"
+                />
               </div>
               <span className="font-black text-xl hover:opacity-80 transition-opacity tracking-tighter uppercase">
                 Groove

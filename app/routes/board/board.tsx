@@ -2,7 +2,7 @@ import { useRef, useState, useMemo } from "react";
 import { invariant } from "@epic-web/invariant";
 import { useSubmit, Link } from "react-router";
 
-import { INTENTS, CONTENT_TYPES } from "../types";
+import { CONTENT_TYPES } from "../types";
 import type { getBoardData } from "../queries";
 
 import { Column } from "./column";
@@ -26,6 +26,10 @@ export default function Board({ board }: BoardProps) {
   const submit = useSubmit();
   const [searchTerm, setSearchTerm] = useState("");
   const addCardCallbackRef = useRef<(() => void) | null>(null);
+  const [dragOverColumnId, setDragOverColumnId] = useState<string | null>(null);
+  const [dropPosition, setDropPosition] = useState<"left" | "right" | null>(
+    null
+  );
 
   // Use custom hooks for state management
   const {
@@ -90,6 +94,8 @@ export default function Board({ board }: BoardProps) {
           onDragEnd={() => {
             // Reset all drag states when any drag ends
             setDraggedColumnId(null);
+            setDragOverColumnId(null);
+            setDropPosition(null);
           }}
         >
           {columnArray.map((col) => {
@@ -108,10 +114,9 @@ export default function Board({ board }: BoardProps) {
                 } ${draggedColumnId === col.id ? "shadow-xl scale-105 opacity-50" : ""}`}
                 title={
                   isExpanded
-                    ? "Drag to reorder column"
+                    ? undefined
                     : `Expand ${col.name} (${col.items.length} cards)`
                 }
-                draggable={isExpanded}
                 style={{
                   overflow: isExpanded ? "visible" : "visible",
                 }}
@@ -119,24 +124,30 @@ export default function Board({ board }: BoardProps) {
                 {isExpanded ? (
                   // Expanded column - full width with content
                   <div
-                    className="h-full cursor-grab active:cursor-grabbing"
-                    draggable="true"
-                    onDragStart={(e) => {
-                      setDraggedColumnId(col.id);
-                      e.dataTransfer!.effectAllowed = "move";
-                      e.dataTransfer!.setData(
-                        CONTENT_TYPES.column,
-                        JSON.stringify({ id: col.id, name: col.name })
-                      );
-                    }}
-                    onDragEnd={() => {
-                      setDraggedColumnId(null);
-                    }}
+                    className="h-full relative"
                     onDragOver={(e) => {
                       if (e.dataTransfer.types.includes(CONTENT_TYPES.column)) {
                         e.preventDefault();
                         e.stopPropagation();
                         e.dataTransfer.dropEffect = "move";
+
+                        // Calculate which side (left/right) is being hovered
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const isHoveringLeft =
+                          e.clientX < rect.left + rect.width / 2;
+
+                        setDragOverColumnId(col.id);
+                        setDropPosition(isHoveringLeft ? "left" : "right");
+                      }
+                    }}
+                    onDragLeave={(e) => {
+                      // Only clear if we're actually leaving the column (not just entering a child)
+                      if (
+                        e.currentTarget === e.target ||
+                        !e.currentTarget.contains(e.relatedTarget as Node)
+                      ) {
+                        setDragOverColumnId(null);
+                        setDropPosition(null);
                       }
                     }}
                     onDrop={(e) => {
@@ -148,6 +159,10 @@ export default function Board({ board }: BoardProps) {
 
                       e.preventDefault();
                       e.stopPropagation();
+
+                      // Clear indicators immediately
+                      setDragOverColumnId(null);
+                      setDropPosition(null);
 
                       try {
                         const transfer = JSON.parse(
@@ -165,9 +180,9 @@ export default function Board({ board }: BoardProps) {
                         );
                         if (!draggedCol) return;
 
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        const isDroppedLeft =
-                          e.clientX < rect.left + rect.width / 2;
+                        // Use the stored dropPosition instead of recalculating
+                        // This ensures what the user saw is what they get
+                        const isDroppedLeft = dropPosition === "left";
 
                         let newOrder: number;
                         if (isDroppedLeft) {
@@ -192,12 +207,12 @@ export default function Board({ board }: BoardProps) {
 
                         submit(
                           {
-                            intent: INTENTS.moveColumn,
                             id: draggedId,
                             order: String(newOrder),
                           },
                           {
                             method: "post",
+                            action: "/resources/move-column",
                             navigate: false,
                             fetcherKey: `column:${draggedId}`,
                           }
@@ -209,6 +224,19 @@ export default function Board({ board }: BoardProps) {
                       }
                     }}
                   >
+                    {/* Visual drop indicators - show blue line on left or right side */}
+                    {dragOverColumnId === col.id &&
+                      draggedColumnId &&
+                      draggedColumnId !== col.id && (
+                        <>
+                          {dropPosition === "left" && (
+                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 z-50 rounded-l" />
+                          )}
+                          {dropPosition === "right" && (
+                            <div className="absolute right-0 top-0 bottom-0 w-1 bg-blue-500 z-50 rounded-r" />
+                          )}
+                        </>
+                      )}
                     <Column
                       name={col.name}
                       columnId={col.id}
@@ -228,6 +256,17 @@ export default function Board({ board }: BoardProps) {
                             }
                           : undefined
                       }
+                      onDragStart={(e) => {
+                        setDraggedColumnId(col.id);
+                        e.dataTransfer!.effectAllowed = "move";
+                        e.dataTransfer!.setData(
+                          CONTENT_TYPES.column,
+                          JSON.stringify({ id: col.id, name: col.name })
+                        );
+                      }}
+                      onDragEnd={() => {
+                        setDraggedColumnId(null);
+                      }}
                     />
                   </div>
                 ) : (

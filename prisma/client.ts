@@ -1,19 +1,20 @@
 // Re-export all types from the generated Prisma client for convenience
-export * from "./generated/client.js"
+export * from "./generated/client.js";
 
-import { PrismaClient } from "./generated/client.js"
-import { PrismaLibSql } from "@prisma/adapter-libsql"
+import { PrismaClient } from "./generated/client.js";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
 
 type PrismaGlobal = {
-  prisma: PrismaClient
-}
+  prisma: PrismaClient;
+};
 
 function createPrismaClient(): PrismaClient {
-  const databaseUrl = process.env.DATABASE_URL || "file:/app/prisma/data/data.db"
+  const databaseUrl =
+    process.env.DATABASE_URL || "file:/app/prisma/data/data.db";
 
   const adapter = new PrismaLibSql({
     url: databaseUrl,
-  })
+  });
 
   return new PrismaClient({
     adapter,
@@ -21,13 +22,13 @@ function createPrismaClient(): PrismaClient {
       process.env.NODE_ENV === "development"
         ? ["query", "error", "warn"]
         : ["error"],
-  })
+  });
 }
 
-const globalForPrisma = globalThis as unknown as PrismaGlobal
+const globalForPrisma = globalThis as unknown as PrismaGlobal;
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient()
+export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
 if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma
+  globalForPrisma.prisma = prisma;
 }

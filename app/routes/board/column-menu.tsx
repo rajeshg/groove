@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from "react";
 import { useFetcher } from "react-router";
 import { createPortal } from "react-dom";
 import { COLOR_PRESETS } from "../../constants/colors";
-import { INTENTS } from "../types";
 
 interface ColumnMenuProps {
   columnId: string;
@@ -10,6 +9,7 @@ interface ColumnMenuProps {
   currentColor: string;
   isDefault: boolean;
   isExpanded: boolean;
+  boardId: string;
 }
 
 export function ColumnMenu({
@@ -18,6 +18,7 @@ export function ColumnMenu({
   currentColor,
   isDefault,
   isExpanded,
+  boardId,
 }: ColumnMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -63,11 +64,10 @@ export function ColumnMenu({
     console.log("Submitting color change:", color);
     fetcher.submit(
       {
-        intent: INTENTS.updateColumn,
         columnId,
         color,
       },
-      { method: "post" }
+      { method: "post", action: "/resources/update-column" }
     );
     setIsOpen(false);
   };
@@ -76,10 +76,10 @@ export function ColumnMenu({
     console.log("Submitting delete:", columnId);
     fetcher.submit(
       {
-        intent: INTENTS.deleteColumn,
         columnId,
+        boardId,
       },
-      { method: "post" }
+      { method: "post", action: "/resources/delete-column" }
     );
     setIsOpen(false);
     setShowDeleteConfirm(false);

@@ -1,6 +1,5 @@
 import { useRef, useEffect, useState } from "react";
 import { useFetcher, useRevalidator } from "react-router";
-import { INTENTS } from "../types";
 import { getInitials, getAvatarColor } from "../../utils/avatar";
 import type { RenderedAssignee } from "../types";
 
@@ -11,7 +10,6 @@ interface AssigneePickerProps {
   availableAssignees: RenderedAssignee[];
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  action?: string;
 }
 
 export function AssigneePicker({
@@ -21,7 +19,6 @@ export function AssigneePicker({
   availableAssignees,
   isOpen,
   onOpenChange,
-  action,
 }: AssigneePickerProps) {
   const fetcher = useFetcher();
   const revalidator = useRevalidator();
@@ -58,23 +55,14 @@ export function AssigneePicker({
   );
 
   const handleSelect = (assigneeId: string | null) => {
-    const submitOptions: { method: "post"; action?: string } = {
-      method: "post",
-    };
-    if (action) {
-      submitOptions.action = action;
-    }
-
-    // Build form data with proper null handling
-    const formData = new FormData();
-    formData.append("intent", INTENTS.updateItemAssignee);
-    formData.append("itemId", itemId);
-    if (assigneeId) {
-      formData.append("assigneeId", assigneeId);
-    }
-    // For null assignee (unassigned), we don't append it, which will be treated as null by the schema
-
-    fetcher.submit(formData, submitOptions);
+    fetcher.submit(
+      {
+        itemId: itemId,
+        boardId: boardId,
+        assigneeId: assigneeId || "",
+      },
+      { method: "post", action: "/resources/update-item-assignee" }
+    );
 
     // Close menu immediately for responsive UX
     onOpenChange(false);
@@ -86,11 +74,11 @@ export function AssigneePicker({
 
     fetcher.submit(
       {
-        intent: INTENTS.createAndAssignVirtualAssignee,
-        name: name.trim(),
-        itemId,
+        itemId: itemId,
+        boardId: boardId,
+        newAssigneeName: name.trim(),
       },
-      { method: "post", action: `/board/${boardId}` }
+      { method: "post", action: "/resources/update-item-assignee" }
     );
 
     setSearchTerm("");

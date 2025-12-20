@@ -2,7 +2,6 @@ import { useMatches, Link } from "react-router";
 import { useRef, useEffect } from "react";
 import { Icon } from "../../icons/icons";
 import { EditableText } from "./components";
-import { INTENTS } from "../types";
 import type { Board } from "../../../prisma/client";
 
 interface BoardHeaderProps {
@@ -96,9 +95,9 @@ export function BoardHeader({
                 buttonLabel={`Edit board "${displayTitle}" name`}
                 inputLabel="Edit board name"
                 placeholder="Board name..."
+                action="/resources/update-board-name"
                 hiddenFields={{
-                  intent: INTENTS.updateBoardName,
-                  id: String(board.id),
+                  boardId: String(board.id),
                 }}
               >
                 <></>

@@ -1,6 +1,6 @@
 import { customAlphabet } from "nanoid";
 
-const base36Alphabet = '0123456789abcdefghijklmnopqrstuvwxyz';
+const base36Alphabet = "0123456789abcdefghijklmnopqrstuvwxyz";
 
 /**
  * Generate a high-entropy beautifully formatted ID optimized for mobile typing
@@ -10,10 +10,10 @@ const base36Alphabet = '0123456789abcdefghijklmnopqrstuvwxyz';
  */
 export function generateId(): string {
   // Generate parts: 2 letters + 3 numbers, 2 letters + 3 numbers
-  const letters1 = customAlphabet('abcdefghijklmnopqrstuvwxyz', 2)();
-  const numbers1 = customAlphabet('0123456789', 3)();
-  const letters2 = customAlphabet('abcdefghijklmnopqrstuvwxyz', 2)();
-  const numbers2 = customAlphabet('0123456789', 3)();
+  const letters1 = customAlphabet("abcdefghijklmnopqrstuvwxyz", 2)();
+  const numbers1 = customAlphabet("0123456789", 3)();
+  const letters2 = customAlphabet("abcdefghijklmnopqrstuvwxyz", 2)();
+  const numbers2 = customAlphabet("0123456789", 3)();
 
   return `${letters1}${numbers1}-${letters2}${numbers2}`;
 }

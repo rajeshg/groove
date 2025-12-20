@@ -47,6 +47,7 @@ export function EditableText({
   buttonLabel,
   placeholder,
   hiddenFields = {},
+  action,
 }: {
   children: React.ReactNode;
   fieldName: string;
@@ -57,6 +58,7 @@ export function EditableText({
   buttonLabel: string;
   placeholder?: string;
   hiddenFields?: Record<string, string>;
+  action?: string;
 }) {
   let fetcher = useFetcher();
   let [edit, setEdit] = useState(false);
@@ -77,7 +79,10 @@ export function EditableText({
         [fieldName]: newValue,
         ...hiddenFields,
       };
-      fetcher.submit(formDataObj, { method: "post" });
+      fetcher.submit(formDataObj, {
+        method: "post",
+        ...(action && { action }),
+      });
     }
     setEdit(false);
   };

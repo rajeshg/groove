@@ -14,4 +14,27 @@ export default [
   route("profile", "routes/profile.tsx"),
   route("me/assigned", "routes/me.assigned.tsx"),
   route("me/created", "routes/me.created.tsx"),
+
+  // Resource routes
+  route("resources/new-card", "routes/resources/new-card.tsx"),
+  route("resources/new-column", "routes/resources/new-column.tsx"),
+  route("resources/update-card", "routes/resources/update-card.tsx"),
+  route("resources/update-column", "routes/resources/update-column.tsx"),
+  route("resources/delete-card", "routes/resources/delete-card.tsx"),
+  route("resources/delete-column", "routes/resources/delete-column.tsx"),
+  route("resources/move-card", "routes/resources/move-card.tsx"),
+  route("resources/move-column", "routes/resources/move-column.tsx"),
+  route("resources/create-comment", "routes/resources/create-comment.tsx"),
+  route("resources/update-comment", "routes/resources/update-comment.tsx"),
+  route("resources/delete-comment", "routes/resources/delete-comment.tsx"),
+  route(
+    "resources/update-board-name",
+    "routes/resources/update-board-name.tsx"
+  ),
+  route("resources/invite-user", "routes/resources/invite-user.tsx"),
+  route(
+    "resources/update-item-assignee",
+    "routes/resources/update-item-assignee.tsx"
+  ),
+  route("resources/remove-member", "routes/resources/remove-member.tsx"),
 ] satisfies RouteConfig;
