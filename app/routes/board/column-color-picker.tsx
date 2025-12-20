@@ -24,9 +24,24 @@ export function ColumnColorPicker({
   useEffect(() => {
     if (isOpen && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
+      const dropdownWidth = 176; // Approximate width: 4 cols * 32px + gaps + padding
+      const viewportWidth = window.innerWidth;
+      
+      // Check if dropdown would overflow on the right
+      const wouldOverflowRight = rect.left + dropdownWidth > viewportWidth;
+      
+      // Position dropdown
+      let left = rect.left;
+      if (wouldOverflowRight) {
+        // Align to right edge of button instead
+        left = rect.right - dropdownWidth;
+        // Ensure it doesn't go off the left edge
+        left = Math.max(8, left);
+      }
+      
       setDropdownPosition({
         top: rect.bottom + 4,
-        left: rect.left,
+        left: left,
       });
     }
   }, [isOpen]);
