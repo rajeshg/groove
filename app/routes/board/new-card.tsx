@@ -1,10 +1,29 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { invariant } from "@epic-web/invariant";
 import { useFetcher, useParams } from "react-router";
+import { useForm, getFormProps } from "@conform-to/react";
+import { parseWithZod } from "@conform-to/zod/v4";
+import { z } from "zod";
 
 import { ItemMutationFields } from "../types";
 import { SaveButton, CancelButton } from "./components";
 import { Textarea } from "../../components/textarea";
+
+// Client-side validation schema (matches server schema)
+const NewCardSchema = z.object({
+  boardId: z.string().min(1, "Board ID is required"),
+  columnId: z.string().min(1, "Column ID is required"),
+  title: z
+    .string()
+    .min(1, "Card title is required")
+    .max(255, "Card title is too long"),
+  order: z.coerce
+    .number("Order must be a number")
+    .finite("Order must be a valid number")
+    .min(0, "Order cannot be negative"),
+  content: z.string().nullable().optional().default(null),
+  redirectTo: z.string().optional(),
+});
 
 export function NewCard({
   columnId,
@@ -17,20 +36,35 @@ export function NewCard({
   onComplete: () => void;
   onAddCard: () => void;
 }) {
-  let textAreaRef = useRef<HTMLTextAreaElement>(null);
   let buttonRef = useRef<HTMLButtonElement>(null);
   let fetcher = useFetcher();
   let params = useParams();
+  
+  // Track title for button disabled state
+  let [title, setTitle] = useState("");
+  
+  // Use Conform for form state management and auto-reset
+  let [form, fields] = useForm({
+    lastResult: fetcher.data?.result,
+    onValidate({ formData }) {
+      return parseWithZod(formData, { schema: NewCardSchema });
+    },
+    shouldRevalidate: "onBlur",
+  });
+  
+  // Track if we're currently submitting
+  let isSubmitting = fetcher.state === "submitting";
   
   // Track previous state to detect when submission completes
   let prevStateRef = useRef(fetcher.state);
   
   useEffect(() => {
-    // When fetcher completes (goes from submitting to idle), call onAddCard and clear input
+    // When fetcher completes (goes from submitting to idle), reset local state
     if (prevStateRef.current === "submitting" && fetcher.state === "idle") {
-      onAddCard();
-      if (textAreaRef.current) {
-        textAreaRef.current.value = "";
+      // Check if submission was successful (no errors)
+      if (!fetcher.data?.error) {
+        setTitle(""); // Clear local state for button disabled logic
+        onAddCard();
       }
     }
     prevStateRef.current = fetcher.state;
@@ -40,8 +74,11 @@ export function NewCard({
     <fetcher.Form
       method="post"
       action="/resources/new-card"
+      {...getFormProps(form)}
       className="flex flex-col gap-2.5 p-2 pt-1"
       onBlur={(event) => {
+        // Don't close form if we're submitting
+        if (isSubmitting) return;
         if (!event.currentTarget.contains(event.relatedTarget)) {
           onComplete();
         }
@@ -62,29 +99,40 @@ export function NewCard({
       <Textarea
         autoFocus
         required
-        ref={textAreaRef}
-        name={ItemMutationFields.title.name}
+        key={fields.title.key}
+        name={fields.title.name}
+        defaultValue={fields.title.initialValue}
         placeholder="Enter a title for this card"
-        className="outline-none shadow-sm border border-slate-300 dark:border-slate-600 text-sm rounded w-full py-2 px-3 resize-none placeholder:text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 min-h-16 max-h-64 overflow-y-auto bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-50"
+        disabled={isSubmitting}
+        onChange={(e) => {
+          setTitle(e.target.value);
+          // Auto-resize textarea
+          let el = e.currentTarget;
+          el.style.height = "auto";
+          el.style.height = Math.min(el.scrollHeight, 256) + "px";
+        }}
+        className="outline-none shadow-sm border border-slate-300 dark:border-slate-600 text-sm rounded w-full py-2 px-3 resize-none placeholder:text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 min-h-16 max-h-64 overflow-y-auto bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
         onKeyDown={(event) => {
-          if (event.key === "Enter") {
+          if (event.key === "Enter" && !isSubmitting) {
             event.preventDefault();
             invariant(buttonRef.current, "expected button ref");
             buttonRef.current.click();
           }
-          if (event.key === "Escape") {
+          if (event.key === "Escape" && !isSubmitting) {
             onComplete();
           }
         }}
-        onChange={(event) => {
-          let el = event.currentTarget;
-          el.style.height = "auto";
-          el.style.height = Math.min(el.scrollHeight, 256) + "px";
-        }}
       />
       <div className="flex justify-between">
-        <SaveButton ref={buttonRef}>Save Card</SaveButton>
-        <CancelButton onClick={onComplete}>Cancel</CancelButton>
+        <SaveButton 
+          ref={buttonRef} 
+          disabled={isSubmitting || !title.trim()}
+        >
+          {isSubmitting ? "Saving..." : "Save Card"}
+        </SaveButton>
+        <CancelButton onClick={onComplete} disabled={isSubmitting}>
+          Cancel
+        </CancelButton>
       </div>
     </fetcher.Form>
   );

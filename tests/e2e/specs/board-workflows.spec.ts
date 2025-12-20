@@ -359,23 +359,16 @@ test.describe("Board Workflows", () => {
       name: /invite|send/i,
     })
     
-    // Wait for the invite request to complete
-    const invitePromise = page.waitForResponse(
-      (resp) => resp.url().includes("/resources/invite-user") && resp.status() === 200,
-      { timeout: 5000 }
-    )
-    
     await inviteButton.click()
-    await invitePromise
-
-    // Should show success or the user in the list
-    await page.waitForTimeout(1000)
-
-    // Verify member was invited (check that invitation succeeded)
-    const memberListed = await page.locator("body").textContent()
-    const inviteSucceeded = memberListed?.includes(member.email!) || memberListed?.includes("invited") || memberListed?.includes("Invitation sent")
     
-    // Test passes if invitation was sent
-    expect(inviteSucceeded).toBe(true)
+    // Wait for the button to return to idle state (form submission complete)
+    await expect(inviteButton).toHaveText(/send invitation/i, { timeout: 5000 })
+
+    // Wait for the invitation to appear in the pending invitations section
+    await expect(page.locator("body")).toContainText(member.email!, { timeout: 5000 })
+    
+    // Verify the pending invitations section is visible
+    const pendingSection = page.getByText(/pending invitations/i)
+    await expect(pendingSection).toBeVisible()
   })
 })

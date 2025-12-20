@@ -18,7 +18,7 @@ export let SaveButton = forwardRef<
       // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/button#clicking_and_focus
       // https://bugs.webkit.org/show_bug.cgi?id=22261
       tabIndex={0}
-      className="text-sm rounded-lg text-left p-2 font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+      className="text-sm rounded-lg text-left p-2 font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600"
     />
   );
 });
@@ -33,7 +33,7 @@ export let CancelButton = forwardRef<
       type="button"
       tabIndex={0}
       {...props}
-      className="text-sm rounded-lg text-left p-2 font-medium hover:bg-slate-200 focus:bg-slate-200"
+      className="text-sm rounded-lg text-left p-2 font-medium hover:bg-slate-200 focus:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
     />
   );
 });

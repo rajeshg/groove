@@ -1,4 +1,5 @@
 import { useLoaderData, useNavigate } from "react-router";
+import { useState } from "react";
 import { requireAuthCookie } from "~/auth/auth";
 import { badRequest, notFound } from "~/http/bad-request";
 import { getBoardData } from "./queries";
@@ -7,6 +8,7 @@ import { Card } from "./board/card";
 import { BoardHeader } from "./board/board-header";
 import { EditableText } from "./board/components";
 import { ColumnColorPicker } from "./board/column-color-picker";
+import { NewCard } from "./board/new-card";
 import { assertBoardAccess } from "~/utils/permissions";
 
 export async function loader({
@@ -52,6 +54,7 @@ export async function loader({
 export default function ColumnDetail() {
   const { board, column, items } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
+  const [addingCard, setAddingCard] = useState(false);
 
   // Sort items by order
   const sortedItems = [...items].sort((a, b) => a.order - b.order);
@@ -121,6 +124,28 @@ export default function ColumnDetail() {
         </div>
 
         <div className="w-full max-w-4xl">
+          {/* Add Card Button/Form */}
+          <div className="mb-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+            {addingCard ? (
+              <NewCard
+                columnId={column.id}
+                nextOrder={items.length === 0 ? 1 : Math.max(...items.map(i => i.order)) + 1}
+                onAddCard={() => {}}
+                onComplete={() => setAddingCard(false)}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setAddingCard(true)}
+                className="w-full flex items-center gap-2 p-4 text-left font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors rounded-lg"
+              >
+                <Icon name="plus" />
+                <span>Add a card</span>
+              </button>
+            )}
+          </div>
+
+          {/* Cards List */}
           {items.length === 0 ? (
             <div className="bg-white dark:bg-slate-800 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-700 p-10">
               <div className="text-center py-12 text-slate-500 dark:text-slate-400">

@@ -383,21 +383,21 @@ test.describe("Card Workflows - Comprehensive", () => {
       .getByPlaceholder(/Enter a title for this card/i)
       .first()
 
-    // Leave input empty and try to save - HTML5 required should prevent submission
+    // Leave input empty - button should be disabled
     const saveButton = page.getByRole("button", { name: /Save Card/i })
-    await saveButton.click()
-
-    await page.waitForTimeout(500)
-
-    // Input should still be visible (HTML5 validation prevented submission)
-    const inputStillVisible = await cardInput.isVisible()
-    expect(inputStillVisible).toBe(true)
     
+    // Verify button is disabled when input is empty
+    await expect(saveButton).toBeDisabled()
+
     // No cards should be created yet
     expect(await page.locator('[data-card-id]').count()).toBe(0)
 
     // Now create a card with proper title to verify form works
     await cardInput.fill("Valid Card Title")
+    
+    // Button should now be enabled
+    await expect(saveButton).toBeEnabled()
+    
     await saveButton.click()
 
     // Card should be created
