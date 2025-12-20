@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { invariant } from "@epic-web/invariant";
 import { useFetcher, useParams } from "react-router";
 
@@ -21,20 +21,26 @@ export function NewCard({
   let buttonRef = useRef<HTMLButtonElement>(null);
   let fetcher = useFetcher();
   let params = useParams();
+  
+  // Track previous state to detect when submission completes
+  let prevStateRef = useRef(fetcher.state);
+  
+  useEffect(() => {
+    // When fetcher completes (goes from submitting to idle), call onAddCard and clear input
+    if (prevStateRef.current === "submitting" && fetcher.state === "idle") {
+      onAddCard();
+      if (textAreaRef.current) {
+        textAreaRef.current.value = "";
+      }
+    }
+    prevStateRef.current = fetcher.state;
+  }, [fetcher.state, onAddCard]);
 
   return (
     <fetcher.Form
       method="post"
       action="/resources/new-card"
       className="flex flex-col gap-2.5 p-2 pt-1"
-      onSubmit={(event) => {
-        event.preventDefault();
-        let formData = new FormData(event.currentTarget);
-        fetcher.submit(formData);
-        onAddCard();
-        invariant(textAreaRef.current, "missing textarea ref");
-        textAreaRef.current.value = "";
-      }}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) {
           onComplete();

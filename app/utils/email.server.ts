@@ -34,6 +34,13 @@ export async function sendEmail({
   subject: string;
   html: string;
 }) {
+  // Skip email sending in test environments
+  if (process.env.NODE_ENV === 'test' || process.env.E2E_TEST === 'true') {
+    console.log(`📧 [TEST MODE] Skipping email to: ${to}`);
+    console.log(`📧 Subject: ${subject}`);
+    return { success: true, testMode: true };
+  }
+
   const client = getClient();
   const from = process.env.EMAIL_FROM || `Groove <${process.env.SMTP_USER}>`;
 

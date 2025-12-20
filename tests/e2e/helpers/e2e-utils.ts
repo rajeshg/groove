@@ -70,7 +70,37 @@ export async function createTestAccount(userData?: {
 /**
  * Create a test board for an account
  */
-export async function createTestBoard(accountId: string, name?: string) {
+export async function createTestBoard(accountId: string, name?: string, createMultipleColumns = false) {
+  const columnsData = createMultipleColumns
+    ? [
+        {
+          id: generateId(),
+          name: "Todo",
+          order: 1,
+          color: "#94a3b8",
+        },
+        {
+          id: generateId(),
+          name: "In Progress",
+          order: 2,
+          color: "#f59e0b",
+        },
+        {
+          id: generateId(),
+          name: "Done",
+          order: 3,
+          color: "#10b981",
+        },
+      ]
+    : [
+        {
+          id: generateId(),
+          name: "Todo",
+          order: 1,
+          color: "#94a3b8",
+        },
+      ]
+
   const board = await prisma.board.create({
     data: {
       id: generateId(),
@@ -78,14 +108,14 @@ export async function createTestBoard(accountId: string, name?: string) {
       color: "#3b82f6",
       accountId: accountId,
       columns: {
-        create: [
-          {
-            id: generateId(),
-            name: "Todo",
-            order: 1,
-            color: "#94a3b8",
-          },
-        ],
+        create: columnsData,
+      },
+      members: {
+        create: {
+          id: generateId(),
+          accountId: accountId,
+          role: "owner",
+        },
       },
     },
     include: {
