@@ -11,7 +11,7 @@ datasource db {
 }
 
 model Account {
-  id        String  @id @default(nanoid(12)) // Native Prisma 7 nanoid support
+  id        String  @id
   email     String  @unique
   firstName String?
   lastName  String?
@@ -26,7 +26,7 @@ model Account {
 }
 
 model Password {
-  id        String  @id @default(nanoid(12))
+  id        String  @id
   salt      String
   hash      String
   Account   Account @relation(fields: [accountId], references: [id])
@@ -34,7 +34,7 @@ model Password {
 }
 
 model Board {
-  id        String   @id @default(nanoid(12))
+  id        String   @id
   name      String
   color     String   @default("#e0e0e0")
   createdAt DateTime @default(now())
@@ -49,7 +49,7 @@ model Board {
 }
 
 model Column {
-  id        String   @id @default(nanoid(12))
+  id        String   @id
   name      String
   color     String   @default("#94a3b8")
   order     Float    @default(0)
@@ -64,7 +64,7 @@ model Column {
 }
 
 model Item {
-    id        String   @id @default(nanoid(12))
+    id        String   @id
     title     String
     content   String?
 
@@ -92,7 +92,7 @@ model Item {
 }
 
 model Comment {
-  id        String   @id @default(nanoid(12))
+  id        String   @id
   content   String
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -104,7 +104,7 @@ model Comment {
 }
 
 model Assignee {
-  id        String   @id @default(nanoid(12))
+  id        String   @id
   name      String
   createdAt DateTime @default(now())
 
@@ -120,7 +120,7 @@ model Assignee {
 }
 
 model BoardMember {
-  id        String   @id @default(nanoid(12))
+  id        String   @id
   role      String   @default("editor")
   createdAt DateTime @default(now())
 
@@ -134,7 +134,7 @@ model BoardMember {
 }
 
 model BoardInvitation {
-  id        String   @id @default(nanoid(12))
+  id        String   @id
   email     String
   role      String   @default("editor")
   status    String   @default("pending")

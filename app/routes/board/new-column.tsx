@@ -29,7 +29,8 @@ export function NewColumn({
       onSubmit={(event) => {
         event.preventDefault();
         let formData = new FormData(event.currentTarget);
-        formData.set("id", crypto.randomUUID());
+        // Generate temporary client ID for optimistic updates (server will generate nanoid(12))
+        formData.set("id", `temp-${Math.random().toString(36).slice(2, 9)}`);
         submit(formData, {
           navigate: false,
           method: "post",

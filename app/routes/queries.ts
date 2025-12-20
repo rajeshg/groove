@@ -1,9 +1,9 @@
+import { generateId } from "../utils/id";
 import { prisma } from "../../prisma/client";
 import { DEFAULT_COLUMN_COLORS } from "../constants/colors";
 import { getBoardTemplate } from "../constants/templates";
 import { ensureAssigneeForUser } from "../utils/assignee";
 
-import type { ItemMutation } from "./types";
 import type { Prisma } from "../../prisma/client";
 
 // Time threshold for editing/deleting comments (15 minutes in milliseconds)
@@ -145,21 +145,44 @@ export async function getCardDetail(
 }
 
 export function upsertItem(
-  mutation: ItemMutation & { boardId: string },
+  mutation: {
+    id?: string;
+    boardId: string;
+    columnId: string;
+    title: string;
+    order: number;
+    content?: string | null;
+    createdBy?: string;
+    intent?: string;
+  },
   _accountId: string
 ) {
-  // Touch lastActiveAt on meaningful changes (content/title/column changes)
-  const updateData = { ...mutation, lastActiveAt: new Date() };
+  const { intent: _intent, id, boardId, columnId, createdBy, ...rest } = mutation;
+
+  const baseData: any = {
+    ...rest,
+    lastActiveAt: new Date(),
+    Board: { connect: { id: boardId } },
+    Column: { connect: { id: columnId } },
+  };
+
+  if (createdBy) {
+    baseData.createdByUser = { connect: { id: createdBy } };
+  }
+
+  if (!id) {
+    return prisma.item.create({
+      data: { ...baseData, id: generateId() },
+    });
+  }
 
   return prisma.item.upsert({
     where: {
-      id: mutation.id,
-      Board: {
-        accountId: _accountId,
-      },
+      id: id,
+      Board: { accountId: _accountId },
     },
-    create: updateData,
-    update: updateData,
+    create: baseData as Prisma.ItemCreateInput,
+    update: baseData as Prisma.ItemUpdateInput,
   });
 }
 
@@ -216,15 +239,21 @@ export async function createColumn(
   let columnCount = await prisma.column.count({
     where: { boardId, Board: { accountId } },
   });
-  return prisma.column.create({
-    data: {
-      id,
-      boardId,
-      name,
-      order: columnCount + 1,
-      isExpanded: true,
-    },
-  });
+
+  const data: Prisma.ColumnCreateInput = {
+    Board: { connect: { id: boardId } },
+    name,
+    order: columnCount + 1,
+    isExpanded: true,
+  };
+
+  // If id is not a temporary client ID, use it (though usually it is)
+  // If it is a temp ID, omit it so Prisma generates a nanoid(12)
+  if (!id.startsWith("temp-")) {
+    data.id = id;
+  }
+
+  return prisma.column.create({ data: { ...data, id: generateId() } });
 }
 
 export async function deleteColumn(
@@ -315,6 +344,7 @@ export async function createComment(
   const [comment] = await prisma.$transaction([
     prisma.comment.create({
       data: {
+        id: generateId(),
         content,
         createdBy,
         itemId,
@@ -479,6 +509,7 @@ export async function createBoard(
 
   const board = await prisma.board.create({
     data: {
+      id: generateId(),
       name,
       color,
       accountId,
@@ -488,6 +519,7 @@ export async function createBoard(
   // Create owner as a board member with role 'owner'
   await prisma.boardMember.create({
     data: {
+      id: generateId(),
       boardId: board.id,
       accountId,
       role: "owner",
@@ -551,7 +583,7 @@ export async function createBoard(
   for (const col of columnsToCreate) {
     await prisma.column.create({
       data: {
-        id: `col-${board.id}-${col.order}`,
+        id: generateId(),
         boardId: board.id,
         name: col.name,
         order: col.order,
@@ -630,6 +662,7 @@ export async function addBoardMember(
 ) {
   return prisma.boardMember.create({
     data: {
+      id: generateId(),
       boardId,
       accountId,
       role,
@@ -673,6 +706,7 @@ export async function inviteUserToBoard(
 ) {
   return prisma.boardInvitation.create({
     data: {
+      id: generateId(),
       boardId,
       email,
       invitedBy,
@@ -723,6 +757,7 @@ export async function acceptBoardInvitation(
   // Create board member record
   await prisma.boardMember.create({
     data: {
+      id: generateId(),
       boardId: invitation.boardId,
       accountId: userId,
       role: invitation.role,

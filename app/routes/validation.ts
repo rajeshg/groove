@@ -69,7 +69,8 @@ export const itemMutationSchema = z.object({
     .max(255, "Card title is too long"),
   order: z.coerce
     .number("Order must be a number")
-    .finite("Order must be a valid number"),
+    .finite("Order must be a valid number")
+    .min(0, "Order cannot be negative"),
   content: z.string().nullable().default(null),
 });
 
@@ -77,14 +78,33 @@ export type ItemMutationInput = z.infer<typeof itemMutationSchema>;
 
 export const createItemSchema = z.object({
   intent: z.literal("createItem"),
-  ...itemMutationSchema.shape,
+  columnId: z.string().min(1, "Invalid column ID"),
+  title: z
+    .string()
+    .min(1, "Card title is required")
+    .max(255, "Card title is too long"),
+  order: z.coerce
+    .number("Order must be a number")
+    .finite("Order must be a valid number")
+    .min(0, "Order cannot be negative"),
+  content: z.string().nullable().default(null),
 });
 
 export type CreateItemInput = z.infer<typeof createItemSchema>;
 
 export const updateItemSchema = z.object({
   intent: z.literal("updateItem"),
-  ...itemMutationSchema.shape,
+  id: z.string().min(1, "Invalid item ID"),
+  columnId: z.string().min(1, "Invalid column ID"),
+  title: z
+    .string()
+    .min(1, "Card title is required")
+    .max(255, "Card title is too long"),
+  order: z.coerce
+    .number("Order must be a number")
+    .finite("Order must be a valid number")
+    .min(0, "Order cannot be negative"),
+  content: z.string().nullable().default(null),
 });
 
 export type UpdateItemInput = z.infer<typeof updateItemSchema>;
@@ -96,7 +116,8 @@ export const moveItemSchema = z.object({
   title: z.string().optional(),
   order: z.coerce
     .number("Order must be a number")
-    .finite("Order must be a valid number"),
+    .finite("Order must be a valid number")
+    .min(0, "Order cannot be negative"),
   content: z.string().nullable().default(null),
 });
 
@@ -146,7 +167,8 @@ export const moveColumnSchema = z.object({
   id: z.string().min(1, "Invalid column ID"),
   order: z.coerce
     .number("Order must be a number")
-    .finite("Order must be a valid number"),
+    .finite("Order must be a valid number")
+    .min(0, "Order cannot be negative"),
 });
 
 export type MoveColumnInput = z.infer<typeof moveColumnSchema>;
@@ -168,7 +190,7 @@ export const inviteUserSchema = z.object({
     .string()
     .min(1, "Email is required")
     .email("Please enter a valid email address"),
-  role: z.string().default("editor"),
+  role: z.enum(["owner", "editor"]).default("editor"),
 });
 
 export type InviteUserInput = z.infer<typeof inviteUserSchema>;
@@ -232,12 +254,18 @@ export type CreateAndAssignVirtualAssigneeInput = z.infer<
 
 /**
  * Parse FormData into an object, handling multiple values and null
+ *
+ * - Trims string values to remove leading/trailing whitespace
+ * - Converts empty strings to null (allows optional field handling)
+ * - Preserves non-string values as-is
  */
 export function formDataToObject(formData: FormData): Record<string, unknown> {
   const obj: Record<string, unknown> = {};
   for (const [key, value] of formData.entries()) {
+    // Trim strings to remove leading/trailing whitespace
+    const trimmed = typeof value === "string" ? value.trim() : value;
     // Handle empty strings as null for optional fields
-    obj[key] = value === "" ? null : value;
+    obj[key] = trimmed === "" ? null : trimmed;
   }
   return obj;
 }

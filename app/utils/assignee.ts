@@ -1,3 +1,4 @@
+import { generateId } from "./id";
 import { prisma } from "../../prisma/client";
 
 /**
@@ -82,6 +83,7 @@ export async function ensureAssigneeForUser(
 
   const assignee = await prisma.assignee.create({
     data: {
+      id: generateId(),
       name: uniqueName,
       boardId,
       userId,
@@ -122,6 +124,7 @@ export async function createOrGetAssignee(
 
   const assignee = await prisma.assignee.create({
     data: {
+      id: generateId(),
       name: uniqueName,
       boardId,
     },

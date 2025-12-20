@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { generateId } from "../utils/id";
 
 import { prisma } from "../../prisma/client";
 
@@ -24,10 +25,11 @@ export async function createAccount(
 
   return prisma.account.create({
     data: {
+      id: generateId(),
       email: email,
       firstName: firstName.trim(),
       lastName: lastName.trim(),
-      Password: { create: { hash, salt } },
+      Password: { create: { id: generateId(), hash, salt } },
     },
   });
 }

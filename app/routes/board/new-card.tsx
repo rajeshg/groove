@@ -21,27 +21,22 @@ export function NewCard({
   let buttonRef = useRef<HTMLButtonElement>(null);
   let submit = useSubmit();
 
-  return (
-    <Form
-      method="post"
-      className="flex flex-col gap-2.5 p-2 pt-1"
+   return (
+     <Form
+       method="post"
+       className="flex flex-col gap-2.5 p-2 pt-1"
       onSubmit={(event) => {
         event.preventDefault();
-
         let formData = new FormData(event.currentTarget);
-        let id = crypto.randomUUID();
-        formData.set(ItemMutationFields.id.name, id);
-
+        // We don't send an ID for creation, the server will generate nanoid(12)
         submit(formData, {
-          method: "post",
-          fetcherKey: `card:${id}`,
           navigate: false,
+          method: "post",
           flushSync: true,
         });
-
-        invariant(textAreaRef.current);
-        textAreaRef.current.value = "";
         onAddCard();
+        invariant(textAreaRef.current, "missing textarea ref");
+        textAreaRef.current.value = "";
       }}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) {

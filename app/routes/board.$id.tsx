@@ -41,7 +41,8 @@ import type { Route } from "./+types/board.$id";
 import { sendEmail, emailTemplates } from "~/utils/email.server";
 import {
   updateBoardNameSchema,
-  itemMutationSchema,
+  createItemSchema,
+  updateItemSchema,
   deleteCardSchema,
   createColumnSchema,
   updateColumnSchema,
@@ -203,21 +204,18 @@ export async function action({
     }
 
     case INTENTS.createItem: {
-      const result = tryParseFormData(formData, itemMutationSchema);
+      const result = tryParseFormData(formData, createItemSchema);
       if (!result.success) throw badRequest(result.error);
       // Assign current user as creator when creating new card
       await upsertItem(
-        { ...result.data, boardId, createdBy: accountId } as ItemMutation & {
-          boardId: string;
-          createdBy: string;
-        },
+        { ...result.data, boardId, createdBy: accountId } as any,
         accountId
       );
       break;
     }
 
     case INTENTS.updateItem: {
-      const result = tryParseFormData(formData, itemMutationSchema);
+      const result = tryParseFormData(formData, updateItemSchema);
       if (!result.success) throw badRequest(result.error);
       await upsertItem({ ...result.data, boardId }, accountId);
       break;
