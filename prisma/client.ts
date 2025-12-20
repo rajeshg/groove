@@ -10,7 +10,7 @@ type PrismaGlobal = {
 
 function createPrismaClient(): PrismaClient {
   const databaseUrl =
-    process.env.DATABASE_URL || "file:/app/prisma/data/data.db";
+    process.env.DATABASE_URL || "file:./prisma/data/data.db";
 
   const adapter = new PrismaLibSql({
     url: databaseUrl,

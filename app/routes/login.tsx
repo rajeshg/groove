@@ -1,61 +1,100 @@
 import { redirect } from "react-router";
-import { Form, Link, useActionData, useSearchParams } from "react-router";
+import { Form, Link, useSearchParams } from "react-router";
+import { useForm, getFormProps, getInputProps } from "@conform-to/react";
+import { parseWithZod } from "@conform-to/zod/v4";
+import type { Route } from "./+types/login";
 
 import { redirectIfLoggedInLoader, setAuthOnResponse } from "../auth/auth";
 import { Button } from "../components/button";
 import { Input, Label } from "../components/input";
+import { prisma } from "../../prisma/client";
 
 import { login } from "./login.queries";
-import { loginSchema, tryParseFormData } from "./validation";
+import { loginSchema } from "./validation";
 
-export const loader = redirectIfLoggedInLoader;
+export async function loader({ request }: Route.LoaderArgs) {
+  // If user is already logged in, redirect them
+  await redirectIfLoggedInLoader({ request });
+  
+  // Check if there's an invitation
+  const url = new URL(request.url);
+  const invitationId = url.searchParams.get("invitationId");
+  
+  if (invitationId) {
+    // Fetch invitation details to show context
+    const invitation = await prisma.boardInvitation.findUnique({
+      where: { id: invitationId },
+      select: {
+        Board: {
+          select: {
+            name: true,
+            Account: {
+              select: { firstName: true, lastName: true }
+            }
+          }
+        },
+        status: true,
+      }
+    });
+    
+    if (invitation && invitation.status === "pending") {
+      return {
+        boardName: invitation.Board.name,
+        inviterName: invitation.Board.Account.firstName 
+          ? `${invitation.Board.Account.firstName} ${invitation.Board.Account.lastName || ""}`.trim()
+          : "A team member"
+      };
+    }
+  }
+  
+  return { boardName: null, inviterName: null };
+}
 
 export const meta = () => {
   return [{ title: "Groove Login" }];
 };
 
-export async function action({ request }: { request: Request }) {
-  let formData = await request.formData();
+export async function action({ request }: Route.ActionArgs) {
+  const formData = await request.formData();
   const url = new URL(request.url);
   const invitationId = url.searchParams.get("invitationId");
 
-  const result = tryParseFormData(formData, loginSchema);
-  if (!result.success) {
-    return new Response(
-      JSON.stringify({ ok: false, errors: { general: result.error } }),
-      {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+  const submission = parseWithZod(formData, { schema: loginSchema });
+
+  if (submission.status !== "success") {
+    return { result: submission.reply() };
   }
 
-  let userId = await login(result.data.email, result.data.password);
+  const userId = await login(submission.value.email, submission.value.password);
   if (userId === false) {
-    return new Response(
-      JSON.stringify({
-        ok: false,
-        errors: { password: "Invalid credentials" },
+    return {
+      result: submission.reply({
+        fieldErrors: {
+          password: ["Invalid credentials"],
+        },
       }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
-    );
+    };
   }
 
   // If there's an invitation, redirect to accept it
   const redirectUrl = invitationId ? `/invite?id=${invitationId}` : "/home";
-  let response = redirect(redirectUrl);
+  const response = redirect(redirectUrl);
   return setAuthOnResponse(response, userId);
 }
 
-export default function Login() {
-  let actionResult = useActionData<{
-    ok?: boolean;
-    errors?: { email?: string; password?: string };
-  }>();
-
+export default function Login({ actionData, loaderData }: Route.ComponentProps) {
   const [searchParams] = useSearchParams();
   const invitationId = searchParams.get("invitationId");
   const hasInvitationContext = !!invitationId;
+
+  const [form, fields] = useForm({
+    lastResult: actionData?.result,
+    onValidate({ formData }) {
+      return parseWithZod(formData, { schema: loginSchema });
+    },
+    shouldValidate: "onBlur",
+    shouldRevalidate: "onInput",
+  });
 
   return (
     <div className="flex min-h-full flex-1 flex-col mt-20 sm:px-6 lg:px-8">
@@ -66,58 +105,54 @@ export default function Login() {
         >
           Log in
         </h2>
-        <p className="mt-2 text-center text-sm text-slate-600">
-          {hasInvitationContext
-            ? "Sign in to accept your board invitation"
-            : "Welcome back to Groove"}
-        </p>
+        {hasInvitationContext && loaderData.boardName ? (
+          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-900 text-center">
+              <strong>{loaderData.inviterName}</strong> invited you to join{" "}
+              <strong>{loaderData.boardName}</strong>
+            </p>
+          </div>
+        ) : (
+          <p className="mt-2 text-center text-sm text-slate-600">
+            Welcome back to Groove
+          </p>
+        )}
       </div>
 
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-[480px]">
         <div className="bg-white px-6 py-12 shadow sm:rounded-lg sm:px-12">
-          <Form className="space-y-6" method="post">
+          <Form method="post" {...getFormProps(form)} className="space-y-6">
             <div>
-              <Label htmlFor="email">
-                Email address{" "}
-                {actionResult?.errors?.email && (
-                  <span id="email-error" className="text-red-600 font-semibold">
-                    {actionResult.errors.email}
-                  </span>
-                )}
-              </Label>
+              <Label htmlFor={fields.email.id}>Email address</Label>
               <Input
+                {...getInputProps(fields.email, { type: "email" })}
                 autoFocus
-                id="email"
-                name="email"
-                type="email"
                 autoComplete="email"
-                aria-describedby={
-                  actionResult?.errors?.email ? "email-error" : "login-header"
-                }
-                required
               />
+              {fields.email.errors && (
+                <div
+                  id={fields.email.errorId}
+                  className="text-red-600 font-semibold text-sm mt-1"
+                >
+                  {fields.email.errors}
+                </div>
+              )}
             </div>
 
             <div>
-              <Label htmlFor="password">
-                Password{" "}
-                {actionResult?.errors?.password && (
-                  <span
-                    id="password-error"
-                    className="text-red-600 font-semibold"
-                  >
-                    {actionResult.errors.password}
-                  </span>
-                )}
-              </Label>
+              <Label htmlFor={fields.password.id}>Password</Label>
               <Input
-                id="password"
-                name="password"
-                type="password"
+                {...getInputProps(fields.password, { type: "password" })}
                 autoComplete="current-password"
-                aria-describedby="password-error"
-                required
               />
+              {fields.password.errors && (
+                <div
+                  id={fields.password.errorId}
+                  className="text-red-600 font-semibold text-sm mt-1"
+                >
+                  {fields.password.errors}
+                </div>
+              )}
             </div>
 
             <div>

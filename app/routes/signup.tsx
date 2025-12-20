@@ -1,103 +1,121 @@
 import { redirect, useSearchParams, useNavigation } from "react-router";
-import { Form, Link, useActionData } from "react-router";
+import { Form, Link } from "react-router";
+import { useForm, getFormProps, getInputProps } from "@conform-to/react";
+import { parseWithZod } from "@conform-to/zod/v4";
+import type { Route } from "./+types/signup";
 
 import { redirectIfLoggedInLoader, setAuthOnResponse } from "../auth/auth";
 import { Label, Input } from "../components/input";
 import { Button } from "../components/button";
 import { Icon } from "../icons/icons";
+import { prisma } from "../../prisma/client";
 
 import { createAccount, accountExists } from "./signup.queries";
-import { signupSchema, tryParseFormData } from "./validation";
+import { signupSchema } from "./validation";
 import { sendEmail, emailTemplates } from "~/utils/email.server";
-import { acceptBoardInvitation, getPendingInvitationsForUser } from "./queries";
 
-export const loader = redirectIfLoggedInLoader;
+export async function loader({ request }: Route.LoaderArgs) {
+  // If user is already logged in, redirect them
+  await redirectIfLoggedInLoader({ request });
+  
+  // Check if there's an invitation
+  const url = new URL(request.url);
+  const invitationId = url.searchParams.get("invitationId");
+  
+  if (invitationId) {
+    // Fetch invitation details to show context
+    const invitation = await prisma.boardInvitation.findUnique({
+      where: { id: invitationId },
+      select: {
+        Board: {
+          select: {
+            name: true,
+            Account: {
+              select: { firstName: true, lastName: true }
+            }
+          }
+        },
+        status: true,
+      }
+    });
+    
+    if (invitation && invitation.status === "pending") {
+      return {
+        boardName: invitation.Board.name,
+        inviterName: invitation.Board.Account.firstName 
+          ? `${invitation.Board.Account.firstName} ${invitation.Board.Account.lastName || ""}`.trim()
+          : "A team member"
+      };
+    }
+  }
+  
+  return { boardName: null, inviterName: null };
+}
 
 export const meta = () => {
   return [{ title: "Groove Signup" }];
 };
 
-export async function action({ request }: { request: Request }) {
-  let formData = await request.formData();
+export async function action({ request }: Route.ActionArgs) {
+  const formData = await request.formData();
   const url = new URL(request.url);
   const invitationId = url.searchParams.get("invitationId");
 
-  const result = tryParseFormData(formData, signupSchema);
-  if (!result.success) {
-    return new Response(
-      JSON.stringify({ ok: false, errors: { general: result.error } }),
-      {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+  const submission = parseWithZod(formData, { schema: signupSchema });
+
+  if (submission.status !== "success") {
+    return { result: submission.reply() };
   }
 
   // Check if account already exists
-  const emailExists = await accountExists(result.data.email);
+  const emailExists = await accountExists(submission.value.email);
   if (emailExists) {
-    return new Response(
-      JSON.stringify({
-        ok: false,
-        errors: { email: "An account with this email address already exists" },
+    return {
+      result: submission.reply({
+        fieldErrors: {
+          email: ["An account with this email address already exists"],
+        },
       }),
-      {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    };
   }
 
-  let user = await createAccount(
-    result.data.email,
-    result.data.password,
-    result.data.firstName,
-    result.data.lastName
+  const user = await createAccount(
+    submission.value.email,
+    submission.value.password,
+    submission.value.firstName,
+    submission.value.lastName
   );
-
-  // Check for and accept any pending invitations for this email
-  const pendingInvitations = await getPendingInvitationsForUser(
-    result.data.email
-  );
-  for (const invitation of pendingInvitations) {
-    try {
-      await acceptBoardInvitation(invitation.id, user.id);
-    } catch (error) {
-      // Log but don't fail signup if invitation acceptance fails
-      console.error(`Failed to accept invitation ${invitation.id}:`, error);
-    }
-  }
 
   // Send welcome email
-  const template = emailTemplates.welcome(result.data.firstName);
+  const template = emailTemplates.welcome(submission.value.firstName);
   await sendEmail({
-    to: result.data.email,
+    to: submission.value.email,
     subject: template.subject,
     html: template.html,
   });
 
   // If there's a specific invitation, redirect to accept it
+  // Otherwise go to home
   const redirectUrl = invitationId ? `/invite?id=${invitationId}` : "/home";
   return setAuthOnResponse(redirect(redirectUrl), user.id);
 }
 
-export default function Signup() {
-  let actionResult = useActionData<{
-    ok?: boolean;
-    errors?: {
-      email?: string;
-      password?: string;
-      firstName?: string;
-      lastName?: string;
-    };
-  }>();
-
+export default function Signup({ actionData, loaderData }: Route.ComponentProps) {
   const [searchParams] = useSearchParams();
   const invitationId = searchParams.get("invitationId");
   const hasInvitationContext = !!invitationId;
 
   const navigation = useNavigation();
   const isSubmitting = navigation.state !== "idle";
+
+  const [form, fields] = useForm({
+    lastResult: actionData?.result,
+    onValidate({ formData }) {
+      return parseWithZod(formData, { schema: signupSchema });
+    },
+    shouldValidate: "onBlur",
+    shouldRevalidate: "onInput",
+  });
 
   return (
     <div className="flex min-h-full flex-1 flex-col mt-20 sm:px-6 lg:px-8">
@@ -108,116 +126,92 @@ export default function Signup() {
         >
           Sign up
         </h2>
-        <p className="mt-2 text-center text-sm text-slate-600">
-          {hasInvitationContext
-            ? "Create your account to accept the board invitation"
-            : "Join Groove and start collaborating"}
-        </p>
+        {hasInvitationContext && loaderData.boardName ? (
+          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-900 text-center">
+              <strong>{loaderData.inviterName}</strong> invited you to join{" "}
+              <strong>{loaderData.boardName}</strong>
+            </p>
+          </div>
+        ) : (
+          <p className="mt-2 text-center text-sm text-slate-600">
+            Join Groove and start collaborating
+          </p>
+        )}
       </div>
 
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-[480px]">
         <div className="bg-white px-6 py-12 shadow sm:rounded-lg sm:px-12">
-          <Form className="space-y-6" method="post">
+          <Form method="post" {...getFormProps(form)} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="firstName">
-                  First Name{" "}
-                  {actionResult?.errors?.firstName && (
-                    <span
-                      id="firstName-error"
-                      className="text-red-600 font-semibold"
-                    >
-                      {actionResult.errors.firstName}
-                    </span>
-                  )}
-                </Label>
+                <Label htmlFor={fields.firstName.id}>First Name</Label>
                 <Input
-                  id="firstName"
-                  name="firstName"
-                  type="text"
+                  {...getInputProps(fields.firstName, { type: "text" })}
                   autoComplete="given-name"
-                  aria-describedby={
-                    actionResult?.errors?.firstName
-                      ? "firstName-error"
-                      : "signup-header"
-                  }
-                  required
                   disabled={isSubmitting}
                 />
+                {fields.firstName.errors && (
+                  <div
+                    id={fields.firstName.errorId}
+                    className="text-red-600 font-semibold text-sm mt-1"
+                  >
+                    {fields.firstName.errors}
+                  </div>
+                )}
               </div>
 
               <div>
-                <Label htmlFor="lastName">
-                  Last Name{" "}
-                  {actionResult?.errors?.lastName && (
-                    <span
-                      id="lastName-error"
-                      className="text-red-600 font-semibold"
-                    >
-                      {actionResult.errors.lastName}
-                    </span>
-                  )}
-                </Label>
+                <Label htmlFor={fields.lastName.id}>Last Name</Label>
                 <Input
-                  id="lastName"
-                  name="lastName"
-                  type="text"
+                  {...getInputProps(fields.lastName, { type: "text" })}
                   autoComplete="family-name"
-                  aria-describedby={
-                    actionResult?.errors?.lastName
-                      ? "lastName-error"
-                      : "signup-header"
-                  }
-                  required
                   disabled={isSubmitting}
                 />
+                {fields.lastName.errors && (
+                  <div
+                    id={fields.lastName.errorId}
+                    className="text-red-600 font-semibold text-sm mt-1"
+                  >
+                    {fields.lastName.errors}
+                  </div>
+                )}
               </div>
             </div>
 
             <div>
-              <Label htmlFor="email">
-                Email address{" "}
-                {actionResult?.errors?.email && (
-                  <span id="email-error" className="text-red-600 font-semibold">
-                    {actionResult.errors.email}
-                  </span>
-                )}
-              </Label>
+              <Label htmlFor={fields.email.id}>Email address</Label>
               <Input
+                {...getInputProps(fields.email, { type: "email" })}
                 autoFocus
-                id="email"
-                name="email"
-                type="email"
                 autoComplete="email"
-                aria-describedby={
-                  actionResult?.errors?.email ? "email-error" : "signup-header"
-                }
-                required
                 disabled={isSubmitting}
               />
+              {fields.email.errors && (
+                <div
+                  id={fields.email.errorId}
+                  className="text-red-600 font-semibold text-sm mt-1"
+                >
+                  {fields.email.errors}
+                </div>
+              )}
             </div>
 
             <div>
-              <Label htmlFor="password">
-                Password{" "}
-                {actionResult?.errors?.password && (
-                  <span
-                    id="password-error"
-                    className="text-red-600 font-semibold"
-                  >
-                    {actionResult.errors.password}
-                  </span>
-                )}
-              </Label>
+              <Label htmlFor={fields.password.id}>Password</Label>
               <Input
-                id="password"
-                name="password"
-                type="password"
+                {...getInputProps(fields.password, { type: "password" })}
                 autoComplete="current-password"
-                aria-describedby="password-error"
-                required
                 disabled={isSubmitting}
               />
+              {fields.password.errors && (
+                <div
+                  id={fields.password.errorId}
+                  className="text-red-600 font-semibold text-sm mt-1"
+                >
+                  {fields.password.errors}
+                </div>
+              )}
             </div>
 
             <Button type="submit" disabled={isSubmitting}>

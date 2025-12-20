@@ -17,6 +17,15 @@
 /prisma/data/
 /prisma/generated/
 
+# Test outputs (all generated test artifacts)
+test-output/
+test-results/
+playwright-report/
+
+# Test databases
+tests/**/*.db
+prisma/data/test-*.db
+
 # Nginx certificates (generated, not committed)
 /nginx/certs/
 

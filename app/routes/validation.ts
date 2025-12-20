@@ -195,6 +195,14 @@ export const inviteUserSchema = z.object({
 
 export type InviteUserInput = z.infer<typeof inviteUserSchema>;
 
+// Schema for /invite route (no intent needed - dedicated route)
+export const inviteAcceptSchema = z.object({
+  invitationId: z.string().min(1, "Invitation ID is required"),
+});
+
+export type InviteAcceptInput = z.infer<typeof inviteAcceptSchema>;
+
+// Schema for accepting invitation via resource route (needs intent)
 export const acceptInvitationSchema = z.object({
   intent: z.literal("acceptInvitation"),
   invitationId: z.string().min(1, "Invitation ID is required"),

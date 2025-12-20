@@ -1,13 +1,13 @@
-// tests/setup.ts - Ensure correct DATABASE_URL for tests
+// tests/setup/vitest.setup.ts - Ensure correct DATABASE_URL for tests
 import { config } from "dotenv";
 import path from "node:path";
 import fs from "fs";
 
 // Load environment variables from project root
-config({ path: path.resolve(__dirname, "../.env") });
+config({ path: path.resolve(__dirname, "../../.env") });
 
 // Clean up old test databases (older than 1 hour)
-const dataDir = path.resolve(__dirname, "../prisma/data");
+const dataDir = path.resolve(__dirname, "../../prisma/data");
 if (fs.existsSync(dataDir)) {
   const files = fs.readdirSync(dataDir);
   const oneHourAgo = Date.now() - 60 * 60 * 1000;
@@ -28,14 +28,16 @@ if (fs.existsSync(dataDir)) {
   });
 }
 
-// Use a unique test database with timestamp + milliseconds for concurrent test runs
+// Use a unique test database with timestamp + milliseconds + random suffix for concurrent test runs
 const now = new Date();
 const timestamp =
   now.toISOString().replace(/[:-]/g, "").replace(/\..+/, "") +
   "-" +
-  now.getMilliseconds().toString().padStart(3, "0");
+  now.getMilliseconds().toString().padStart(3, "0") +
+  "-" +
+  Math.random().toString(36).substring(2, 8);
 const testDbName = `test-${timestamp}.db`;
-const testDbPath = path.resolve(__dirname, `../prisma/data/${testDbName}`);
+const testDbPath = path.resolve(__dirname, `../../prisma/data/${testDbName}`);
 
 process.env.DATABASE_URL = `file:${testDbPath}`;
 process.env.TEST_DB_PATH = testDbPath;
@@ -48,14 +50,17 @@ if (!fs.existsSync(dbDir)) {
 }
 
 // Copy the main database as a starting point for the test database
-const mainDbPath = path.resolve(__dirname, "../prisma/data/data.db");
+const mainDbPath = path.resolve(__dirname, "../../prisma/data/data.db");
 if (fs.existsSync(mainDbPath)) {
   try {
     fs.copyFileSync(mainDbPath, testDbPath);
+    // Ensure the copied database is writable
+    fs.chmodSync(testDbPath, 0o666);
     console.log("✅ Test database initialized from main database");
-  } catch {
+  } catch (error) {
     console.log(
-      "⚠️  Could not copy main database, test will create fresh database"
+      "⚠️  Could not copy main database, test will create fresh database",
+      error
     );
   }
 }
