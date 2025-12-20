@@ -269,9 +269,9 @@ function NewBoard() {
   let [boardTitle, setBoardTitle] = useState("");
 
   const handleTemplateChange = (templateName: string) => {
-    if (!boardTitle.trim()) {
-      setBoardTitle(templateName);
-    }
+    // Always update the board name to match the selected template
+    // This ensures the name stays in sync with the template selection
+    setBoardTitle(templateName);
   };
 
   return (
