@@ -138,8 +138,8 @@ export function Card({
       <div
         draggable
         className={
-          "w-full pt-8 pb-3 pr-3 pl-3 relative group bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 cursor-pointer hover:shadow-md hover:border-slate-300 dark:hover:border-slate-500 transition-all " +
-          (isDragging ? "opacity-50 scale-95" : "")
+          "w-full pt-10 pb-4 pr-4 pl-4 relative group bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer hover:shadow-xl hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-300 " +
+          (isDragging ? "opacity-50 scale-95" : "hover:-translate-y-1")
         }
         onClick={() => {
           // Don't navigate if dragging
@@ -167,17 +167,18 @@ export function Card({
       >
         {/* Card ID badge - absolutely positioned at top-left */}
         <div
-          className="absolute top-0 left-0 inline-flex items-center text-white font-semibold px-2 py-1 text-xs gap-2 font-mono uppercase"
+          className="absolute top-0 left-0 inline-flex items-center text-white font-black px-3 py-1 text-[9px] gap-2 font-mono uppercase tracking-widest rounded-tl-xl rounded-br-lg shadow-sm"
           style={{
             backgroundColor: columnColor,
+            textShadow: "0 1px 1px rgba(0, 0, 0, 0.2)",
           }}
         >
-          <span>{id.substring(0, 4)}</span>
-          <span>{boardName}</span>
+          <span className="opacity-80">#{id.substring(0, 4)}</span>
+          <span className="border-l border-white/20 pl-2">{boardName}</span>
         </div>
 
         {/* Card title - non-editable, click opens detail page */}
-        <h3 className="font-semibold text-slate-900 dark:text-slate-50 text-sm mb-1">
+        <h3 className="font-bold text-slate-950 dark:text-slate-50 text-base mb-1">
           {title}
         </h3>
 
@@ -193,7 +194,7 @@ export function Card({
 
         {/* Comment count badge */}
         {commentCount > 0 && (
-          <div className="flex items-center gap-1 mt-2 text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-1 mt-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
             <svg
               className="w-3 h-3"
               fill="none"
@@ -204,7 +205,7 @@ export function Card({
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
+                d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
               />
             </svg>
             <span>

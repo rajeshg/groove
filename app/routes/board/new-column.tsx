@@ -11,10 +11,12 @@ export function NewColumn({
   boardId,
   onAdd,
   editInitially,
+  isMobile = false,
 }: {
   boardId: string;
   onAdd: () => void;
   editInitially: boolean;
+  isMobile?: boolean;
 }) {
   let [editing, setEditing] = useState(editInitially);
   let inputRef = useRef<HTMLInputElement>(null);
@@ -24,7 +26,11 @@ export function NewColumn({
     <fetcher.Form
       method="post"
       action="/resources/new-column"
-      className="p-3 flex-shrink-0 flex flex-col gap-3 overflow-hidden max-h-full w-[24rem] border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm bg-white dark:bg-slate-800"
+      className={
+        isMobile
+          ? "p-4 flex flex-col gap-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 shadow-inner"
+          : "p-4 flex-shrink-0 flex flex-col gap-4 overflow-hidden max-h-full w-[24rem] border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-sm shadow-sm"
+      }
       onSubmit={(event) => {
         event.preventDefault();
         let formData = new FormData(event.currentTarget);
@@ -65,9 +71,19 @@ export function NewColumn({
         onAdd();
       }}
       aria-label="Add new column"
-      className="flex-shrink-0 flex items-center justify-center w-8 h-8 mt-2 ml-2 text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all"
+      className={
+        isMobile
+          ? "w-full p-8 flex items-center justify-center gap-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 hover:bg-white dark:hover:bg-slate-800 transition-all text-slate-500 dark:text-slate-400 font-bold group shadow-sm"
+          : "flex-shrink-0 flex flex-col items-center justify-center w-[24rem] self-stretch bg-slate-100/30 dark:bg-slate-900/30 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-500 hover:bg-slate-100/50 dark:hover:bg-slate-900/50 transition-all group m-0"
+      }
     >
-      <Icon name="plus" size="md" />
+      <div className="flex flex-col items-center gap-4 transition-transform duration-300 group-hover:scale-110">
+        <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 transition-all">
+          <Icon name="plus" size="md" />
+        </div>
+        <span className="uppercase tracking-[0.3em] text-[10px] font-black text-slate-400 dark:text-slate-500 group-hover:text-blue-600 transition-colors">Add Column</span>
+      </div>
     </button>
+
   );
 }

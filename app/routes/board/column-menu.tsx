@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useFetcher } from "react-router";
 import { createPortal } from "react-dom";
+import { Icon } from "../../icons/icons";
 import { COLOR_PRESETS } from "../../constants/colors";
 
 interface ColumnMenuProps {
@@ -95,11 +96,11 @@ export function ColumnMenu({
       <button
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
-        className="p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+        className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-all text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
         title="Column options"
         aria-label={`Menu for column ${columnName}`}
       >
-        <span className="text-lg">⋯</span>
+        <Icon name="dots" size="md" />
       </button>
 
       {isOpen &&
@@ -107,24 +108,24 @@ export function ColumnMenu({
           <div
             data-column-menu-portal
             onMouseDown={(e) => e.stopPropagation()}
-            className="fixed z-50 bg-white dark:bg-slate-800 rounded-lg shadow-lg p-2 border border-slate-200 dark:border-slate-700 min-w-48 max-w-64"
+            className="fixed z-50 bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl rounded-3xl shadow-2xl p-4 border border-slate-200 dark:border-slate-700 min-w-56 max-w-72 animate-in fade-in zoom-in-95 duration-200 shadow-blue-500/10"
             style={{
               top: dropdownPosition.top,
               left: dropdownPosition.left,
             }}
           >
             {/* Color Picker */}
-            <div className="p-2 border-b border-slate-200 dark:border-slate-700">
-              <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2 text-center">
-                Column Color
+            <div className="pb-4 mb-2 border-b border-slate-100 dark:border-slate-700">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 mb-4 text-center">
+                Column Theme
               </p>
-              <div className="grid grid-cols-3 gap-2 justify-center">
+              <div className="grid grid-cols-4 gap-3">
                 {COLOR_PRESETS.map((preset) => {
                   const selected = currentColor === preset.value;
                   return (
                     <label
                       key={preset.value}
-                      className="cursor-pointer flex flex-col items-center"
+                      className="cursor-pointer relative group"
                       title={preset.name}
                     >
                       <input
@@ -137,36 +138,19 @@ export function ColumnMenu({
                         aria-label={`Select ${preset.name}`}
                       />
                       <span
-                        className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all shadow ${
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center border-2 transition-all duration-300 ${
                           selected
-                            ? "border-slate-900 dark:border-white ring-2 ring-slate-900 dark:ring-white ring-offset-1 shadow-md"
-                            : "border-slate-300 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500"
+                            ? "border-blue-500 scale-110 shadow-lg z-10"
+                            : "border-transparent hover:scale-105"
                         }`}
                         style={{
                           backgroundColor: preset.value,
-                          imageRendering: "crisp-edges",
-                          WebkitFontSmoothing: "none",
-                          MozOsxFontSmoothing: "grayscale",
                         }}
                       >
                         {selected && (
-                          <svg
-                            className="w-4 h-4 text-white drop-shadow"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth={3}
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M6 12l4 4 8-8"
-                            />
-                          </svg>
+                          <div className="w-2 h-2 rounded-full bg-white shadow-sm animate-pulse" />
                         )}
                       </span>
-                      <span className="sr-only">{preset.name}</span>
                     </label>
                   );
                 })}
@@ -175,7 +159,7 @@ export function ColumnMenu({
 
             {/* Delete Option */}
             {!isDefault && (
-              <div className="p-2">
+              <div className="pt-2">
                 {!showDeleteConfirm ? (
                   <button
                     type="button"
@@ -184,40 +168,31 @@ export function ColumnMenu({
                       setShowDeleteConfirm(true);
                     }}
                     disabled={fetcher.state !== "idle"}
-                    className="w-full text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-2 rounded transition-colors text-left disabled:opacity-50"
+                    className="w-full text-xs font-black uppercase tracking-widest text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 px-4 py-3 rounded-xl transition-all disabled:opacity-50 flex items-center justify-between group"
                   >
-                    Delete Column
+                    <span>Delete Column</span>
+                    <Icon name="trash" className="opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
                 ) : (
-                  <div className="space-y-2">
-                    <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-                      Delete "<span className="font-medium">{columnName}</span>
-                      "?
-                    </p>
-                    <p className="text-xs text-slate-600 dark:text-slate-400">
-                      All cards will move to "May be?" column.
+                  <div className="space-y-3 p-2 bg-red-50/50 dark:bg-red-900/10 rounded-2xl border border-red-100 dark:border-red-900/30">
+                    <p className="text-[10px] font-black uppercase tracking-tight text-red-800 dark:text-red-400">
+                      Are you sure?
                     </p>
                     <div className="flex gap-2">
                       <button
                         type="button"
-                        onClick={() => {
-                          console.log("Confirm delete clicked");
-                          handleDeleteColumn();
-                        }}
+                        onClick={handleDeleteColumn}
                         disabled={fetcher.state !== "idle"}
-                        className="flex-1 px-2 py-1 text-sm font-medium bg-red-600 hover:bg-red-700 text-white rounded transition-colors disabled:opacity-50"
+                        className="flex-1 px-3 py-2 text-[10px] font-black uppercase tracking-widest bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all shadow-md shadow-red-500/20"
                       >
-                        {fetcher.state !== "idle" ? "Deleting..." : "Delete"}
+                        {fetcher.state !== "idle" ? "..." : "Delete"}
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          console.log("Cancel delete clicked");
-                          setShowDeleteConfirm(false);
-                        }}
-                        className="flex-1 px-2 py-1 text-sm font-medium bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-slate-50 rounded hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                        onClick={() => setShowDeleteConfirm(false)}
+                        className="flex-1 px-3 py-2 text-[10px] font-black uppercase tracking-widest bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-all"
                       >
-                        Cancel
+                        No
                       </button>
                     </div>
                   </div>

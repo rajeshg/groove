@@ -36,8 +36,7 @@ export async function sendEmail({
 }) {
   // Skip email sending in test environments
   if (process.env.NODE_ENV === 'test' || process.env.E2E_TEST === 'true') {
-    console.log(`📧 [TEST MODE] Skipping email to: ${to}`);
-    console.log(`📧 Subject: ${subject}`);
+    console.log(`📧 [TEST MODE] Skipping email to: ${to} | Subject: ${subject}`);
     return { success: true, testMode: true };
   }
 

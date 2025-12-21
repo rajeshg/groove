@@ -75,7 +75,7 @@ export function NewCard({
       method="post"
       action="/resources/new-card"
       {...getFormProps(form)}
-      className="flex flex-col gap-2.5 p-2 pt-1"
+      className="flex flex-col gap-3 p-4 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-blue-200 dark:border-blue-800 m-2 shadow-lg animate-in fade-in slide-in-from-top-2 duration-300"
       onBlur={(event) => {
         // Don't close form if we're submitting
         if (isSubmitting) return;
@@ -111,7 +111,7 @@ export function NewCard({
           el.style.height = "auto";
           el.style.height = Math.min(el.scrollHeight, 256) + "px";
         }}
-        className="outline-none shadow-sm border border-slate-300 dark:border-slate-600 text-sm rounded w-full py-2 px-3 resize-none placeholder:text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 min-h-16 max-h-64 overflow-y-auto bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="outline-none border-none text-sm font-bold rounded-xl w-full py-2 px-0 resize-none placeholder:text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 min-h-16 max-h-64 overflow-y-auto bg-transparent text-slate-900 dark:text-slate-50 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-0"
         onKeyDown={(event) => {
           if (event.key === "Enter" && !isSubmitting) {
             event.preventDefault();
@@ -123,12 +123,12 @@ export function NewCard({
           }
         }}
       />
-      <div className="flex justify-between">
+      <div className="flex justify-between items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-700">
         <SaveButton 
           ref={buttonRef} 
           disabled={isSubmitting || !title.trim()}
         >
-          {isSubmitting ? "Saving..." : "Save Card"}
+          {isSubmitting ? "..." : "Create Card"}
         </SaveButton>
         <CancelButton onClick={onComplete} disabled={isSubmitting}>
           Cancel

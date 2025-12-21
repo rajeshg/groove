@@ -61,7 +61,7 @@ function Avatar({ label, bgColor }: { label: string; bgColor?: string }) {
 
   return (
     <div
-      className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0 shadow-sm"
+      className="w-8 h-8 rounded-xl flex items-center justify-center text-[10px] font-black text-white flex-shrink-0 shadow-sm transition-transform hover:scale-110"
       style={{ backgroundColor: color }}
       title={label}
     >
@@ -132,11 +132,11 @@ export function CardMeta({
   const hasUpdate = lastActiveAtDate.getTime() > createdAtDate.getTime() + 1000;
 
   return (
-    <div className="mt-4 pt-3">
+    <div className="mt-3 pt-3">
       <div
-        className="grid text-[12px] uppercase font-medium"
+        className="grid text-[10px] uppercase font-black tracking-tight"
         style={{
-          gridTemplateColumns: "44px 1fr 1fr 44px",
+          gridTemplateColumns: "40px 1fr 1fr 40px",
           gridTemplateAreas: `
             "avatars-author text-added text-updated avatars-assignees"
             "avatars-author text-author text-assignees avatars-assignees"
@@ -144,7 +144,6 @@ export function CardMeta({
           color: "rgb(100 116 139)",
           alignItems: "stretch",
           width: "100%",
-          maxWidth: "440px",
         }}
       >
         <div
@@ -159,7 +158,7 @@ export function CardMeta({
         </div>
 
         <span
-          className="whitespace-nowrap border-r border-b border-slate-200 dark:border-slate-700 pr-3 pb-[0.75ch] flex items-center min-w-0"
+          className="whitespace-nowrap border-r border-b border-slate-300 dark:border-slate-700 pr-3 pb-[0.75ch] flex items-center min-w-0"
           style={{ gridArea: "text-added", lineHeight: 1 }}
         >
           <span className="truncate">
@@ -168,7 +167,7 @@ export function CardMeta({
         </span>
 
         <span
-          className="whitespace-nowrap border-b border-slate-200 dark:border-slate-700 pl-3 pb-[0.75ch] text-right flex items-center justify-end min-w-0"
+          className="whitespace-nowrap border-b border-slate-300 dark:border-slate-700 pl-3 pb-[0.75ch] text-right flex items-center justify-end min-w-0"
           style={{ gridArea: "text-updated", lineHeight: 1 }}
         >
           {hasUpdate ? (
@@ -184,7 +183,7 @@ export function CardMeta({
         </span>
 
         <span
-          className="whitespace-nowrap border-r border-slate-200 dark:border-slate-700 pr-3 pt-[0.75ch] capitalize text-slate-600 dark:text-slate-400 flex items-center min-w-0"
+          className="whitespace-nowrap border-r border-slate-300 dark:border-slate-700 pr-3 pt-[0.75ch] capitalize text-slate-700 dark:text-slate-300 font-bold flex items-center min-w-0"
           style={{ gridArea: "text-author", lineHeight: 1 }}
           title={createdByName || "Unknown"}
         >
@@ -192,7 +191,7 @@ export function CardMeta({
         </span>
 
         <span
-          className="whitespace-nowrap pl-3 pt-[0.75ch] text-right capitalize text-slate-600 dark:text-slate-400 flex items-center justify-end min-w-0"
+          className="whitespace-nowrap pl-3 pt-[0.75ch] text-right capitalize text-slate-700 dark:text-slate-300 font-bold flex items-center justify-end min-w-0"
           style={{ gridArea: "text-assignees", lineHeight: 1 }}
           title={assignee ? `→ ${assigneeName}` : undefined}
         >

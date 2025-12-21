@@ -65,18 +65,18 @@ export function BoardHeader({
   const isEditable = !!board && !profileMatch && !cardMatch;
 
   return (
-    <div className="flex-shrink-0 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 h-14">
-      <div className="grid grid-cols-3 items-center h-full px-4 sm:px-8">
+    <div className="flex-shrink-0 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md h-16">
+      <div className="grid grid-cols-3 items-center h-full px-4 sm:px-10">
         {/* Left section: Switcher (only on board pages) */}
         <div className="flex items-center">
           {board && (
             <Link
               to={`/board/${board.id}/members`}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors shadow-sm border border-blue-100 dark:border-blue-800"
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white transition-all shadow-sm border border-slate-200 dark:border-slate-700 font-bold group"
               title="Manage board members"
             >
-              <Icon name="user" />
-              <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">
+              <Icon name="user" className="group-hover:scale-110 transition-transform" />
+              <span className="text-xs font-black uppercase tracking-widest hidden sm:inline">
                 Invite
               </span>
             </Link>
@@ -85,13 +85,13 @@ export function BoardHeader({
 
         {/* Center: Context Title (Centered) */}
         <div className="flex justify-center min-w-0">
-          <h1 className="text-[10px] sm:text-sm font-bold text-slate-900 dark:text-slate-100 uppercase tracking-[0.1em] sm:tracking-[0.2em]">
+          <h1 className="text-base sm:text-lg font-black text-slate-950 dark:text-slate-50 uppercase tracking-tighter sm:tracking-normal">
             {isEditable ? (
               <EditableText
                 value={displayTitle}
                 fieldName="name"
-                inputClassName="text-[10px] sm:text-sm font-bold border border-slate-400 rounded py-0.5 px-2 text-black dark:text-white dark:bg-slate-700 uppercase text-center w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                buttonClassName="block rounded text-center border border-transparent py-1 px-2 sm:px-3 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors truncate"
+                inputClassName="text-base sm:text-lg font-black border-2 border-blue-500 dark:border-blue-400 rounded-lg py-1 px-3 text-black dark:text-white dark:bg-slate-800 uppercase text-center w-full focus:outline-none shadow-lg transition-all"
+                buttonClassName="block rounded-lg text-center border border-transparent py-1.5 px-4 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all truncate group"
                 buttonLabel={`Edit board "${displayTitle}" name`}
                 inputLabel="Edit board name"
                 placeholder="Board name..."
@@ -103,7 +103,7 @@ export function BoardHeader({
                 <></>
               </EditableText>
             ) : (
-              <span className="py-1 px-2 sm:px-3 block truncate">
+              <span className="py-1.5 px-4 block truncate">
                 {displayTitle}
               </span>
             )}
@@ -113,22 +113,22 @@ export function BoardHeader({
         {/* Right section: Search (Only if search props are provided) */}
         <div className="flex items-center justify-end">
           {setSearchTerm !== undefined && (
-            <div className="relative w-full max-w-[120px] sm:max-w-[180px]">
-              <div className="absolute inset-y-0 left-0 pl-2 sm:pl-2.5 flex items-center pointer-events-none text-slate-400">
+            <div className="relative w-full max-w-[140px] sm:max-w-[220px]">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
                 <Icon name="search" size="md" />
               </div>
               <input
                 ref={searchInputRef}
                 type="text"
-                placeholder="SEARCH"
+                placeholder="SEARCH..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="block w-full pl-7 sm:pl-8 pr-7 py-1.5 text-[9px] sm:text-[10px] font-medium border border-slate-200 dark:border-slate-700 rounded-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all shadow-sm"
+                className="block w-full pl-9 pr-8 py-2 text-xs sm:text-sm font-bold border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-950 dark:text-slate-50 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-inner"
               />
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm("")}
-                  className="absolute inset-y-0 right-0 pr-1.5 sm:pr-2 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  className="absolute inset-y-0 right-0 pr-1.5 sm:pr-2 flex items-center text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                 >
                   <Icon
                     name="plus"

@@ -285,7 +285,7 @@ function ProseMirrorEditor({
       </div>
       <div
         ref={editorRef}
-        className="border-2 rounded-lg min-h-48 p-4 transition cursor-text overflow-auto bg-white dark:bg-slate-900 border-blue-500 dark:border-blue-600 shadow-lg shadow-blue-500/10 prose dark:prose-invert prose-sm max-w-none prose-headings:font-bold prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-p:text-sm prose-p:leading-6 prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-a:underline prose-strong:font-semibold prose-code:bg-slate-100 dark:prose-code:bg-slate-700 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-pre:bg-slate-800 dark:prose-pre:bg-slate-900 prose-pre:text-slate-100 prose-pre:p-3 prose-pre:rounded prose-blockquote:border-l-4 prose-blockquote:border-slate-300 dark:prose-blockquote:border-slate-600 prose-blockquote:pl-4 prose-blockquote:text-slate-600 dark:prose-blockquote:text-slate-400 prose-ul:list-disc prose-ul:pl-5 prose-ol:list-decimal prose-ol:pl-5 prose-li:my-1 prose-img:rounded prose-img:max-w-full outline-none"
+        className="border-2 rounded-lg min-h-32 md:min-h-48 p-4 transition cursor-text overflow-auto bg-white dark:bg-slate-900 border-blue-500 dark:border-blue-600 shadow-lg shadow-blue-500/10 prose dark:prose-invert prose-sm max-w-none prose-headings:font-bold prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-p:text-sm prose-p:leading-6 prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-a:underline prose-strong:font-semibold prose-code:bg-slate-100 dark:prose-code:bg-slate-700 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-pre:bg-slate-800 dark:prose-pre:bg-slate-900 prose-pre:text-slate-100 prose-pre:p-3 prose-pre:rounded prose-blockquote:border-l-4 prose-blockquote:border-slate-300 dark:prose-blockquote:border-slate-600 prose-blockquote:pl-4 prose-blockquote:text-slate-600 dark:prose-blockquote:text-slate-400 prose-ul:list-disc prose-ul:pl-5 prose-ol:list-decimal prose-ol:pl-5 prose-li:my-1 prose-img:rounded prose-img:max-w-full outline-none"
       />
     </div>
   );
@@ -301,7 +301,7 @@ export function CardDescriptionEditor({
   if (readOnly) {
     return (
       <div
-        className="border-2 rounded-lg p-4 min-h-48 bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 prose dark:prose-invert prose-sm max-w-none"
+        className="border-2 rounded-lg p-4 min-h-32 md:min-h-48 bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-600 prose dark:prose-invert prose-sm max-w-none"
         dangerouslySetInnerHTML={{ __html: content || "" }}
       />
     );

@@ -13,12 +13,8 @@ export let SaveButton = forwardRef<
       ref={ref}
       {...props}
       type={props.type || "submit"}
-      // this makes it so the button takes focus on clicks in safari I can't
-      // remember if this is the proper workaround or not, it's been a while!
-      // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/button#clicking_and_focus
-      // https://bugs.webkit.org/show_bug.cgi?id=22261
       tabIndex={0}
-      className="text-sm rounded-lg text-left p-2 font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600"
+      className="text-[11px] font-black uppercase tracking-widest rounded-xl px-4 py-2.5 text-center text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-md shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 active:scale-95"
     />
   );
 });
@@ -33,7 +29,7 @@ export let CancelButton = forwardRef<
       type="button"
       tabIndex={0}
       {...props}
-      className="text-sm rounded-lg text-left p-2 font-medium hover:bg-slate-200 focus:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+      className="text-[11px] font-black uppercase tracking-widest rounded-xl px-4 py-2.5 text-center text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
     />
   );
 });

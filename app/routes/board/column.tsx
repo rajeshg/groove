@@ -68,9 +68,9 @@ export function Column({
   return (
     <div
       className={
-        `flex-shrink-0 flex flex-col w-[24rem] box-border rounded-lg transition-all duration-100 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 ${className} ` +
+        `flex-shrink-0 flex flex-col w-[24rem] box-border rounded-2xl transition-all duration-200 bg-slate-100/50 dark:bg-slate-900/50 backdrop-blur-sm border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md ${className} ` +
         (acceptDrop
-          ? `ring-2 ring-offset-2 dark:ring-offset-slate-900 ring-blue-400`
+          ? `ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-slate-900`
           : ``)
       }
       data-column-id={columnId}
@@ -128,14 +128,14 @@ export function Column({
       }}
     >
       <div
-        className="px-3 py-3 border-b-4 bg-white dark:bg-slate-800"
+        className="px-4 py-4 border-b-2 bg-slate-100/50 dark:bg-slate-900/50 rounded-t-2xl"
         style={{ borderColor: color }}
       >
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-3">
           {/* Drag handle - only this area is draggable */}
           {isExpanded && onDragStart && (
             <div
-              className="cursor-grab active:cursor-grabbing p-1 -ml-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400"
+              className="cursor-grab active:cursor-grabbing p-1.5 -ml-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
               draggable="true"
               onDragStart={onDragStart}
               onDragEnd={onDragEnd}
@@ -147,30 +147,30 @@ export function Column({
           )}
 
           {isExpanded ? (
-            <h2 className="flex-1 text-center py-1 px-2 font-bold text-slate-900 dark:text-slate-50 text-sm uppercase">
+            <h2 className="flex-1 text-center py-1 px-2 font-black text-slate-900 dark:text-slate-50 text-xs uppercase tracking-widest">
               {name}
             </h2>
           ) : (
             <button
               onClick={onToggle}
-              className="flex items-center justify-center gap-2 flex-1 text-center p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors uppercase"
+              className="flex items-center justify-center gap-2 flex-1 text-center p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors uppercase"
               title={`Expand column: ${name} (${items.length} cards)`}
             >
               <Icon name="chevron-right" />
-              <span className="font-bold text-slate-900 dark:text-slate-50 text-sm truncate">
+              <span className="font-black text-slate-900 dark:text-slate-50 text-xs truncate">
                 {name}
               </span>
-              <span className="text-xs text-slate-500 dark:text-slate-400">
-                ({items.length})
+              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                {items.length}
               </span>
             </button>
           )}
           {isExpanded && (
-            <>
+            <div className="flex items-center gap-1">
               {/* Collapse button */}
               <button
                 onClick={onToggle}
-                className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-500"
                 title="Collapse column"
                 aria-label="Collapse column"
               >
@@ -180,13 +180,13 @@ export function Column({
               {/* Link to column detail page */}
               <Link
                 to={`/board/${boardId}/column/${columnId}`}
-                className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+                className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
                 title="View column details"
                 aria-label="View column details"
               >
                 <Icon name="chevron-right" size="md" />
               </Link>
-            </>
+            </div>
           )}
         </div>
       </div>
@@ -199,7 +199,7 @@ export function Column({
           onComplete={() => setEdit(false)}
         />
       ) : (
-        <div className="p-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2">
+        <div className="p-3 flex items-center justify-between gap-2 group/add">
           <button
             type="button"
             onClick={() => {
@@ -208,13 +208,14 @@ export function Column({
               });
               scrollList();
             }}
-            className="flex items-center gap-2 rounded text-left flex-1 p-2 font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 focus:bg-slate-100 dark:focus:bg-slate-700 transition-colors text-sm"
+            className="flex items-center gap-2 rounded-xl text-left flex-1 p-3 font-black text-slate-400 dark:text-slate-500 hover:bg-white dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 hover:shadow-sm transition-all text-[10px] uppercase tracking-widest"
             data-add-card-button
           >
-            <Icon name="plus" /> Add a card
+            <Icon name="plus" className="group-hover/add:scale-110 transition-transform" />
+            Add a card
           </button>
           {shortcut && (
-            <div className="flex items-center justify-center w-5 h-5 rounded border border-slate-300 dark:border-slate-600 text-[10px] font-black text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 shadow-sm uppercase">
+            <div className="flex items-center justify-center w-5 h-5 rounded border border-slate-200 dark:border-slate-800 text-[9px] font-black text-slate-400 dark:text-slate-600 bg-white dark:bg-slate-900 shadow-sm uppercase">
               {shortcut}
             </div>
           )}
@@ -223,7 +224,7 @@ export function Column({
 
       <ul
         ref={listRef}
-        className="flex flex-col gap-y-2 flex-grow min-h-[2px] px-0 py-2"
+        className="flex flex-col gap-y-3 flex-grow min-h-[100px] px-2 py-3 overflow-y-auto custom-scrollbar"
       >
         {items
           .sort((a, b) => a.order - b.order)
@@ -263,12 +264,12 @@ export function Column({
 
       {items.length === 0 && !edit && (
         <div
-          className={`py-8 text-center transition-all duration-200 bg-slate-50 dark:bg-slate-700/50`}
+          className={`py-12 text-center transition-all duration-200 bg-slate-100/30 dark:bg-slate-900/30 rounded-b-2xl`}
         >
           <div
-            className={`text-xs font-medium text-slate-400 dark:text-slate-500`}
+            className={`text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-600`}
           >
-            No cards
+            Empty Column
           </div>
         </div>
       )}

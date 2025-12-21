@@ -53,6 +53,7 @@ export function useBoardState({
       },
       {
         method: "post",
+        action: "/resources/update-column",
         navigate: false,
       }
     );

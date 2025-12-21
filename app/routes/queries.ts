@@ -42,7 +42,13 @@ export async function getBoardData(
       };
     };
     columns: { orderBy: { order: "asc" } };
-    members: { include: { Account: { select: { id: true; email: true } } } };
+    members: {
+      include: {
+        Account: {
+          select: { id: true; email: true; firstName: true; lastName: true };
+        };
+      };
+    };
     invitations: {
       where: { status: "pending" };
       include: { Account: { select: { email: true } } };
@@ -89,7 +95,11 @@ export async function getBoardData(
       },
       columns: { orderBy: { order: "asc" } },
       members: {
-        include: { Account: { select: { id: true, email: true } } },
+        include: {
+          Account: {
+            select: { id: true, email: true, firstName: true, lastName: true },
+          },
+        },
       },
       invitations: {
         where: {
@@ -715,7 +725,7 @@ export async function getBoardMembers(boardId: string) {
     where: { boardId },
     include: {
       Account: {
-        select: { email: true, id: true },
+        select: { email: true, id: true, firstName: true, lastName: true },
       },
     },
   });

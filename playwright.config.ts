@@ -29,12 +29,11 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: "npm run dev",
+    command: "E2E_TEST=true npm run dev",
     url: "http://localhost:5173",
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
-    env: {
-      E2E_TEST: 'true',
-    },
+    stdout: 'pipe',
+    stderr: 'pipe',
   },
 })

@@ -195,12 +195,12 @@ export default function CardDetail({ loaderData }: Route.ComponentProps) {
                   <div className="flex-1 flex flex-col gap-4 w-full lg:w-auto lg:min-w-0">
                     <div className="flex items-center gap-2">
                       <span
-                        className="inline-block px-2 py-1 text-xs font-bold text-white rounded"
+                        className="inline-block px-3 py-1 text-[10px] font-black text-white rounded-lg shadow-sm"
                         style={{ backgroundColor: columnColor }}
                       >
-                        No. {card.id.substring(0, 4).toUpperCase()}
+                        NO. {card.id.substring(0, 4).toUpperCase()}
                       </span>
-                      <span className="text-xs font-semibold uppercase text-slate-600 dark:text-slate-400">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-500">
                         {currentColumn?.name}
                       </span>
                     </div>
@@ -217,14 +217,14 @@ export default function CardDetail({ loaderData }: Route.ComponentProps) {
                             ref={titleInputRef}
                             type="text"
                             defaultValue={localTitle}
-                            className="block w-full border-2 border-blue-500 bg-white dark:bg-slate-700 px-2 py-1 text-2xl font-bold text-slate-900 dark:text-slate-50 rounded"
+                            className="block w-full border-2 border-blue-500 bg-white dark:bg-slate-700 px-3 py-2 text-2xl font-black text-slate-900 dark:text-slate-50 rounded-xl shadow-inner focus:outline-none"
                             autoFocus
                           />
                         </div>
                       ) : (
                         <h1
                           onClick={() => setEditTitleMode(true)}
-                          className="text-2xl font-bold cursor-text hover:bg-slate-50 dark:hover:bg-slate-700 rounded px-2 py-1 -mx-2 transition-colors"
+                          className="text-2xl font-black cursor-text hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl px-2 py-1 -mx-2 transition-all"
                         >
                           {localTitle}
                         </h1>
@@ -256,7 +256,7 @@ export default function CardDetail({ loaderData }: Route.ComponentProps) {
                       ) : (
                         <div
                           onClick={() => setEditMode(true)}
-                          className="min-h-[200px] md:min-h-[300px] p-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded cursor-text hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors text-sm prose dark:prose-invert prose-sm max-w-none prose-headings:font-bold prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-p:text-sm prose-p:leading-6 prose-p:m-0 prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-a:underline prose-strong:font-semibold prose-code:bg-slate-100 dark:prose-code:bg-slate-600 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-pre:bg-slate-800 dark:prose-pre:bg-slate-900 prose-pre:text-slate-100 prose-pre:p-3 prose-pre:rounded prose-blockquote:border-l-4 prose-blockquote:border-slate-300 dark:prose-blockquote:border-slate-600 prose-blockquote:pl-4 prose-blockquote:text-slate-600 dark:prose-blockquote:text-slate-400 prose-ul:list-disc prose-ul:pl-5 prose-ol:list-decimal prose-ol:pl-5 prose-li:my-1 prose-img:rounded prose-img:max-w-full"
+                          className="min-h-[100px] md:min-h-[200px] p-4 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl cursor-text hover:bg-slate-100 dark:hover:bg-slate-600 transition-all text-sm prose dark:prose-invert prose-sm max-w-none prose-headings:font-bold prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-p:text-sm prose-p:leading-6 prose-p:m-0 prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-a:underline prose-strong:font-semibold prose-code:bg-slate-100 dark:prose-code:bg-slate-600 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-pre:bg-slate-800 dark:prose-pre:bg-slate-900 prose-pre:text-slate-100 prose-pre:p-3 prose-pre:rounded prose-blockquote:border-l-4 prose-blockquote:border-slate-300 dark:prose-blockquote:border-slate-600 prose-blockquote:pl-4 prose-blockquote:text-slate-600 dark:prose-blockquote:text-slate-400 prose-ul:list-disc prose-ul:pl-5 prose-ol:list-decimal prose-ol:pl-5 prose-li:my-1 prose-img:rounded prose-img:max-w-full"
                         >
                           {localContent ? (
                             <div
@@ -273,7 +273,7 @@ export default function CardDetail({ loaderData }: Route.ComponentProps) {
                   </div>
 
                   <div
-                    className="flex flex-col w-full sm:w-auto border border-solid rounded overflow-hidden sm:border-0"
+                    className="flex flex-col w-full sm:w-auto border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden sm:border-0 shadow-sm sm:shadow-none"
                     style={{ borderColor: columnColor }}
                   >
                     {columns.map((column: Column) => {
@@ -282,12 +282,12 @@ export default function CardDetail({ loaderData }: Route.ComponentProps) {
                         <button
                           key={column.id}
                           onClick={() => changeColumn(column.id)}
-                          className="px-3 py-2 text-xs font-semibold uppercase text-left hover:opacity-90 sm:rounded"
+                          className="px-4 py-2.5 text-[10px] font-black uppercase text-left hover:bg-slate-50 dark:hover:bg-slate-700 transition-all sm:rounded-lg sm:mb-1 last:mb-0"
                           style={{
                             backgroundColor: isActive
                               ? column.color
-                              : "transparent",
-                            color: isActive ? "#fff" : "inherit",
+                              : undefined,
+                            color: isActive ? "#fff" : undefined,
                           }}
                         >
                           {column.name}
@@ -314,7 +314,7 @@ export default function CardDetail({ loaderData }: Route.ComponentProps) {
 
                 <div className="p-4 sm:px-6 border-t border-slate-200 dark:border-slate-700">
                   <h3 className="text-sm font-semibold mb-4">Comments</h3>
-                  <div className="space-y-4 mb-4">
+                  <div className="space-y-4 mb-6">
                     {card.comments?.map((comment: RenderedComment) => {
                       const canEdit =
                         isCommentEditable(comment.createdAt) &&
@@ -326,9 +326,9 @@ export default function CardDetail({ loaderData }: Route.ComponentProps) {
                           ? `User ${comment.createdBy.substring(0, 8)}`
                           : "Unknown User";
                       return (
-                        <div key={comment.id} className="flex gap-3 text-sm">
+                        <div key={comment.id} className="flex gap-4 text-sm bg-slate-50/50 dark:bg-slate-900/30 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
                           <div
-                            className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                            className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-white text-xs font-black shadow-sm"
                             style={{
                               backgroundColor: getAvatarColor(displayName),
                             }}
@@ -336,9 +336,9 @@ export default function CardDetail({ loaderData }: Route.ComponentProps) {
                             {getInitials(displayName)}
                           </div>
                           <div className="flex-1">
-                            <div className="flex items-baseline gap-2 mb-1">
-                              <span className="font-medium">{displayName}</span>
-                              <span className="text-xs text-slate-500">
+                            <div className="flex items-baseline justify-between mb-2">
+                              <span className="font-bold text-slate-900 dark:text-slate-100">{displayName}</span>
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                                 {new Date(
                                   comment.createdAt
                                 ).toLocaleDateString()}
@@ -364,16 +364,16 @@ export default function CardDetail({ loaderData }: Route.ComponentProps) {
                               />
                             ) : (
                               <>
-                                <p className="whitespace-pre-wrap break-words mb-2">
+                                <p className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap break-words mb-3 leading-relaxed">
                                   {comment.content}
                                 </p>
                                 {canEdit && (
-                                  <div className="flex gap-2">
+                                  <div className="flex gap-3">
                                     <button
                                       onClick={() => {
                                         setEditingCommentId(comment.id);
                                       }}
-                                      className="text-xs text-blue-500 hover:text-blue-700 font-medium"
+                                      className="text-[10px] font-black uppercase tracking-widest text-blue-500 hover:text-blue-700 transition-colors"
                                     >
                                       Edit
                                     </button>
@@ -389,7 +389,7 @@ export default function CardDetail({ loaderData }: Route.ComponentProps) {
                                           }
                                         );
                                       }}
-                                      className="text-xs text-red-500 hover:text-red-700 font-medium"
+                                      className="text-[10px] font-black uppercase tracking-widest text-red-500 hover:text-red-700 transition-colors"
                                     >
                                       Delete
                                     </button>
@@ -405,7 +405,7 @@ export default function CardDetail({ loaderData }: Route.ComponentProps) {
                   <commentFetcher.Form
                     method="post"
                     action="/resources/create-comment"
-                    className="flex gap-2"
+                    className="flex flex-col sm:flex-row gap-3"
                   >
                     <input type="hidden" name="cardId" value={cardId} />
                     <Input
@@ -414,7 +414,7 @@ export default function CardDetail({ loaderData }: Route.ComponentProps) {
                       placeholder="Add a comment..."
                       value={commentInput}
                       onChange={(e) => setCommentInput(e.target.value)}
-                      className="flex-1 text-sm"
+                      className="flex-1 text-sm rounded-xl px-4 py-3 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 transition-all"
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && commentInput.trim()) {
                           commentFetcher.submit(
@@ -437,7 +437,7 @@ export default function CardDetail({ loaderData }: Route.ComponentProps) {
                         !commentInput.trim() ||
                         commentFetcher.state === "submitting"
                       }
-                      className="px-3 py-1 text-sm font-medium rounded bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                      className="px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-blue-500/20"
                       onClick={(e) => {
                         if (commentInput.trim()) {
                           commentFetcher.submit(

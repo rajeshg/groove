@@ -1,4 +1,4 @@
-import { useLoaderData, useNavigate } from "react-router";
+import { useLoaderData, useNavigate, useFetchers } from "react-router";
 import { useState } from "react";
 import { requireAuthCookie } from "~/auth/auth";
 import { badRequest, notFound } from "~/http/bad-request";
@@ -55,6 +55,22 @@ export default function ColumnDetail() {
   const { board, column, items } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const [addingCard, setAddingCard] = useState(false);
+  
+  // Get all active fetchers to track optimistic updates
+  const fetchers = useFetchers();
+  
+  // Find any pending color update for this column
+  const colorFetcher = fetchers.find(
+    (f) =>
+      f.formAction === "/resources/update-column" &&
+      f.formData?.get("columnId") === column.id &&
+      f.formData?.get("color")
+  );
+  
+  const pendingColorUpdate = colorFetcher?.formData?.get("color") as string | undefined;
+  
+  // Use pending color if available, otherwise use current color
+  const displayColor = pendingColorUpdate || column.color || "#94a3b8";
 
   // Sort items by order
   const sortedItems = [...items].sort((a, b) => a.order - b.order);
@@ -67,21 +83,21 @@ export default function ColumnDetail() {
   });
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-50">
+    <div className="h-full flex flex-col overflow-hidden bg-white dark:bg-slate-950 text-slate-950 dark:text-slate-50">
       <BoardHeader />
 
       <div className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col items-center">
         {/* Header bar with all controls */}
         <div className="mb-6 w-full max-w-4xl">
-          <div className="flex items-center justify-between gap-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 px-4 py-3">
+          <div className="flex items-center justify-between gap-4 bg-white dark:bg-slate-900 rounded-lg shadow-sm border-2 border-slate-200 dark:border-slate-800 px-4 py-3">
             {/* Left: Back button */}
             <button
               onClick={() => navigate(-1)}
-              className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors flex-shrink-0 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100"
+              className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors flex-shrink-0 text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-slate-50 font-semibold"
               aria-label="Back"
             >
               <Icon name="chevron-left" className="w-5 h-5" />
-              <span className="text-sm font-medium">Back</span>
+              <span className="text-sm font-semibold">Back</span>
             </button>
 
             {/* Center: Editable column name */}
@@ -91,8 +107,8 @@ export default function ColumnDetail() {
                 value={column.name}
                 inputLabel="Edit column name"
                 buttonLabel={`Edit column "${column.name}" name`}
-                inputClassName="border border-slate-300 dark:border-slate-500 rounded px-3 py-2 font-bold text-slate-900 dark:text-slate-50 dark:bg-slate-700 text-lg text-center uppercase"
-                buttonClassName="px-3 py-2 font-bold text-slate-900 dark:text-slate-50 text-lg hover:bg-slate-100 dark:hover:bg-slate-700 rounded uppercase"
+                inputClassName="border-2 border-slate-400 dark:border-slate-600 rounded px-3 py-2 font-black text-slate-950 dark:text-slate-50 dark:bg-slate-800 text-lg text-center uppercase"
+                buttonClassName="px-3 py-2 font-black text-slate-950 dark:text-slate-50 text-xl hover:bg-slate-100 dark:hover:bg-slate-800 rounded uppercase"
                 placeholder="Column name..."
                 action="/resources/update-column"
                 hiddenFields={{
@@ -105,11 +121,11 @@ export default function ColumnDetail() {
 
             {/* Right: Card count and color picker */}
             <div className="flex items-center gap-4 flex-shrink-0">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-md">
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-md border border-slate-200 dark:border-slate-700">
+                <span className="text-sm font-bold text-slate-900 dark:text-slate-50">
                   {items.length}
                 </span>
-                <span className="text-xs text-slate-500 dark:text-slate-400">
+                <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
                   {items.length === 1 ? "card" : "cards"}
                 </span>
               </div>
@@ -117,7 +133,7 @@ export default function ColumnDetail() {
               <ColumnColorPicker
                 columnId={column.id}
                 columnName={column.name}
-                currentColor={column.color || "#94a3b8"}
+                currentColor={displayColor}
               />
             </div>
           </div>
@@ -125,7 +141,7 @@ export default function ColumnDetail() {
 
         <div className="w-full max-w-4xl">
           {/* Add Card Button/Form */}
-          <div className="mb-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+          <div className="mb-4 bg-white dark:bg-slate-900 rounded-lg shadow-sm border-2 border-slate-200 dark:border-slate-800">
             {addingCard ? (
               <NewCard
                 columnId={column.id}
@@ -137,7 +153,7 @@ export default function ColumnDetail() {
               <button
                 type="button"
                 onClick={() => setAddingCard(true)}
-                className="w-full flex items-center gap-2 p-4 text-left font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors rounded-lg"
+                className="w-full flex items-center gap-2 p-4 text-left font-bold text-slate-900 dark:text-slate-50 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors rounded-lg"
               >
                 <Icon name="plus" />
                 <span>Add a card</span>
@@ -165,7 +181,7 @@ export default function ColumnDetail() {
                   content={item.content}
                   id={String(item.id)}
                   columnId={String(item.columnId)}
-                  columnColor={column.color || undefined}
+                  columnColor={displayColor}
                   order={item.order}
                   nextOrder={item.nextOrder}
                   previousOrder={item.previousOrder}

@@ -96,7 +96,7 @@ export function BoardSwitcher({
 
       {/* Popover Menu - Perfectly matching board-menu.png */}
       {isOpen && (
-        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 w-[calc(100vw-2rem)] sm:w-[420px] max-h-[85vh] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl shadow-2xl z-[100] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed sm:absolute top-16 sm:top-full left-4 right-4 sm:left-1/2 sm:-translate-x-1/2 mt-2 sm:mt-4 w-auto sm:w-[420px] max-h-[85vh] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl shadow-2xl z-[100] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
           {/* Search Header */}
           <div className="p-5">
             <div className="relative">
@@ -218,17 +218,21 @@ function MenuActionCard({
   return (
     <Link
       to={to}
-      className={`relative flex flex-col items-center justify-center h-24 rounded-2xl border transition-all ${
+      className={`relative flex flex-col items-center justify-center h-24 rounded-3xl border transition-all duration-300 ${
         active
-          ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 shadow-sm ring-1 ring-blue-500/10"
-          : "bg-slate-50 dark:bg-slate-900/40 border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-white dark:hover:bg-slate-800"
+          ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/30 scale-105 z-10"
+          : "bg-slate-50 dark:bg-slate-900/40 border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-blue-500 dark:hover:border-blue-500 hover:bg-white dark:hover:bg-slate-800 hover:-translate-y-1"
       }`}
     >
-      <div className="absolute top-2 right-2 min-w-[20px] h-[20px] flex items-center justify-center px-1 text-[10px] font-black bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300 rounded-md border border-slate-200 dark:border-slate-600 shadow-sm">
+      <div className={`absolute top-2.5 right-2.5 min-w-[22px] h-[22px] flex items-center justify-center px-1.5 text-[10px] font-black rounded-lg border shadow-sm ${
+        active 
+          ? "bg-white text-blue-600 border-white" 
+          : "bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300 border-slate-200 dark:border-slate-600"
+      }`}>
         {count}
       </div>
-      <Icon name={icon} size="xl" className="mb-2" />
-      <span className="text-[11px] font-black uppercase tracking-wider text-center leading-tight">
+      <Icon name={icon} size="xl" className={`mb-2 ${active ? "text-white" : ""}`} />
+      <span className={`text-[10px] font-black uppercase tracking-widest text-center leading-tight ${active ? "text-white/90" : ""}`}>
         {label}
       </span>
     </Link>

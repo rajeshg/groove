@@ -48,9 +48,9 @@ export default function BoardMembers({ loaderData }: Route.ComponentProps) {
           <div className="mb-6 flex items-center justify-between">
             <Link
               to={`/board/${board.id}`}
-              className="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white dark:bg-slate-800 text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 border border-slate-200 dark:border-slate-700 shadow-sm transition-all"
             >
-              <Icon name="chevron-right" className="rotate-180" />
+              <Icon name="chevron-left" />
               Back to Board
             </Link>
           </div>
@@ -58,11 +58,14 @@ export default function BoardMembers({ loaderData }: Route.ComponentProps) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
             {/* Left/Middle: Members List */}
             <div className="md:col-span-2 space-y-6">
-              <section className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-                <div className="p-6 border-b border-slate-100 dark:border-slate-700">
-                  <h2 className="text-lg font-bold flex items-center gap-2">
-                    <Icon name="user" />
-                    Board Members ({board.members.length})
+              <section className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md rounded-[2.5rem] shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div className="p-8 border-b border-slate-100 dark:border-slate-700">
+                  <h2 className="text-sm font-black uppercase tracking-[0.2em] flex items-center gap-3 text-slate-400 dark:text-slate-500">
+                    <Icon name="user" className="w-5 h-5" />
+                    Board Members
+                    <span className="ml-auto bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1 rounded-full text-[10px]">
+                      {board.members.length}
+                    </span>
                   </h2>
                 </div>
                 <div className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -76,9 +79,9 @@ export default function BoardMembers({ loaderData }: Route.ComponentProps) {
                         key={member.id}
                         className="p-4 flex items-center justify-between group"
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-4">
                           <div
-                            className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-sm"
+                            className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black shadow-sm transition-transform hover:rotate-3"
                             style={{
                               backgroundColor: getAvatarColor(displayName),
                             }}
@@ -86,20 +89,20 @@ export default function BoardMembers({ loaderData }: Route.ComponentProps) {
                             {getInitials(displayName)}
                           </div>
                           <div>
-                            <div className="font-bold flex items-center gap-2">
+                            <div className="font-black text-slate-900 dark:text-slate-100 flex items-center gap-2 uppercase tracking-tight">
                               {displayName}
                               {isCurrentUser && (
-                                <span className="text-[10px] bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded uppercase tracking-tighter">
+                                <span className="text-[9px] bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-lg uppercase tracking-widest font-black">
                                   You
                                 </span>
                               )}
                               {isOwner && (
-                                <span className="text-[10px] bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded uppercase tracking-tighter font-black">
+                                <span className="text-[9px] bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-lg uppercase tracking-widest font-black shadow-sm">
                                   Owner
                                 </span>
                               )}
                             </div>
-                            <div className="text-xs text-slate-500 dark:text-slate-400">
+                            <div className="text-xs font-medium text-slate-400 dark:text-slate-500">
                               {member.Account.email} •{" "}
                               <span className="capitalize">{member.role}</span>
                             </div>
@@ -172,8 +175,8 @@ export default function BoardMembers({ loaderData }: Route.ComponentProps) {
             {/* Right Side: Invite Form */}
             {isOwner && (
               <div className="space-y-6 sticky top-8">
-                <section className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-                  <h2 className="text-xl font-black mb-6 uppercase tracking-tighter">
+                <section className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md rounded-[2.5rem] shadow-xl border border-slate-200 dark:border-slate-700 p-8">
+                  <h2 className="text-sm font-black mb-8 uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
                     Invite People
                   </h2>
 

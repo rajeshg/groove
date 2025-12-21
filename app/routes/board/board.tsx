@@ -5,6 +5,7 @@ import { useSubmit, Link } from "react-router";
 import { CONTENT_TYPES } from "../types";
 import type { getBoardData } from "../queries";
 
+import { Icon } from "../../icons/icons";
 import { Column } from "./column";
 import { NewColumn } from "./new-column";
 import { BoardHeader } from "./board-header";
@@ -12,6 +13,7 @@ import { useBoardData } from "./hooks/useBoardData";
 import { useBoardState } from "./hooks/useBoardState";
 import { useBoardKeyboardShortcuts } from "./hooks/useBoardKeyboardShortcuts";
 import { calculateColumnMetrics } from "./utils";
+import { getContrastTextColor } from "../../utils/color-contrast";
 import "./columns.css";
 
 // Note: BOARD_CONSTANTS are available but not currently used in this component
@@ -63,34 +65,43 @@ export default function Board({ board }: BoardProps) {
   }
 
   return (
-    <div className="flex-1 flex flex-col relative bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 min-h-full">
+    <div className="flex-1 flex flex-col relative bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-50 min-h-full">
+      {/* Subtle grid pattern background */}
+      <div 
+        className="absolute inset-0 z-0 pointer-events-none opacity-[0.03] dark:opacity-[0.05]" 
+        style={{ 
+          backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
+          backgroundSize: '24px 24px'
+        }}
+      />
+
       {/* Top color accent stripe - high visibility */}
       <div
-        className="h-1 w-full flex-shrink-0 sticky top-14 z-50"
+        className="h-1.5 w-full flex-shrink-0 sticky top-14 z-50 shadow-sm"
         style={{ background: board.color }}
       />
 
-      <div className="sticky top-[60px] z-40 bg-white dark:bg-slate-900 shadow-sm">
+      <div className="sticky top-[60px] z-40 bg-white dark:bg-slate-900 shadow-sm border-b border-slate-200 dark:border-slate-800">
         <BoardHeader searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
       </div>
 
       {/* Canvas area - Desktop view (hidden on mobile) */}
       <div
-        className="hidden md:flex flex-1 w-full overflow-x-auto relative flex-col"
+        className="hidden md:flex flex-1 w-full overflow-x-auto relative flex-col custom-scrollbar"
         ref={scrollContainerRef}
       >
         {/* Left color accent bar - spans the whole scrollable height */}
         <div
-          className="w-1.5 absolute top-0 bottom-0 left-0"
+          className="w-1 absolute top-0 bottom-0 left-0"
           style={{
             background: board.color,
-            opacity: 0.5,
+            opacity: 0.2,
             zIndex: 0,
           }}
         />
 
         <div
-          className="flex w-max min-h-[calc(100vh-120px)] items-stretch gap-2 px-8 pb-10 pt-4 relative z-10"
+          className="flex w-max min-h-[calc(100vh-140px)] items-stretch gap-6 px-10 pb-12 pt-6 relative z-10"
           onDragEnd={() => {
             // Reset all drag states when any drag ends
             setDraggedColumnId(null);
@@ -106,12 +117,13 @@ export default function Board({ board }: BoardProps) {
                 key={col.id}
                 data-column-name={col.name}
                 data-expanded={isExpanded ? "true" : "false"}
-                className={`transition-all duration-300 ease-out relative self-stretch column-${col.name
-                  .toLowerCase()
-                  .replace(/[^a-z0-9]+/g, "-")
-                  .replace(/^-|-$/g, "")} ${
-                  isExpanded ? "w-[24rem]" : "w-10"
-                } ${draggedColumnId === col.id ? "shadow-xl scale-105 opacity-50" : ""}`}
+                 className={`transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) relative self-stretch column-${col.name
+                   .toLowerCase()
+                   .replace(/[^a-z0-9]+/g, "-")
+                   .replace(/^-|-$/g, "")} ${
+                   isExpanded ? "w-[24rem]" : "w-12"
+                 } ${draggedColumnId === col.id ? "shadow-2xl z-50 scale-[1.02] rotate-1" : "z-10"}`}
+
                 title={
                   isExpanded
                     ? undefined
@@ -271,17 +283,20 @@ export default function Board({ board }: BoardProps) {
                   </div>
                 ) : (
                   // Collapsed column - Fizzy-inspired candy pop look
-                  <button
+                   <button
                     onClick={() => handleColumnToggle(col.id)}
                     className="column-collapsed"
                     style={
                       {
                         color: col.color,
+                        width: '48px',
                         "--collapse-height": `${metricsById.get(col.id)?.collapseHeight}px`,
+                        "--text-color": getContrastTextColor(col.color),
                       } as Record<string, unknown>
                     }
                     title={`Click to expand "${col.name}" (${col.items.length} cards)`}
                   >
+
                     {/* Content - badge and name on top of progress bar */}
                     <div
                       className="column-collapsed-content"
@@ -340,23 +355,20 @@ export default function Board({ board }: BoardProps) {
                   <div className="column-mobile-card-name">{col.name}</div>
                 </div>
                 <div className="column-mobile-card-icon">
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
+                  <Icon name="chevron-right" />
                 </div>
+
               </Link>
             );
           })}
+          
+          {/* Add Column button for mobile - styled like a mobile card */}
+          <NewColumn
+            boardId={board.id}
+            onAdd={() => {}}
+            editInitially={board.columns.length === 0}
+            isMobile={true}
+          />
         </div>
       </div>
     </div>

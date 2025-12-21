@@ -7,6 +7,7 @@ interface ColumnColorPickerProps {
   columnId: string;
   columnName: string;
   currentColor: string;
+  onColorChange?: () => void;
 }
 
 export function ColumnColorPicker({
@@ -17,6 +18,7 @@ export function ColumnColorPicker({
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const fetcher = useFetcher();
 
   // Position dropdown when opening
@@ -50,7 +52,9 @@ export function ColumnColorPicker({
     function handleClickOutside(event: MouseEvent) {
       if (
         buttonRef.current &&
-        !buttonRef.current.contains(event.target as Node)
+        !buttonRef.current.contains(event.target as Node) &&
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
       ) {
         setIsOpen(false);
       }
@@ -69,7 +73,10 @@ export function ColumnColorPicker({
         columnId,
         color,
       },
-      { method: "post", action: "/resources/update-column" }
+      { 
+        method: "post", 
+        action: "/resources/update-column",
+      }
     );
     setIsOpen(false);
   };
@@ -88,6 +95,7 @@ export function ColumnColorPicker({
       {isOpen &&
         createPortal(
           <div
+            ref={dropdownRef}
             className="fixed z-50 bg-white rounded-lg shadow-lg p-3 border border-slate-200"
             style={{
               top: dropdownPosition.top,
