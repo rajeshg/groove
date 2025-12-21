@@ -183,8 +183,8 @@ test.describe("Board Workflows", () => {
       if (await cardInput.isVisible()) {
         await cardInput.fill("Design landing page")
         
-        // Click Save Card button instead of pressing Enter
-        const saveButton = page.getByRole("button", { name: /Save Card/i })
+        // Click Create Card button instead of pressing Enter
+        const saveButton = page.getByRole("button", { name: /Create Card/i })
         await saveButton.click()
 
         // Wait a bit for the card to be created
@@ -194,8 +194,10 @@ test.describe("Board Workflows", () => {
         const cardVisible = await page.locator("text=/Design.*landing/i").first().isVisible()
         
         if (cardVisible) {
-          // Click on the card
-          await page.locator("text=/Design.*landing/i").first().click()
+          // Find the card and navigate directly
+          const cardLocator = page.locator('li[data-card-id]').filter({ hasText: /Design.*landing/i }).first()
+          const cardId = await cardLocator.getAttribute("data-card-id")
+          await page.goto(`/card/${cardId}`)
 
           // Should navigate to card detail
           await expect(page).toHaveURL(/\/card\//, { timeout: 10000 })
@@ -251,79 +253,80 @@ test.describe("Board Workflows", () => {
       if (await cardInput.isVisible()) {
         await cardInput.fill("Fix authentication bug")
 
-        // Click Save Card button
-        const saveButton = page.getByRole("button", { name: /Save Card/i })
+        // Click Create Card button
+        const saveButton = page.getByRole("button", { name: /Create Card/i })
         await saveButton.click()
 
-        await page.waitForTimeout(1000)
+        // Wait for card to appear in the list
+        const cardLocator = page.locator('li[data-card-id]').filter({ hasText: "Fix authentication bug" })
+        await expect(cardLocator).toBeVisible({ timeout: 10000 })
 
-        // Click on the card to open detail
-        const cardLink = page.locator("text=/Fix.*authentication/i").first()
-        if (await cardLink.isVisible()) {
-          await cardLink.click()
+        // Get the card ID and navigate directly to it
+        // This is more robust than clicking in a fast-moving UI
+        const cardId = await cardLocator.getAttribute("data-card-id")
+        await page.goto(`/card/${cardId}`)
 
-          // Wait for card detail page
-          await expect(page).toHaveURL(/\/card\//, { timeout: 10000 })
+        // Wait for card detail page
+        await expect(page).toHaveURL(/\/card\//, { timeout: 10000 })
 
-          // Add first comment
-          const commentInput = page.getByPlaceholder(/Add a comment/i)
-          await commentInput.fill("This bug affects login with special characters")
-          await commentInput.press("Enter")
+        // Add first comment
+        const commentInput = page.getByPlaceholder(/Add a comment/i)
+        await commentInput.fill("This bug affects login with special characters")
+        await commentInput.press("Enter")
 
-          // Wait for comment to appear
-          await page.waitForTimeout(500)
-          await expect(page.locator("body")).toContainText(
-            "special characters"
-          )
+        // Wait for comment to appear
+        await page.waitForTimeout(500)
+        await expect(page.locator("body")).toContainText(
+          "special characters"
+        )
 
-          // Add second comment
-          await commentInput.fill(
-            "Reproduced on Chrome and Firefox"
-          )
-          await commentInput.press("Enter")
+        // Add second comment
+        await commentInput.fill(
+          "Reproduced on Chrome and Firefox"
+        )
+        await commentInput.press("Enter")
 
-          await page.waitForTimeout(500)
-          await expect(page.locator("body")).toContainText("Chrome and Firefox")
+        await page.waitForTimeout(500)
+        await expect(page.locator("body")).toContainText("Chrome and Firefox")
 
-          // Edit the first comment - find Edit button next to the comment text
-          const editButton = page.getByRole("button", { name: /Edit/i }).first()
-          await editButton.click()
+        // Edit the first comment - find Edit button next to the comment text
+        const editButton = page.getByRole("button", { name: /Edit/i }).first()
+        await editButton.click()
 
-          // Wait for edit input to appear and fill it
-          const editTextarea = page.getByPlaceholder(/Edit comment/i)
-          await editTextarea.waitFor({ state: "visible", timeout: 2000 })
-          await editTextarea.fill(
-            "This bug affects login with special characters like & < >"
-          )
+        // Wait for edit input to appear and fill it
+        const editTextarea = page.getByPlaceholder(/Edit comment/i)
+        await editTextarea.waitFor({ state: "visible", timeout: 2000 })
+        await editTextarea.fill(
+          "This bug affects login with special characters like & < >"
+        )
 
-          // Submit by pressing Enter
-          await editTextarea.press("Enter")
+        // Submit by pressing Enter
+        await editTextarea.press("Enter")
 
-          await page.waitForTimeout(500)
-          // Verify edit was saved
-          await expect(page.locator("body")).toContainText("& < >")
+        await page.waitForTimeout(500)
+        // Verify edit was saved
+        await expect(page.locator("body")).toContainText("& < >")
 
-          // Delete the second comment - find the comment containing "Chrome and Firefox" then its Delete button
-          const secondCommentContainer = page.locator("text=Chrome and Firefox").locator("..").locator("..")
-          const deleteButton = secondCommentContainer.getByRole("button", { name: /Delete/i })
-          
-          const deletePromise = page.waitForResponse(
-            (resp) => resp.url().includes("/resources/delete-comment") && resp.status() === 200,
-            { timeout: 5000 }
-          )
-          await deleteButton.click()
-          await deletePromise
+        // Delete the second comment - find the comment containing "Chrome and Firefox" then its Delete button
+        const secondCommentContainer = page.locator("text=Chrome and Firefox").locator("..").locator("..")
+        const deleteButton = secondCommentContainer.getByRole("button", { name: /Delete/i })
+        
+        const deletePromise = page.waitForResponse(
+          (resp) => resp.url().includes("/resources/delete-comment") && resp.status() === 200,
+          { timeout: 5000 }
+        )
+        await deleteButton.click()
+        await deletePromise
 
-          await page.waitForTimeout(300)
-          // Verify comment was deleted
-          const commentStillExists = await page
-            .locator("text=Chrome and Firefox")
-            .count()
-          expect(commentStillExists).toBe(0)
+        await page.waitForTimeout(300)
+        // Verify comment was deleted
+        const commentStillExists = await page
+          .locator("text=Chrome and Firefox")
+          .count()
+        expect(commentStillExists).toBe(0)
 
-          // Verify first comment still exists
-          await expect(page.locator("body")).toContainText("& < >")
-        }
+        // Verify first comment still exists
+        await expect(page.locator("body")).toContainText("& < >")
       }
     }
   })

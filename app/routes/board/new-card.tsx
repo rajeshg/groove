@@ -111,7 +111,7 @@ export function NewCard({
           el.style.height = "auto";
           el.style.height = Math.min(el.scrollHeight, 256) + "px";
         }}
-        className="outline-none border-none text-sm font-bold rounded-xl w-full py-2 px-0 resize-none placeholder:text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 min-h-16 max-h-64 overflow-y-auto bg-transparent text-slate-900 dark:text-slate-50 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-0"
+         className="outline-none border-none text-base font-bold rounded-xl w-full py-2 px-0 resize-none placeholder:text-base placeholder:text-slate-400 dark:placeholder:text-slate-500 min-h-16 max-h-64 overflow-y-auto bg-transparent text-slate-900 dark:text-slate-50 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-0"
         onKeyDown={(event) => {
           if (event.key === "Enter" && !isSubmitting) {
             event.preventDefault();
