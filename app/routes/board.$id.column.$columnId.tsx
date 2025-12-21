@@ -139,7 +139,6 @@ export default function ColumnDetail() {
               <NewCard
                 columnId={column.id}
                 nextOrder={items.length === 0 ? 1 : Math.max(...items.map(i => i.order)) + 1}
-                onAddCard={() => {}}
                 onComplete={() => setAddingCard(false)}
               />
             ) : (

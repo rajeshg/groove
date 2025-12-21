@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef } from "react";
 import { invariant } from "@epic-web/invariant";
 import { useFetcher, useParams } from "react-router";
 import { useForm, getFormProps } from "@conform-to/react";
@@ -6,7 +6,8 @@ import { parseWithZod } from "@conform-to/zod/v4";
 import { z } from "zod";
 
 import { ItemMutationFields } from "../types";
-import { SaveButton, CancelButton } from "./components";
+import { CancelButton } from "./components";
+import { StatusButton } from "../../components/status-button";
 import { Textarea } from "../../components/textarea";
 
 // Client-side validation schema (matches server schema)
@@ -29,19 +30,14 @@ export function NewCard({
   columnId,
   nextOrder,
   onComplete,
-  onAddCard,
 }: {
   columnId: string;
   nextOrder: number;
   onComplete: () => void;
-  onAddCard: () => void;
 }) {
   let buttonRef = useRef<HTMLButtonElement>(null);
   let fetcher = useFetcher();
   let params = useParams();
-  
-  // Track title for button disabled state
-  let [title, setTitle] = useState("");
   
   // Use Conform for form state management and auto-reset
   let [form, fields] = useForm({
@@ -52,29 +48,16 @@ export function NewCard({
     shouldRevalidate: "onBlur",
   });
   
-  // Track if we're currently submitting
-  let isSubmitting = fetcher.state === "submitting";
-  
-  // Track previous state to detect when submission completes
-  let prevStateRef = useRef(fetcher.state);
-  
-  useEffect(() => {
-    // When fetcher completes (goes from submitting to idle), reset local state
-    if (prevStateRef.current === "submitting" && fetcher.state === "idle") {
-      // Check if submission was successful (no errors)
-      if (!fetcher.data?.error) {
-        setTitle(""); // Clear local state for button disabled logic
-        onAddCard();
-      }
-    }
-    prevStateRef.current = fetcher.state;
-  }, [fetcher.state, onAddCard]);
+  // Track if we're currently submitting or loading
+  let isSubmitting = fetcher.state !== "idle";
 
   return (
     <fetcher.Form
       method="post"
       action="/resources/new-card"
       {...getFormProps(form)}
+      // Use key to reset form when submission completes successfully
+      key={fetcher.data?.result ? Date.now() : "new-card-form"}
       className="flex flex-col gap-3 p-4 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-blue-200 dark:border-blue-800 m-2 shadow-lg animate-in fade-in slide-in-from-top-2 duration-300"
       onBlur={(event) => {
         // Don't close form if we're submitting
@@ -105,7 +88,6 @@ export function NewCard({
         placeholder="Enter a title for this card"
         disabled={isSubmitting}
         onChange={(e) => {
-          setTitle(e.target.value);
           // Auto-resize textarea
           let el = e.currentTarget;
           el.style.height = "auto";
@@ -124,12 +106,12 @@ export function NewCard({
         }}
       />
       <div className="flex justify-between items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-700">
-        <SaveButton 
-          ref={buttonRef} 
-          disabled={isSubmitting || !title.trim()}
+        <StatusButton 
+          ref={buttonRef}
+          status={isSubmitting ? "pending" : "idle"}
         >
-          {isSubmitting ? "..." : "Create Card"}
-        </SaveButton>
+          Create Card
+        </StatusButton>
         <CancelButton onClick={onComplete} disabled={isSubmitting}>
           Cancel
         </CancelButton>

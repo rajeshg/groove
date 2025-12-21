@@ -196,7 +196,6 @@ export function Column({
         <NewCard
           columnId={columnId}
           nextOrder={items.length === 0 ? 1 : items[items.length - 1].order + 1}
-          onAddCard={() => scrollList()}
           onComplete={() => setEdit(false)}
         />
       ) : (
@@ -209,10 +208,10 @@ export function Column({
               });
               scrollList();
             }}
-            className="flex items-center gap-2 rounded-xl text-left flex-1 p-3 font-black text-slate-400 dark:text-slate-500 hover:bg-white dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 hover:shadow-sm transition-all text-[10px] uppercase tracking-widest"
+            className="flex items-center gap-2 rounded-xl text-left flex-1 p-3 font-black text-slate-400 dark:text-slate-500 hover:bg-white dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 hover:shadow-sm transition-all text-[10px] uppercase tracking-widest leading-4"
             data-add-card-button
           >
-            <Icon name="plus" className="group-hover/add:scale-110 transition-transform" />
+            <Icon name="plus" className="flex-shrink-0 group-hover/add:scale-110 transition-transform" />
             Add a card
           </button>
           {shortcut && (

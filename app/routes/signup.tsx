@@ -6,8 +6,7 @@ import type { Route } from "./+types/signup";
 
 import { redirectIfLoggedInLoader, setAuthOnResponse } from "../auth/auth";
 import { Label, Input } from "../components/input";
-import { Button } from "../components/button";
-import { Icon } from "../icons/icons";
+import { StatusButton } from "../components/status-button";
 import { prisma } from "../../prisma/client";
 
 import { createAccount, accountExists } from "./signup.queries";
@@ -214,16 +213,13 @@ export default function Signup({ actionData, loaderData }: Route.ComponentProps)
               )}
             </div>
 
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <span className="flex items-center justify-center gap-2">
-                  <Icon name="plus" className="w-4 h-4 animate-spin" />
-                  Creating account...
-                </span>
-              ) : (
-                "Sign up"
-              )}
-            </Button>
+            <StatusButton 
+              type="submit" 
+              status={isSubmitting ? "pending" : "idle"}
+              className="w-full"
+            >
+              Sign up
+            </StatusButton>
 
             <div className="text-sm text-slate-500">
               Already have an account?{" "}

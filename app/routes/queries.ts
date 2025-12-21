@@ -271,8 +271,8 @@ export async function updateColumn(
 export async function createColumn(
   boardId: string,
   name: string,
-  id: string,
-  accountId: string
+  accountId: string,
+  id?: string
 ) {
   let columnCount = await prisma.column.count({
     where: { boardId, Board: { accountId } },
@@ -280,7 +280,7 @@ export async function createColumn(
 
   return prisma.column.create({
     data: {
-      id: generateId(),
+      id: id || generateId(), // Use provided ID or generate new one
       Board: { connect: { id: boardId } },
       name,
       order: columnCount + 1,

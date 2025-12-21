@@ -353,16 +353,32 @@ describe("Validation: Column Operations", () => {
   describe("createColumnSchema", () => {
     it("should validate correct column creation", () => {
       const data = {
-        intent: "newColumn",
+        boardId: "board123",
         name: "To Do",
         id: "temp-col123",
       };
       expect(() => createColumnSchema.parse(data)).not.toThrow();
     });
 
+    it("should validate column creation without id (server generates)", () => {
+      const data = {
+        boardId: "board123",
+        name: "To Do",
+      };
+      expect(() => createColumnSchema.parse(data)).not.toThrow();
+    });
+
     it("should reject missing name", () => {
       const data = {
-        intent: "newColumn",
+        boardId: "board123",
+        id: "temp-col123",
+      };
+      expect(() => createColumnSchema.parse(data)).toThrow();
+    });
+
+    it("should reject missing boardId", () => {
+      const data = {
+        name: "To Do",
         id: "temp-col123",
       };
       expect(() => createColumnSchema.parse(data)).toThrow();
@@ -370,7 +386,7 @@ describe("Validation: Column Operations", () => {
 
     it("should reject name longer than 255 characters", () => {
       const data = {
-        intent: "newColumn",
+        boardId: "board123",
         name: "a".repeat(256),
         id: "temp-col123",
       };

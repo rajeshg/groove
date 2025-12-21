@@ -5,7 +5,7 @@ import { z } from "zod";
 import { Modal } from "~/components/Modal";
 import { Input, Label } from "~/components/input";
 import { ColorPicker } from "~/components/ColorPicker";
-import { Button } from "~/components/button";
+import { StatusButton } from "~/components/status-button";
 import { requireAuthCookie } from "~/auth/auth";
 import { getBoardData } from "~/routes/queries";
 import { assertBoardAccess } from "~/utils/permissions";
@@ -115,9 +115,13 @@ export default function BoardSettings() {
 
           {isOwner && (
             <div className="flex justify-end pt-2">
-              <Button type="submit" disabled={isSubmitting} className="h-9 text-xs px-5 w-auto py-0 leading-none items-center">
-                {isSubmitting ? "Saving..." : "Save Changes"}
-              </Button>
+              <StatusButton 
+                type="submit" 
+                status={isSubmitting ? "pending" : "idle"}
+                className="h-9 text-xs px-5 w-auto py-0 leading-none items-center"
+              >
+                Save Changes
+              </StatusButton>
             </div>
           )}
         </Form>
@@ -143,13 +147,13 @@ export default function BoardSettings() {
                   className="h-9 text-sm w-full"
                 />
               </div>
-              <Button
+              <StatusButton
                 type="submit"
-                disabled={inviteFetcher.state !== "idle"}
+                status={inviteFetcher.state !== "idle" ? "pending" : "idle"}
                 className="h-9 px-5 text-xs shrink-0 sm:w-auto w-full py-0 leading-none items-center"
               >
-                {inviteFetcher.state !== "idle" ? "Inviting..." : "Invite"}
-              </Button>
+                Invite
+              </StatusButton>
             </inviteFetcher.Form>
           )}
 

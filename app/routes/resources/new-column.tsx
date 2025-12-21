@@ -9,7 +9,7 @@ import { createColumn } from "~/routes/queries";
 // Schema for creating a new column (without intent field since it's implicit)
 const NewColumnSchema = z.object({
   boardId: z.string().min(1, "Board ID is required"),
-  id: z.string().min(1, "Column ID is required"),
+  id: z.string().optional(), // Optional - server will generate if not provided
   name: z
     .string()
     .min(1, "Column name is required")
@@ -33,8 +33,8 @@ export async function action({ request }: { request: Request }) {
 
   const { boardId, id, name, redirectTo } = submission.value;
 
-  // Create the column
-  await createColumn(boardId, name, id, accountId);
+  // Create the column (id is optional, server will generate if not provided)
+  await createColumn(boardId, name, accountId, id);
 
   // Support progressive enhancement
   if (redirectTo) {

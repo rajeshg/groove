@@ -1,11 +1,15 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { flushSync } from "react-dom";
 import { invariant } from "@epic-web/invariant";
 import { Icon } from "../../icons/icons";
 import { useFetcher } from "react-router";
+import { useForm, getFormProps } from "@conform-to/react";
+import { parseWithZod } from "@conform-to/zod/v4";
 
-import { CancelButton, SaveButton } from "./components";
+import { CancelButton } from "./components";
+import { StatusButton } from "../../components/status-button";
 import { Input } from "../../components/input";
+import { createColumnSchema } from "../validation";
 
 export function NewColumn({
   boardId,
@@ -20,28 +24,45 @@ export function NewColumn({
 }) {
   let [editing, setEditing] = useState(editInitially);
   let inputRef = useRef<HTMLInputElement>(null);
+  let buttonRef = useRef<HTMLButtonElement>(null);
   let fetcher = useFetcher();
+
+  // Use Conform for form state management
+  let [form, fields] = useForm({
+    lastResult: fetcher.data?.result,
+    onValidate({ formData }) {
+      return parseWithZod(formData, { schema: createColumnSchema });
+    },
+    shouldRevalidate: "onBlur",
+  });
+
+  // Track if we're currently submitting or loading
+  let isSubmitting = fetcher.state !== "idle";
+
+  // Close form after successful submission
+  useEffect(() => {
+    if (
+      fetcher.state === "idle" &&
+      fetcher.data?.result?.status === "success" &&
+      editing
+    ) {
+      setEditing(false);
+    }
+  }, [fetcher.state, fetcher.data, editing]);
 
   return editing ? (
     <fetcher.Form
       method="post"
       action="/resources/new-column"
+      {...getFormProps(form)}
       className={
         isMobile
           ? "p-4 flex flex-col gap-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 shadow-inner"
           : "p-4 flex-shrink-0 flex flex-col gap-4 overflow-hidden max-h-full w-[24rem] border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-sm shadow-sm"
       }
-      onSubmit={(event) => {
-        event.preventDefault();
-        let formData = new FormData(event.currentTarget);
-        // Generate temporary client ID for optimistic updates (server will generate nanoid(12))
-        formData.set("id", `temp-${Math.random().toString(36).slice(2, 9)}`);
-        fetcher.submit(formData);
-        onAdd();
-        invariant(inputRef.current, "missing input ref");
-        inputRef.current.value = "";
-      }}
       onBlur={(event) => {
+        // Don't close form if we're submitting
+        if (isSubmitting) return;
         if (!event.currentTarget.contains(event.relatedTarget)) {
           setEditing(false);
         }
@@ -52,19 +73,44 @@ export function NewColumn({
         autoFocus
         required
         ref={inputRef}
-        type="text"
-        name="name"
+        key={fields.name.key}
+        name={fields.name.name}
+        defaultValue={fields.name.initialValue}
         placeholder="Column name..."
-        className="border border-slate-300 dark:border-slate-600 w-full rounded px-2 py-1 font-bold text-slate-900 dark:text-slate-50 dark:bg-slate-700 text-sm"
+        disabled={isSubmitting}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" && !isSubmitting) {
+            event.preventDefault();
+            invariant(buttonRef.current, "expected button ref");
+            buttonRef.current.click();
+          }
+          if (event.key === "Escape" && !isSubmitting) {
+            setEditing(false);
+          }
+        }}
+        className="border border-slate-300 dark:border-slate-600 w-full rounded px-2 py-1 font-bold text-slate-900 dark:text-slate-50 dark:bg-slate-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
       />
       <div className="flex justify-between gap-2">
-        <SaveButton>Save Column</SaveButton>
-        <CancelButton onClick={() => setEditing(false)}>Cancel</CancelButton>
+        <StatusButton 
+          ref={buttonRef}
+          status={isSubmitting ? "pending" : "idle"}
+        >
+          Save Column
+        </StatusButton>
+        <CancelButton 
+          onClick={() => setEditing(false)} 
+          disabled={isSubmitting}
+        >
+          Cancel
+        </CancelButton>
       </div>
     </fetcher.Form>
   ) : (
     <button
-      onClick={() => {
+      type="button"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
         flushSync(() => {
           setEditing(true);
         });

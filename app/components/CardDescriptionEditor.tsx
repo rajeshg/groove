@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
-import { EditorState } from "prosemirror-state";
+import { EditorState, Transaction } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
 import {
   Schema,

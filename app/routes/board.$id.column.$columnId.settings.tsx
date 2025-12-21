@@ -5,7 +5,7 @@ import { z } from "zod";
 import { Modal } from "~/components/Modal";
 import { Input, Label } from "~/components/input";
 import { ColorPicker } from "~/components/ColorPicker";
-import { Button } from "~/components/button";
+import { StatusButton } from "~/components/status-button";
 import { requireAuthCookie } from "~/auth/auth";
 import { getBoardData } from "~/routes/queries";
 import { assertBoardAccess } from "~/utils/permissions";
@@ -118,9 +118,13 @@ export default function ColumnSettings() {
           </div>
 
           <div className="flex justify-end pt-2">
-            <Button type="submit" disabled={isSubmitting} className="h-9 text-xs px-5 w-auto py-0 leading-none items-center">
-              {isSubmitting ? "Saving..." : "Save Changes"}
-            </Button>
+            <StatusButton 
+              type="submit" 
+              status={isSubmitting ? "pending" : "idle"}
+              className="h-9 text-xs px-5 w-auto py-0 leading-none items-center"
+            >
+              Save Changes
+            </StatusButton>
           </div>
         </Form>
 
@@ -156,13 +160,14 @@ export default function ColumnSettings() {
                   <deleteFetcher.Form method="post" action="/resources/delete-column" className="flex-1">
                     <input type="hidden" name="columnId" value={column.id} />
                     <input type="hidden" name="boardId" value={board.id} />
-                    <button
+                    <StatusButton
                       type="submit"
-                      disabled={isDeleting}
-                      className="w-full px-4 py-2 text-[10px] font-black uppercase tracking-widest bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all shadow-md disabled:opacity-50"
+                      variant="danger"
+                      status={isDeleting ? "pending" : "idle"}
+                      className="w-full h-auto py-2 text-[10px]"
                     >
-                      {isDeleting ? "Deleting..." : "Delete"}
-                    </button>
+                      Delete
+                    </StatusButton>
                   </deleteFetcher.Form>
                   <button
                     type="button"

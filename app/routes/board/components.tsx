@@ -4,21 +4,6 @@ import { flushSync } from "react-dom";
 
 import { Input } from "../../components/input";
 
-export let SaveButton = forwardRef<
-  HTMLButtonElement,
-  React.ButtonHTMLAttributes<HTMLButtonElement>
->((props, ref) => {
-  return (
-    <button
-      ref={ref}
-      {...props}
-      type={props.type || "submit"}
-      tabIndex={0}
-      className="text-[11px] font-black uppercase tracking-widest rounded-xl px-4 py-2.5 text-center text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-md shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 active:scale-95"
-    />
-  );
-});
-
 export let CancelButton = forwardRef<
   HTMLButtonElement,
   React.ButtonHTMLAttributes<HTMLButtonElement>

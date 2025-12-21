@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import type { Board } from "../../prisma/client";
 
 import { requireAuthCookie } from "../auth/auth";
-import { Button } from "../components/button";
+import { StatusButton } from "../components/status-button";
 import { Label, LabeledInput } from "../components/input";
 import { badRequest } from "../http/bad-request";
 
@@ -319,20 +319,13 @@ function NewBoard() {
               </div>
             </div>
 
-            <Button
+            <StatusButton
               type="submit"
+              status={isCreating ? "pending" : "idle"}
               className="w-full h-12 text-base font-bold rounded-xl shadow-lg shadow-blue-500/20"
-              disabled={isCreating}
             >
-              {isCreating ? (
-                <span className="flex items-center justify-center gap-2">
-                  <Icon name="plus" className="w-4 h-4 animate-spin" />
-                  Creating...
-                </span>
-              ) : (
-                "Create Project"
-              )}
-            </Button>
+              Create Project
+            </StatusButton>
           </div>
 
           <div className="xl:col-span-8 space-y-4">

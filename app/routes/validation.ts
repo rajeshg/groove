@@ -141,12 +141,12 @@ export type DeleteCardInput = z.infer<typeof deleteCardSchema>;
 // ============================================================================
 
 export const createColumnSchema = z.object({
-  intent: z.literal("newColumn"),
+  boardId: z.string().min(1, "Board ID is required"),
   name: z
     .string()
     .min(1, "Column name is required")
     .max(255, "Column name is too long"),
-  id: z.string().min(1, "Invalid column ID"),
+  id: z.string().optional(), // Server generates if not provided
 });
 
 export type CreateColumnInput = z.infer<typeof createColumnSchema>;

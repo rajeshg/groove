@@ -1,11 +1,11 @@
-import { redirect } from "react-router";
+import { redirect, useNavigation } from "react-router";
 import { Form, Link, useSearchParams } from "react-router";
 import { useForm, getFormProps, getInputProps } from "@conform-to/react";
 import { parseWithZod } from "@conform-to/zod/v4";
 import type { Route } from "./+types/login";
 
 import { redirectIfLoggedInLoader, setAuthOnResponse } from "../auth/auth";
-import { Button } from "../components/button";
+import { StatusButton } from "../components/status-button";
 import { Input, Label } from "../components/input";
 import { prisma } from "../../prisma/client";
 
@@ -86,6 +86,8 @@ export default function Login({ actionData, loaderData }: Route.ComponentProps) 
   const [searchParams] = useSearchParams();
   const invitationId = searchParams.get("invitationId");
   const hasInvitationContext = !!invitationId;
+  const navigation = useNavigation();
+  const isSubmitting = navigation.state !== "idle";
 
   const [form, fields] = useForm({
     lastResult: actionData?.result,
@@ -156,7 +158,13 @@ export default function Login({ actionData, loaderData }: Route.ComponentProps) 
             </div>
 
             <div>
-              <Button type="submit">Sign in</Button>
+              <StatusButton 
+                type="submit"
+                status={isSubmitting ? "pending" : "idle"}
+                className="w-full"
+              >
+                Sign in
+              </StatusButton>
             </div>
             <div className="text-sm text-slate-500">
               Don't have an account?{" "}

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 
 import { Icon } from "../../icons/icons";
 import { CardMeta } from "./card-meta";
+import { StatusButton } from "../../components/status-button";
 
 import type { RenderedAssignee } from "../types";
 import { CONTENT_TYPES } from "../types";
@@ -243,18 +244,19 @@ export function Card({
               onSubmit={(e) => e.stopPropagation()}
             >
               <input type="hidden" name="itemId" value={id} />
-              <button
+              <StatusButton
                 aria-label="Confirm delete"
-                className="px-2 py-1 text-[10px] font-black uppercase tracking-widest bg-red-600 hover:bg-red-700 text-white rounded transition-all disabled:opacity-50"
+                variant="danger"
+                status={deleteFetcher.state !== "idle" ? "pending" : "idle"}
                 type="submit"
-                disabled={deleteFetcher.state !== "idle"}
+                className="px-2 py-1 text-[10px]"
               >
-                {deleteFetcher.state !== "idle" ? "..." : "Delete"}
-              </button>
+                Delete
+              </StatusButton>
             </deleteFetcher.Form>
             <button
               aria-label="Cancel delete"
-              className="px-2 py-1 text-[10px] font-black uppercase tracking-widest bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded hover:bg-slate-300 dark:hover:bg-slate-600 transition-all"
+              className="px-2 py-1 text-[10px] font-black uppercase tracking-widest bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl hover:bg-slate-300 dark:hover:bg-slate-600 transition-all active:scale-95"
               type="button"
               onClick={(event) => {
                 event.stopPropagation();

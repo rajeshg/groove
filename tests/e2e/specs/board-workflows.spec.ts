@@ -371,4 +371,57 @@ test.describe("Board Workflows", () => {
     // Verify the member email appears in the pending invitations
     await expect(page.locator("body")).toContainText(member.email!, { timeout: 5000 })
   })
+
+  test("should create a new column", async ({ page }) => {
+    // Setup: Create account and board
+    const { account, plainPassword } = await createTestAccount()
+    testAccountIds.push(account.id)
+    const board = await createTestBoard(account.id, "Column Test Board")
+
+    // Login
+    await login(page, account.email!, plainPassword)
+
+    // Navigate to board
+    await navigateToBoard(page, board.id)
+
+    // Find and click "Add Column" button
+    const addColumnButton = page.getByRole("button", { name: /add new column/i })
+    await addColumnButton.click()
+
+    // Wait for the column form to appear
+    await page.waitForTimeout(500)
+
+    // Fill in column name
+    const columnInput = page.getByPlaceholder(/column name/i)
+    await expect(columnInput).toBeVisible()
+    await columnInput.fill("In Review")
+
+    // Click Save Column button
+    const saveButton = page.getByRole("button", { name: /save column/i })
+    await saveButton.click()
+
+    // Wait for the column to be created and appear in the board
+    await page.waitForTimeout(1000)
+
+    // Verify the new column appears in the board
+    await expect(page.locator("body")).toContainText("In Review")
+
+    // Verify we can add a card to the new column
+    const newColumnSection = page.locator('[data-column-name="In Review"]')
+    if (await newColumnSection.isVisible()) {
+      const addCardButton = newColumnSection.getByRole("button", { name: /add.*card/i })
+      if (await addCardButton.isVisible()) {
+        await addCardButton.click()
+        
+        const cardInput = page.getByPlaceholder(/Enter a title for this card/i)
+        if (await cardInput.isVisible()) {
+          await cardInput.fill("Test card in new column")
+          await cardInput.press("Enter")
+          
+          await page.waitForTimeout(500)
+          await expect(page.locator("body")).toContainText("Test card in new column")
+        }
+      }
+    }
+  })
 })
