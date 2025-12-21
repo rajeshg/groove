@@ -61,6 +61,8 @@ export function NewColumn({
           : "p-4 flex-shrink-0 flex flex-col gap-4 overflow-hidden max-h-full w-[24rem] border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-sm shadow-sm"
       }
       onBlur={(event) => {
+        // Don't close form on mobile - it interferes with button clicks
+        if (isMobile) return;
         // Don't close form if we're submitting
         if (isSubmitting) return;
         if (!event.currentTarget.contains(event.relatedTarget)) {
@@ -70,7 +72,7 @@ export function NewColumn({
     >
       <input type="hidden" name="boardId" value={boardId} />
       <Input
-        autoFocus
+        autoFocus={!isMobile}
         required
         ref={inputRef}
         key={fields.name.key}
@@ -119,7 +121,7 @@ export function NewColumn({
       aria-label="Add new column"
       className={
         isMobile
-          ? "w-full p-8 flex items-center justify-center gap-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 hover:bg-white dark:hover:bg-slate-800 transition-all text-slate-500 dark:text-slate-400 font-bold group shadow-sm"
+          ? "w-full p-8 flex items-center justify-center gap-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 hover:bg-white dark:hover:bg-slate-800 transition-all text-slate-500 dark:text-slate-400 font-bold group shadow-sm touch-manipulation"
           : "flex-shrink-0 flex flex-col items-center justify-center w-[24rem] self-stretch bg-slate-100/30 dark:bg-slate-900/30 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-500 hover:bg-slate-100/50 dark:hover:bg-slate-900/50 transition-all group m-0"
       }
     >

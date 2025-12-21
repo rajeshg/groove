@@ -1,6 +1,6 @@
 import { useForm, getFormProps, getInputProps } from "@conform-to/react";
 import { parseWithZod } from "@conform-to/zod/v4";
-import { Form, useActionData, useLoaderData, useNavigation, useFetcher } from "react-router";
+import { Form, useActionData, useLoaderData, useNavigation, useFetcher, useNavigate } from "react-router";
 import { z } from "zod";
 import { Modal } from "~/components/Modal";
 import { Input, Label } from "~/components/input";
@@ -9,7 +9,7 @@ import { StatusButton } from "~/components/status-button";
 import { requireAuthCookie } from "~/auth/auth";
 import { getBoardData } from "~/routes/queries";
 import { assertBoardAccess } from "~/utils/permissions";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Icon } from "~/icons/icons";
 
 const ColumnSettingsSchema = z.object({
@@ -51,6 +51,7 @@ export default function ColumnSettings() {
   const actionData = useActionData<{ result: unknown; error?: string }>();
   const navigation = useNavigation();
   const deleteFetcher = useFetcher();
+  const navigate = useNavigate();
   const [selectedColor, setSelectedColor] = useState(column.color || "#94a3b8");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -68,6 +69,13 @@ export default function ColumnSettings() {
 
   const isSubmitting = navigation.state === "submitting" || (navigation.state === "loading" && navigation.formData?.get("columnId") === column.id);
   const isDeleting = deleteFetcher.state !== "idle";
+
+  // Navigate to board after successful deletion
+  useEffect(() => {
+    if (deleteFetcher.state === "idle" && deleteFetcher.data) {
+      navigate(`/board/${board.id}`, { replace: true });
+    }
+  }, [deleteFetcher.state, deleteFetcher.data, board.id, navigate]);
 
   return (
     <Modal title="Column Settings">

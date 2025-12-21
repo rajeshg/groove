@@ -62,7 +62,7 @@ export function Modal({ children, title }: { children: React.ReactNode; title: s
         e.preventDefault();
         requestClose();
       }}
-      className="fixed inset-0 z-50 m-auto bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 p-0 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 backdrop:bg-slate-950/50 w-[calc(100%-2rem)] max-w-lg h-fit max-h-[calc(100vh-4rem)] overflow-hidden outline-none flex flex-col animate-in fade-in zoom-in-95 duration-200"
+      className="fixed inset-0 z-50 m-auto bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 p-0 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 backdrop:bg-slate-950/50 w-[calc(100%-2rem)] max-w-lg h-auto max-h-[90vh] md:max-h-[calc(100vh-4rem)] overflow-hidden outline-none flex flex-col animate-in fade-in zoom-in-95 duration-200"
       style={{
         animation: isClosing ? 'fadeOut 150ms ease-out forwards, zoomOut 150ms ease-out forwards' : undefined,
       }}
@@ -85,7 +85,7 @@ export function Modal({ children, title }: { children: React.ReactNode; title: s
           <Icon name="plus" className="rotate-45 scale-125" />
         </button>
       </div>
-      <div className="p-6 overflow-y-auto flex-1">{children}</div>
+      <div className="p-4 md:p-6 overflow-y-auto flex-1 overscroll-contain">{children}</div>
     </dialog>
   );
 }
