@@ -1,4 +1,4 @@
-import { useLoaderData, useNavigate, useFetchers } from "react-router";
+import { useLoaderData, useNavigate, useFetchers, Link } from "react-router";
 import { useState } from "react";
 import { requireAuthCookie } from "~/auth/auth";
 import { badRequest, notFound } from "~/http/bad-request";
@@ -6,8 +6,6 @@ import { getBoardData } from "./queries";
 import { Icon } from "~/icons/icons";
 import { Card } from "./board/card";
 import { BoardHeader } from "./board/board-header";
-import { EditableText } from "./board/components";
-import { ColumnColorPicker } from "./board/column-color-picker";
 import { NewCard } from "./board/new-card";
 import { assertBoardAccess } from "~/utils/permissions";
 
@@ -89,38 +87,33 @@ export default function ColumnDetail() {
       <div className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col items-center">
         {/* Header bar with all controls */}
         <div className="mb-6 w-full max-w-4xl">
-          <div className="flex items-center justify-between gap-4 bg-white dark:bg-slate-900 rounded-lg shadow-sm border-2 border-slate-200 dark:border-slate-800 px-4 py-3">
+          <div className="grid grid-cols-[auto_1fr_auto] items-center gap-4 bg-white dark:bg-slate-900 rounded-lg shadow-sm border-2 border-slate-200 dark:border-slate-800 px-4 py-3">
             {/* Left: Back button */}
             <button
               onClick={() => navigate(-1)}
-              className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors flex-shrink-0 text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-slate-50 font-semibold"
+              className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-slate-50 font-semibold"
               aria-label="Back"
             >
               <Icon name="chevron-left" className="w-5 h-5" />
               <span className="text-sm font-semibold">Back</span>
             </button>
 
-            {/* Center: Editable column name */}
-            <div className="flex-1 flex items-center justify-center">
-              <EditableText
-                fieldName="name"
-                value={column.name}
-                inputLabel="Edit column name"
-                buttonLabel={`Edit column "${column.name}" name`}
-                inputClassName="border-2 border-slate-400 dark:border-slate-600 rounded px-3 py-2 font-black text-slate-950 dark:text-slate-50 dark:bg-slate-800 text-lg text-center uppercase"
-                buttonClassName="px-3 py-2 font-black text-slate-950 dark:text-slate-50 text-xl hover:bg-slate-100 dark:hover:bg-slate-800 rounded uppercase"
-                placeholder="Column name..."
-                action="/resources/update-column"
-                hiddenFields={{
-                  columnId: column.id,
-                }}
+            {/* Center: Column name */}
+            <div className="flex items-center justify-center gap-2.5 min-w-0">
+              <h2 className="font-black text-slate-950 dark:text-slate-50 text-lg uppercase truncate flex items-center h-9">
+                {column.name}
+              </h2>
+              <Link
+                to={`/board/${board.id}/column/${column.id}/settings`}
+                className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 group flex-shrink-0 flex items-center justify-center"
+                title="Column Settings"
               >
-                <></>
-              </EditableText>
+                <Icon name="cog" size="md" className="group-hover:rotate-90 transition-transform duration-500" />
+              </Link>
             </div>
 
-            {/* Right: Card count and color picker */}
-            <div className="flex items-center gap-4 flex-shrink-0">
+            {/* Right: Card count and color info */}
+            <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-md border border-slate-200 dark:border-slate-700">
                 <span className="text-sm font-bold text-slate-900 dark:text-slate-50">
                   {items.length}
@@ -129,11 +122,11 @@ export default function ColumnDetail() {
                   {items.length === 1 ? "card" : "cards"}
                 </span>
               </div>
-
-              <ColumnColorPicker
-                columnId={column.id}
-                columnName={column.name}
-                currentColor={displayColor}
+              
+              <div 
+                className="w-8 h-8 rounded-lg border-2 border-slate-300 dark:border-slate-700 shadow-sm flex-shrink-0"
+                style={{ backgroundColor: displayColor }}
+                title={`Column color: ${displayColor}`}
               />
             </div>
           </div>

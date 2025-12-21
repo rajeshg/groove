@@ -74,8 +74,7 @@ export async function getBoardData(
   const isMember = await isBoardMember(boardId, accountId);
 
   // User must be either owner or member
-  if (!isOwner && !isMember)
-    throw new Error("Unauthorized: Not a board member");
+  if (!isOwner && !isMember) return null;
 
   return prisma.board.findUnique({
     where: { id: boardId },
@@ -118,14 +117,14 @@ export async function getBoardData(
   });
 }
 
-export async function updateBoardName(
+export async function updateBoard(
   boardId: string,
-  name: string,
+  data: { name?: string; color?: string },
   accountId: string
 ) {
   return prisma.board.update({
     where: { id: boardId, accountId: accountId },
-    data: { name },
+    data,
   });
 }
 
@@ -227,47 +226,45 @@ export async function upsertItem(
   });
 }
 
-export async function updateColumnName(
-  id: string,
-  name: string,
-  accountId: string
-) {
-  return prisma.column.update({
-    where: { id, Board: { accountId } },
-    data: { name },
+export async function getColumn(id: string, accountId: string) {
+  const column = await prisma.column.findUnique({
+    where: { id },
+    include: { Board: { include: { members: true } } },
   });
+
+  if (!column) return null;
+
+  const board = column.Board;
+  const isOwner = board.accountId === accountId;
+  const isMember = board.members.some((m) => m.accountId === accountId);
+
+  if (!isOwner && !isMember) return null;
+
+  return column;
 }
 
-export async function updateColumnColor(
+export async function updateColumn(
   id: string,
-  color: string,
+  data: { name?: string; color?: string; isExpanded?: boolean; order?: number },
   accountId: string
 ) {
-  return prisma.column.update({
-    where: { id, Board: { accountId } },
-    data: { color },
+  // Simple check: user must be board owner or member
+  const column = await prisma.column.findUnique({
+    where: { id },
+    include: { Board: { include: { members: true } } },
   });
-}
 
-export async function updateColumnExpanded(
-  id: string,
-  isExpanded: boolean,
-  accountId: string
-) {
-  return prisma.column.update({
-    where: { id, Board: { accountId } },
-    data: { isExpanded },
-  });
-}
+  if (!column) throw new Error("Column not found");
 
-export async function updateColumnOrder(
-  id: string,
-  order: number,
-  accountId: string
-) {
+  const board = column.Board;
+  const isOwner = board.accountId === accountId;
+  const isMember = board.members.some((m) => m.accountId === accountId);
+
+  if (!isOwner && !isMember) throw new Error("Unauthorized");
+
   return prisma.column.update({
-    where: { id, Board: { accountId } },
-    data: { order },
+    where: { id },
+    data,
   });
 }
 

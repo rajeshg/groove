@@ -1,4 +1,4 @@
-import { type MetaFunction } from "react-router";
+import { Outlet, type MetaFunction } from "react-router";
 import { invariant, invariantResponse } from "@epic-web/invariant";
 
 import { requireAuthCookie } from "../auth/auth";
@@ -41,5 +41,10 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
 };
 
 export default function BoardPage({ loaderData }: Route.ComponentProps) {
-  return <Board board={loaderData.board} />;
+  return (
+    <>
+      <Board board={loaderData.board} />
+      <Outlet />
+    </>
+  );
 }

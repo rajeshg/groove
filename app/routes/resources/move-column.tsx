@@ -3,7 +3,8 @@ import { invariantResponse } from "@epic-web/invariant";
 import { data } from "react-router";
 import { z } from "zod";
 import { requireAuthCookie } from "~/auth/auth";
-import { updateColumnOrder } from "~/routes/queries";
+import { updateColumn, getColumn } from "~/routes/queries";
+import { canMoveColumn, getPermissionErrorMessage } from "~/utils/permissions";
 
 const MoveColumnSchema = z.object({
   id: z.string().min(1, "Invalid column ID"),
@@ -19,13 +20,38 @@ export async function action({ request }: { request: Request }) {
   const formData = await request.formData();
 
   const submission = parseWithZod(formData, { schema: MoveColumnSchema });
-  invariantResponse(submission.status === "success", "Invalid move data", {
-    status: 400,
-  });
+  if (submission.status !== "success") {
+    return data({ result: submission.reply() }, { status: 400 });
+  }
 
   const { id, order } = submission.value;
 
-  await updateColumnOrder(id, order, accountId);
+  try {
+    // Check permissions
+    const column = await getColumn(id, accountId);
+    invariantResponse(column, "Column not found or unauthorized", { status: 404 });
 
-  return data({ result: submission.reply() });
+    const board = column.Board;
+    const userRole =
+      board.accountId === accountId
+        ? "owner"
+        : board.members.find((m) => m.accountId === accountId)?.role === "editor"
+          ? "editor"
+          : null;
+
+    if (!canMoveColumn(userRole)) {
+      invariantResponse(false, getPermissionErrorMessage("moveColumn"), {
+        status: 403,
+      });
+    }
+
+    await updateColumn(id, { order }, accountId);
+
+    return data({ result: submission.reply() });
+  } catch (error: unknown) {
+    console.error("Error moving column:", error);
+    if (error instanceof Response) throw error;
+    const message = error instanceof Error ? error.message : "Failed to move column";
+    return data({ error: message }, { status: 500 });
+  }
 }

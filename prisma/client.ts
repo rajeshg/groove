@@ -27,17 +27,11 @@ function createPrismaClient(): PrismaClient {
 
 const globalForPrisma = globalThis as unknown as PrismaGlobal;
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
-
 // Global flag to ensure database initialization happens only once
 let databaseInitialized = false;
 
 // Initialize WAL mode for better database performance
-export async function initializeDatabase(): Promise<void> {
+async function initializeDatabase(): Promise<void> {
   if (databaseInitialized) return;
   databaseInitialized = true;
 
@@ -58,3 +52,13 @@ export async function initializeDatabase(): Promise<void> {
     console.warn("⚠️ Failed to enable WAL mode:", error);
   }
 }
+
+export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+
+// Always cache the instance to prevent creating multiple clients
+globalForPrisma.prisma = prisma;
+
+// Initialize WAL mode immediately when module loads
+initializeDatabase().catch(err => console.error("Failed to initialize WAL mode:", err));
+
+

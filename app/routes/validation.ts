@@ -46,15 +46,21 @@ export type SignupInput = z.infer<typeof signupSchema>;
 // Board Operations
 // ============================================================================
 
-export const updateBoardNameSchema = z.object({
-  intent: z.literal("updateBoardName"),
+export const updateBoardSchema = z.object({
+  intent: z.literal("updateBoard"),
+  boardId: z.string().min(1, "Invalid board ID"),
   name: z
     .string()
     .min(1, "Board name is required")
-    .max(255, "Board name is too long"),
+    .max(255, "Board name is too long")
+    .optional(),
+  color: z
+    .string()
+    .regex(/^#[0-9a-f]{6}$/i, "Invalid color format")
+    .optional(),
 });
 
-export type UpdateBoardNameInput = z.infer<typeof updateBoardNameSchema>;
+export type UpdateBoardInput = z.infer<typeof updateBoardSchema>;
 
 // ============================================================================
 // Item/Card Operations

@@ -32,6 +32,7 @@ export function Column({
   columnId,
   items,
   color = "#94a3b8",
+  isDefault: _isDefault = false,
   isExpanded = true,
   onToggle,
   boardName,
@@ -177,14 +178,14 @@ export function Column({
                 <Icon name="shrink" size="md" />
               </button>
 
-              {/* Link to column detail page */}
+              {/* View Column Details Link */}
               <Link
                 to={`/board/${boardId}/column/${columnId}`}
-                className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
+                className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-all text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 group"
                 title="View column details"
-                aria-label="View column details"
+                aria-label={`View details for ${name}`}
               >
-                <Icon name="chevron-right" size="md" />
+                <Icon name="chevron-right" size="md" className="group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </div>
           )}

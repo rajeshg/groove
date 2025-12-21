@@ -55,6 +55,7 @@ export function Card({
 
   let [acceptDrop, setAcceptDrop] = useState<"none" | "top" | "bottom">("none");
   let [isDragging, setIsDragging] = useState(false);
+  let [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   let dragLeaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -71,7 +72,8 @@ export function Card({
     return () => document.removeEventListener("dragend", handleGlobalDragEnd);
   }, []);
 
-  return deleteFetcher.state !== "idle" ? null : (
+  // Hide card when deleting or when delete has completed successfully
+  return deleteFetcher.state !== "idle" || deleteFetcher.data ? null : (
     <li
       data-card-id={id}
       onDragEnter={(event) => {
@@ -214,24 +216,56 @@ export function Card({
           </div>
         )}
 
-        <deleteFetcher.Form
-          method="post"
-          action="/resources/delete-card"
-          className="absolute top-2 right-2"
-        >
-          <input type="hidden" name="itemId" value={id} />
+        {!showDeleteConfirm ? (
           <button
             aria-label="Delete card"
-            className="text-slate-400 dark:text-slate-500 opacity-50 group-hover:opacity-100 hover:text-red-600 dark:hover:text-red-400 transition-all disabled:opacity-50"
-            type="submit"
-            disabled={deleteFetcher.state !== "idle"}
+            className="absolute top-2 right-2 text-slate-400 dark:text-slate-500 opacity-50 group-hover:opacity-100 hover:text-red-600 dark:hover:text-red-400 transition-all"
+            type="button"
             onClick={(event) => {
               event.stopPropagation();
+              event.preventDefault();
+              setShowDeleteConfirm(true);
             }}
           >
             <Icon name="trash" />
           </button>
-        </deleteFetcher.Form>
+        ) : (
+          <div
+            className="absolute top-2 right-2 flex gap-1 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-red-200 dark:border-red-800 p-1"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+            }}
+          >
+            <deleteFetcher.Form
+              method="post"
+              action="/resources/delete-card"
+              onSubmit={(e) => e.stopPropagation()}
+            >
+              <input type="hidden" name="itemId" value={id} />
+              <button
+                aria-label="Confirm delete"
+                className="px-2 py-1 text-[10px] font-black uppercase tracking-widest bg-red-600 hover:bg-red-700 text-white rounded transition-all disabled:opacity-50"
+                type="submit"
+                disabled={deleteFetcher.state !== "idle"}
+              >
+                {deleteFetcher.state !== "idle" ? "..." : "Delete"}
+              </button>
+            </deleteFetcher.Form>
+            <button
+              aria-label="Cancel delete"
+              className="px-2 py-1 text-[10px] font-black uppercase tracking-widest bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded hover:bg-slate-300 dark:hover:bg-slate-600 transition-all"
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                event.preventDefault();
+                setShowDeleteConfirm(false);
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        )}
       </div>
     </li>
   );

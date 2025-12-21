@@ -1,13 +1,15 @@
 import { parseWithZod } from "@conform-to/zod/v4";
 import { invariantResponse } from "@epic-web/invariant";
-import { data } from "react-router";
+import { data, redirect } from "react-router";
 import { z } from "zod";
 import { requireAuthCookie } from "~/auth/auth";
+import { updateColumn, getColumn } from "~/routes/queries";
 import {
-  updateColumnColor,
-  updateColumnExpanded,
-  updateColumnName,
-} from "~/routes/queries";
+  canUpdateColumnName,
+  canUpdateColumnColor,
+  canUpdateColumnExpanded,
+  getPermissionErrorMessage,
+} from "~/utils/permissions";
 
 const UpdateColumnSchema = z.object({
   columnId: z.string().min(1, "Invalid column ID"),
@@ -29,24 +31,60 @@ export async function action({ request }: { request: Request }) {
   const formData = await request.formData();
 
   const submission = parseWithZod(formData, { schema: UpdateColumnSchema });
-  invariantResponse(submission.status === "success", "Invalid column data", {
-    status: 400,
-  });
-
-  const { columnId, name, color, isExpanded } = submission.value;
-
-  if (name) {
-    await updateColumnName(columnId, name, accountId);
+  if (submission.status !== "success") {
+    return data({ result: submission.reply() }, { status: 400 });
   }
 
-  if (color) {
-    await updateColumnColor(columnId, color, accountId);
-  }
+  const { columnId, name, color, isExpanded, redirectTo } = submission.value;
 
-  if (isExpanded !== undefined) {
-    const isExpandedBool = isExpanded === "1";
-    await updateColumnExpanded(columnId, isExpandedBool, accountId);
-  }
+  try {
+    // Check permissions
+    const column = await getColumn(columnId, accountId);
+    invariantResponse(column, "Column not found or unauthorized", { status: 404 });
 
-  return data({ result: submission.reply() });
+    const board = column.Board;
+    const userRole =
+      board.accountId === accountId
+        ? "owner"
+        : board.members.find((m) => m.accountId === accountId)?.role === "editor"
+          ? "editor"
+          : null;
+
+    if (name && !canUpdateColumnName(userRole)) {
+      invariantResponse(false, getPermissionErrorMessage("updateColumnName"), {
+        status: 403,
+      });
+    }
+
+    if (color && !canUpdateColumnColor(userRole)) {
+      invariantResponse(false, getPermissionErrorMessage("updateColumnColor"), {
+        status: 403,
+      });
+    }
+
+    if (isExpanded !== undefined && !canUpdateColumnExpanded(userRole)) {
+      invariantResponse(false, getPermissionErrorMessage("updateColumnExpanded"), {
+        status: 403,
+      });
+    }
+
+    const isExpandedBool = isExpanded !== undefined ? isExpanded === "1" : undefined;
+
+    await updateColumn(
+      columnId,
+      { name, color, isExpanded: isExpandedBool },
+      accountId
+    );
+
+    if (redirectTo) {
+      return redirect(redirectTo);
+    }
+
+    return data({ result: submission.reply() });
+  } catch (error: unknown) {
+    console.error("Error updating column:", error);
+    if (error instanceof Response) throw error;
+    const message = error instanceof Error ? error.message : "Failed to update column";
+    return data({ error: message }, { status: 500 });
+  }
 }

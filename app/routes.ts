@@ -7,8 +7,10 @@ export default [
   route("login", "routes/login.tsx"),
   route("signup", "routes/signup.tsx"),
   route("logout", "routes/logout.tsx"),
-  route("board/:id", "routes/board.$id.tsx"),
-  route("board/:id/members", "routes/board.$id.members.tsx"),
+  route("board/:id", "routes/board.$id.tsx", [
+    route("settings", "routes/board.$id.settings.tsx"),
+    route("column/:columnId/settings", "routes/board.$id.column.$columnId.settings.tsx"),
+  ]),
   route("card/:cardId", "routes/card.$cardId.tsx"),
   route("board/:id/column/:columnId", "routes/board.$id.column.$columnId.tsx"),
   route("profile", "routes/profile.tsx"),
@@ -27,10 +29,7 @@ export default [
   route("resources/create-comment", "routes/resources/create-comment.tsx"),
   route("resources/update-comment", "routes/resources/update-comment.tsx"),
   route("resources/delete-comment", "routes/resources/delete-comment.tsx"),
-  route(
-    "resources/update-board-name",
-    "routes/resources/update-board-name.tsx"
-  ),
+  route("resources/update-board", "routes/resources/update-board.tsx"),
   route("resources/invite-user", "routes/resources/invite-user.tsx"),
   route(
     "resources/update-item-assignee",

@@ -1,6 +1,6 @@
 import { parseWithZod } from "@conform-to/zod/v4";
 import { invariantResponse } from "@epic-web/invariant";
-import { data } from "react-router";
+import { data, redirect } from "react-router";
 import { z } from "zod";
 import { requireAuthCookie } from "~/auth/auth";
 import { deleteCard, getItem } from "~/routes/queries";
@@ -19,13 +19,18 @@ export async function action({ request }: { request: Request }) {
     status: 400,
   });
 
-  const { itemId } = submission.value;
+  const { itemId, redirectTo } = submission.value;
 
   // Check if user can delete this card (must be creator if editor)
   const card = await getItem(itemId, accountId);
   invariantResponse(card, "Card not found", { status: 404 });
 
   await deleteCard(itemId, accountId);
+
+  // If redirectTo is provided, redirect there, otherwise return data for revalidation
+  if (redirectTo) {
+    return redirect(redirectTo);
+  }
 
   return data({ result: submission.reply() });
 }

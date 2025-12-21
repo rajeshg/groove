@@ -15,7 +15,7 @@ import { describe, it, expect } from "vitest";
 import {
   loginSchema,
   signupSchema,
-  updateBoardNameSchema,
+  updateBoardSchema,
   createItemSchema,
   updateItemSchema,
   moveItemSchema,
@@ -153,42 +153,55 @@ describe("Validation: Authentication", () => {
 // ============================================================================
 
 describe("Validation: Board Operations", () => {
-  describe("updateBoardNameSchema", () => {
-    it("should validate correct board name update", () => {
+  describe("updateBoardSchema", () => {
+    it("should validate correct board update", () => {
       const data = {
-        intent: "updateBoardName",
+        intent: "updateBoard",
+        boardId: "board-123",
+        name: "New Board Name",
+        color: "#ff0000",
+      };
+      expect(() => updateBoardSchema.parse(data)).not.toThrow();
+    });
+
+    it("should allow updating only name", () => {
+      const data = {
+        intent: "updateBoard",
+        boardId: "board-123",
         name: "New Board Name",
       };
-      expect(() => updateBoardNameSchema.parse(data)).not.toThrow();
+      expect(() => updateBoardSchema.parse(data)).not.toThrow();
     });
 
-    it("should reject missing name", () => {
-      const data = { intent: "updateBoardName" };
-      expect(() => updateBoardNameSchema.parse(data)).toThrow();
-    });
-
-    it("should reject empty name", () => {
+    it("should allow updating only color", () => {
       const data = {
-        intent: "updateBoardName",
-        name: "",
+        intent: "updateBoard",
+        boardId: "board-123",
+        color: "#00ff00",
       };
-      expect(() => updateBoardNameSchema.parse(data)).toThrow();
+      expect(() => updateBoardSchema.parse(data)).not.toThrow();
     });
 
-    it("should reject name longer than 255 characters", () => {
+    it("should reject missing boardId", () => {
+      const data = { intent: "updateBoard", name: "Name" };
+      expect(() => updateBoardSchema.parse(data)).toThrow();
+    });
+
+    it("should reject invalid color format", () => {
       const data = {
-        intent: "updateBoardName",
-        name: "a".repeat(256),
+        intent: "updateBoard",
+        boardId: "board-123",
+        color: "invalid-color",
       };
-      expect(() => updateBoardNameSchema.parse(data)).toThrow();
+      expect(() => updateBoardSchema.parse(data)).toThrow();
     });
 
     it("should reject wrong intent", () => {
       const data = {
         intent: "wrongIntent",
-        name: "Board Name",
+        boardId: "board-123",
       };
-      expect(() => updateBoardNameSchema.parse(data)).toThrow();
+      expect(() => updateBoardSchema.parse(data)).toThrow();
     });
   });
 });

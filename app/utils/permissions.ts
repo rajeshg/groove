@@ -142,9 +142,9 @@ export function canMoveCard(role: UserRole | null | undefined): boolean {
 }
 
 /**
- * Check if user can update board name
+ * Check if user can update board (name and color)
  */
-export function canUpdateBoardName(role: UserRole | null | undefined): boolean {
+export function canUpdateBoard(role: UserRole | null | undefined): boolean {
   return role === "owner";
 }
 
@@ -183,6 +183,7 @@ export function getPermissionErrorMessage(action: string): string {
     deleteBoard: "Only board owners can delete the board",
     manageMembers: "Only board owners can manage members",
     deleteCard: "You can only delete your own cards",
+    updateBoard: "Only board owners can update board settings",
   };
 
   return actions[action] || "You don't have permission to perform this action";

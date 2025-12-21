@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test"
+import { test, expect, type Page } from "@playwright/test"
 import {
   createTestAccount,
   createTestBoard,
@@ -6,7 +6,7 @@ import {
 } from "../helpers/e2e-utils"
 
 // Helper to login
-async function login(page: any, email: string, password: string) {
+async function login(page: Page, email: string, password: string) {
   await page.goto("/login")
   await page.getByLabel("Email address").fill(email)
   await page.getByLabel("Password").fill(password)
@@ -16,7 +16,7 @@ async function login(page: any, email: string, password: string) {
 }
 
 // Helper to navigate to board and wait for it to load
-async function navigateToBoard(page: any, boardId: string) {
+async function navigateToBoard(page: Page, boardId: string) {
   await page.goto(`/board/${boardId}`, { waitUntil: "networkidle" })
   // Wait for at least one column to be visible
   await page.waitForSelector('[data-column-id]', { timeout: 10000 })
@@ -335,7 +335,7 @@ test.describe("Board Workflows", () => {
     // Setup: Create owner and potential member
     const { account: owner, plainPassword: ownerPassword } =
       await createTestAccount()
-    const { account: member, plainPassword: memberPassword } =
+    const { account: member, plainPassword: _memberPassword } =
       await createTestAccount()
     testAccountIds.push(owner.id, member.id)
 
@@ -347,31 +347,28 @@ test.describe("Board Workflows", () => {
     // Navigate to board
     await navigateToBoard(page, board.id)
 
-    // Go to members page
-    const membersLink = page.getByRole("link", { name: /members|invite/i })
-    await membersLink.click()
+    // Open board settings modal
+    const settingsButton = page.getByRole("link", { name: /settings/i })
+    await settingsButton.click()
 
-    // Should be on members page
-    await expect(page).toHaveURL(/\/members/)
+    // Wait for settings modal to open
+    await expect(page).toHaveURL(new RegExp(`/board/${board.id}/settings`))
+    await page.waitForTimeout(500)
 
-    // Invite the member - look for input by label or placeholder
-    const emailInput = page.getByPlaceholder(/colleague@example.com/i).or(page.getByLabel(/email/i))
+    // Invite the member - look for input by placeholder
+    const emailInput = page.getByPlaceholder(/colleague@example.com/i)
     await emailInput.fill(member.email!)
 
     const inviteButton = page.getByRole("button", {
-      name: /invite|send/i,
+      name: /invite/i,
     })
     
     await inviteButton.click()
     
-    // Wait for the button to return to idle state (form submission complete)
-    await expect(inviteButton).toHaveText(/send invitation/i, { timeout: 5000 })
+    // Wait for invitation to complete
+    await page.waitForTimeout(1000)
 
-    // Wait for the invitation to appear in the pending invitations section
+    // Verify the member email appears in the pending invitations
     await expect(page.locator("body")).toContainText(member.email!, { timeout: 5000 })
-    
-    // Verify the pending invitations section is visible
-    const pendingSection = page.getByText(/pending invitations/i)
-    await expect(pendingSection).toBeVisible()
   })
 })

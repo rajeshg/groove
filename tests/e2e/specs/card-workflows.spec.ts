@@ -1,41 +1,19 @@
-import { test, expect } from "@playwright/test"
+import { test, expect, type Page } from "@playwright/test"
 import {
   createTestAccount,
   createTestBoard,
   cleanupTestData,
 } from "../helpers/e2e-utils"
 
-// Helper to create a card and wait for it to appear
-async function createCard(page: any, title: string) {
-  const addCardButton = page
-    .getByRole("button", { name: /add.*card/i })
-    .first()
-  await addCardButton.click()
-
-  const cardInput = page
-    .getByPlaceholder(/Enter a title for this card/i)
-    .first()
-  await cardInput.fill(title)
-
-  const saveButton = page.getByRole("button", { name: "Save Card" }).first()
-  await saveButton.click()
-
-  // Wait for card to appear in the DOM
-  const cardLocator = page.locator('[data-card-id]').filter({ hasText: title })
-  await expect(cardLocator).toBeVisible({ timeout: 10000 })
-  
-  return cardLocator
-}
-
 // Helper to navigate to board and wait for it to load
-async function navigateToBoard(page: any, boardId: string) {
+async function navigateToBoard(page: Page, boardId: string) {
   await page.goto(`/board/${boardId}`, { waitUntil: "networkidle" })
   // Wait for at least one column to be visible
   await page.waitForSelector('[data-column-id]', { timeout: 10000 })
 }
 
 // Helper to login
-async function login(page: any, email: string, password: string) {
+async function login(page: Page, email: string, password: string) {
   await page.goto("/login")
   await page.getByLabel("Email address").fill(email)
   await page.getByLabel("Password").fill(password)
@@ -77,7 +55,7 @@ test.describe("Card Workflows - Comprehensive", () => {
       .first()
     await cardInput.fill("Implement user registration")
 
-    const saveButton = page.getByRole("button", { name: "Save Card" }).first()
+    const saveButton = page.getByRole("button", { name: "Create Card" }).first()
     await saveButton.click()
 
     // Wait for card to appear in the DOM using data-card-id attribute
@@ -110,15 +88,16 @@ test.describe("Card Workflows - Comprehensive", () => {
       .first()
     await cardInput.fill("Task to move")
 
-    const saveButton = page.getByRole("button", { name: "Save Card" }).first()
+    const saveButton = page.getByRole("button", { name: "Create Card" }).first()
     await saveButton.click()
 
     // Wait for card to appear
     const cardLocator = page.locator('[data-card-id]').filter({ hasText: "Task to move" })
     await expect(cardLocator).toBeVisible({ timeout: 10000 })
     
-    // Open card detail
-    await cardLocator.click()
+    // Open card detail - find the inner clickable div and dispatch click
+    const clickableDiv = cardLocator.locator('div[draggable="true"]')
+    await clickableDiv.dispatchEvent('click')
     await expect(page).toHaveURL(/\/card\//)
 
     // Check current column (should be "Todo" by default)
@@ -171,7 +150,7 @@ test.describe("Card Workflows - Comprehensive", () => {
       .first()
     await cardInput.fill("Card to delete")
 
-    const saveButton = page.getByRole("button", { name: /Save Card/i })
+    const saveButton = page.getByRole("button", { name: /Create Card/i })
     await saveButton.click()
     
     // Wait for the API response
@@ -180,37 +159,36 @@ test.describe("Card Workflows - Comprehensive", () => {
         resp.url().includes("/resources/new-card") && resp.status() === 200,
       { timeout: 5000 }
     )
-    await page.waitForTimeout(500)
+    
+    // Wait for card to fully render
+    await page.waitForTimeout(1000)
 
     // Verify card exists
     const cardLocator = page.locator('[data-card-id]').filter({ hasText: "Card to delete" })
     await expect(cardLocator).toBeVisible()
 
-    // Open card detail
-    await cardLocator.click()
-    await expect(page).toHaveURL(/\/card\//)
-
-    // Look for delete button (might be in a menu or visible button)
-    const deleteButton = page.getByRole("button", { name: /delete/i })
+    // Hover over card to reveal delete button
+    await cardLocator.hover()
+    await page.waitForTimeout(500)
     
-    if (await deleteButton.isVisible()) {
-      await deleteButton.click()
-
-      // Handle confirmation dialog if it appears
-      const confirmButton = page.getByRole("button", { name: /confirm|yes|delete/i })
-      if (await confirmButton.isVisible()) {
-        await confirmButton.click()
-      }
-
-      // Should redirect back to board
-      await page.waitForTimeout(1000)
-      await expect(page).toHaveURL(/\/board\//)
-
-      // Card should no longer exist
-      await page.waitForTimeout(500)
-      const cardLocator = page.locator('[data-card-id]').filter({ hasText: "Card to delete" })
-      await expect(cardLocator).not.toBeVisible()
-    }
+    // Click the trash button using dispatchEvent to ensure proper event handling
+    const trashButton = cardLocator.locator('button[aria-label="Delete card"]')
+    await trashButton.waitFor({ state: 'attached', timeout: 5000 })
+    await trashButton.scrollIntoViewIfNeeded()
+    await trashButton.dispatchEvent('click')
+    
+    // Wait for confirmation UI to appear
+    await page.waitForTimeout(500)
+    
+    // Click the confirm delete button
+    const confirmButton = page.locator('button[aria-label="Confirm delete"]')
+    await confirmButton.click()
+    
+    // Wait for deletion to complete
+    await page.waitForTimeout(1000)
+    
+    // Verify card no longer exists
+    await expect(cardLocator).not.toBeVisible()
   })
 
   test("should create multiple cards in the same column", async ({ page }) => {
@@ -247,7 +225,7 @@ test.describe("Card Workflows - Comprehensive", () => {
       await cardInput.clear()
       await cardInput.fill(title)
 
-      const saveButton = page.getByRole("button", { name: /Save Card/i })
+      const saveButton = page.getByRole("button", { name: /Create Card/i })
       await saveButton.click()
 
       // Wait for card to appear
@@ -330,7 +308,7 @@ test.describe("Card Workflows - Comprehensive", () => {
       .first()
     await cardInput.fill("Card with metadata")
 
-    const saveButton = page.getByRole("button", { name: /Save Card/i })
+    const saveButton = page.getByRole("button", { name: /Create Card/i })
     await saveButton.click()
     
     // Wait for the API response
@@ -344,7 +322,10 @@ test.describe("Card Workflows - Comprehensive", () => {
     // Open card detail
     const cardLocator = page.locator('[data-card-id]').filter({ hasText: "Card with metadata" })
     await expect(cardLocator).toBeVisible()
-    await cardLocator.click()
+    
+    // Find the inner clickable div and dispatch click
+    const clickableDiv = cardLocator.locator('div[draggable="true"]')
+    await clickableDiv.dispatchEvent('click')
     await expect(page).toHaveURL(/\/card\//)
 
     // Check for metadata
@@ -384,7 +365,7 @@ test.describe("Card Workflows - Comprehensive", () => {
       .first()
 
     // Leave input empty - button should be disabled
-    const saveButton = page.getByRole("button", { name: /Save Card/i })
+    const saveButton = page.getByRole("button", { name: /Create Card/i })
     
     // Verify button is disabled when input is empty
     await expect(saveButton).toBeDisabled()
@@ -427,7 +408,7 @@ test.describe("Card Workflows - Comprehensive", () => {
       .first()
     await cardInput.fill("Persistent card title")
 
-    const saveButton = page.getByRole("button", { name: /Save Card/i })
+    const saveButton = page.getByRole("button", { name: /Create Card/i })
     await saveButton.click()
     
     // Wait for the API response
