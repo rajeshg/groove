@@ -72,7 +72,10 @@ export function BoardHeader({
               className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white transition-all shadow-sm border border-slate-200 dark:border-slate-700 font-bold group shrink-0"
               title="Board Settings & Members"
             >
-              <Icon name="cog" className="group-hover:rotate-90 transition-transform duration-500" />
+              <Icon
+                name="cog"
+                className="group-hover:rotate-90 transition-transform duration-500"
+              />
               <span className="text-xs font-black uppercase tracking-widest hidden sm:inline">
                 Settings
               </span>
@@ -94,7 +97,11 @@ export function BoardHeader({
           {setSearchTerm !== undefined && (
             <div className="relative w-full max-w-[120px] sm:max-w-[220px]">
               <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
-                <Icon name="search" size="md" className="scale-90 sm:scale-100" />
+                <Icon
+                  name="search"
+                  size="md"
+                  className="scale-90 sm:scale-100"
+                />
               </div>
               <input
                 ref={searchInputRef}

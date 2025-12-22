@@ -224,15 +224,23 @@ function MenuActionCard({
           : "bg-slate-50 dark:bg-slate-900/40 border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-blue-500 dark:hover:border-blue-500 hover:bg-white dark:hover:bg-slate-800 hover:-translate-y-1"
       }`}
     >
-      <div className={`absolute top-2.5 right-2.5 min-w-[22px] h-[22px] flex items-center justify-center px-1.5 text-[10px] font-black rounded-lg border shadow-sm ${
-        active 
-          ? "bg-white text-blue-600 border-white" 
-          : "bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300 border-slate-200 dark:border-slate-600"
-      }`}>
+      <div
+        className={`absolute top-2.5 right-2.5 min-w-[22px] h-[22px] flex items-center justify-center px-1.5 text-[10px] font-black rounded-lg border shadow-sm ${
+          active
+            ? "bg-white text-blue-600 border-white"
+            : "bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300 border-slate-200 dark:border-slate-600"
+        }`}
+      >
         {count}
       </div>
-      <Icon name={icon} size="xl" className={`mb-2 ${active ? "text-white" : ""}`} />
-      <span className={`text-[10px] font-black uppercase tracking-widest text-center leading-tight ${active ? "text-white/90" : ""}`}>
+      <Icon
+        name={icon}
+        size="xl"
+        className={`mb-2 ${active ? "text-white" : ""}`}
+      />
+      <span
+        className={`text-[10px] font-black uppercase tracking-widest text-center leading-tight ${active ? "text-white/90" : ""}`}
+      >
         {label}
       </span>
     </Link>

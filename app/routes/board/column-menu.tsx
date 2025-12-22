@@ -87,7 +87,10 @@ export function ColumnMenu({
               onClick={() => setIsOpen(false)}
             >
               <span>View Details</span>
-              <Icon name="chevron-right" className="group-hover:translate-x-1 transition-transform" />
+              <Icon
+                name="chevron-right"
+                className="group-hover:translate-x-1 transition-transform"
+              />
             </Link>
           </div>,
           document.body

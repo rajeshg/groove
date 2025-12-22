@@ -9,7 +9,10 @@ export default [
   route("logout", "routes/logout.tsx"),
   route("board/:id", "routes/board.$id.tsx", [
     route("settings", "routes/board.$id.settings.tsx"),
-    route("column/:columnId/settings", "routes/board.$id.column.$columnId.settings.tsx"),
+    route(
+      "column/:columnId/settings",
+      "routes/board.$id.column.$columnId.settings.tsx"
+    ),
   ]),
   route("card/:cardId", "routes/card.$cardId.tsx"),
   route("board/:id/column/:columnId", "routes/board.$id.column.$columnId.tsx"),

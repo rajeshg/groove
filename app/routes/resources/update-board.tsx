@@ -2,12 +2,10 @@ import { parseWithZod } from "@conform-to/zod/v4";
 import { invariantResponse } from "@epic-web/invariant";
 import { data, redirect } from "react-router";
 import { z } from "zod";
+import { optionalString } from "../validation";
 import { requireAuthCookie } from "~/auth/auth";
 import { updateBoard, getBoardData } from "~/routes/queries";
-import {
-  canUpdateBoard,
-  getPermissionErrorMessage,
-} from "~/utils/permissions";
+import { canUpdateBoard, getPermissionErrorMessage } from "~/utils/permissions";
 
 const UpdateBoardSchema = z.object({
   boardId: z.string().min(1, "Invalid board ID"),
@@ -20,14 +18,17 @@ const UpdateBoardSchema = z.object({
     .string()
     .regex(/^#[0-9a-f]{6}$/i, "Invalid color format")
     .optional(),
-  redirectTo: z.string().optional(),
+  redirectTo: optionalString(),
 });
 
 export async function action({ request }: { request: Request }) {
   const accountId = await requireAuthCookie(request);
   const formData = await request.formData();
 
-  const submission = parseWithZod(formData, { schema: UpdateBoardSchema });
+  const submission = parseWithZod(formData, {
+    schema: UpdateBoardSchema,
+    disableAutoCoercion: true,
+  });
   if (submission.status !== "success") {
     return data({ result: submission.reply() }, { status: 400 });
   }
@@ -37,12 +38,15 @@ export async function action({ request }: { request: Request }) {
   try {
     // Check permissions
     const board = await getBoardData(boardId, accountId);
-    invariantResponse(board, "Board not found or unauthorized", { status: 404 });
+    invariantResponse(board, "Board not found or unauthorized", {
+      status: 404,
+    });
 
     const userRole =
       board.accountId === accountId
         ? "owner"
-        : board.members.find((m) => m.accountId === accountId)?.role === "editor"
+        : board.members.find((m) => m.accountId === accountId)?.role ===
+            "editor"
           ? "editor"
           : null;
 
@@ -62,7 +66,8 @@ export async function action({ request }: { request: Request }) {
   } catch (error: unknown) {
     console.error("Error updating board:", error);
     if (error instanceof Response) throw error;
-    const message = error instanceof Error ? error.message : "Failed to update board";
+    const message =
+      error instanceof Error ? error.message : "Failed to update board";
     return data({ error: message }, { status: 500 });
   }
 }

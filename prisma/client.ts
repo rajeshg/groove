@@ -9,8 +9,7 @@ type PrismaGlobal = {
 };
 
 function createPrismaClient(): PrismaClient {
-  const databaseUrl =
-    process.env.DATABASE_URL || "file:./prisma/data/data.db";
+  const databaseUrl = process.env.DATABASE_URL || "file:./prisma/data/data.db";
 
   const adapter = new PrismaLibSql({
     url: databaseUrl,
@@ -41,9 +40,11 @@ async function initializeDatabase(): Promise<void> {
     console.log("✅ SQLite WAL mode enabled");
 
     // Verify WAL mode is active
-    const result = await prisma.$queryRaw<{ journal_mode: string }[]>`PRAGMA journal_mode`;
+    const result = await prisma.$queryRaw<
+      { journal_mode: string }[]
+    >`PRAGMA journal_mode`;
     const mode = result[0]?.journal_mode;
-    if (mode === 'wal') {
+    if (mode === "wal") {
       console.log("✅ WAL mode verified as active");
     } else {
       console.log(`ℹ️ Journal mode is: ${mode}`);
@@ -59,6 +60,6 @@ export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 globalForPrisma.prisma = prisma;
 
 // Initialize WAL mode immediately when module loads
-initializeDatabase().catch(err => console.error("Failed to initialize WAL mode:", err));
-
-
+initializeDatabase().catch((err) =>
+  console.error("Failed to initialize WAL mode:", err)
+);

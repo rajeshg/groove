@@ -2,6 +2,7 @@ import { parseWithZod } from "@conform-to/zod/v4";
 import { invariantResponse } from "@epic-web/invariant";
 import { data } from "react-router";
 import { z } from "zod";
+import { optionalString } from "../validation";
 import { requireAuthCookie } from "~/auth/auth";
 import { upsertItem } from "~/routes/queries";
 
@@ -18,14 +19,17 @@ const UpdateCardSchema = z.object({
     .finite("Order must be a valid number")
     .min(0, "Order cannot be negative"),
   content: z.string().nullable().default(null),
-  redirectTo: z.string().optional(),
+  redirectTo: optionalString(),
 });
 
 export async function action({ request }: { request: Request }) {
   const accountId = await requireAuthCookie(request);
   const formData = await request.formData();
 
-  const submission = parseWithZod(formData, { schema: UpdateCardSchema });
+  const submission = parseWithZod(formData, {
+    schema: UpdateCardSchema,
+    disableAutoCoercion: true,
+  });
   invariantResponse(submission.status === "success", "Invalid card data", {
     status: 400,
   });

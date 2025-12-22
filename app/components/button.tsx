@@ -10,7 +10,8 @@ export let Button = forwardRef<
 
   const variantClasses = {
     primary: "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20",
-    secondary: "bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-100",
+    secondary:
+      "bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-100",
     danger: "bg-red-600 hover:bg-red-700 text-white shadow-red-500/20",
   };
 

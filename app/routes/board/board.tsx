@@ -32,6 +32,9 @@ export default function Board({ board }: BoardProps) {
   const [dropPosition, setDropPosition] = useState<"left" | "right" | null>(
     null
   );
+  const [activeCardFormColumnId, setActiveCardFormColumnId] = useState<
+    string | null
+  >(null);
 
   // Use custom hooks for state management
   const {
@@ -67,11 +70,11 @@ export default function Board({ board }: BoardProps) {
   return (
     <div className="flex-1 flex flex-col relative bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-50 min-h-full">
       {/* Subtle grid pattern background */}
-      <div 
-        className="absolute inset-0 z-0 pointer-events-none opacity-[0.03] dark:opacity-[0.05]" 
-        style={{ 
+      <div
+        className="absolute inset-0 z-0 pointer-events-none opacity-[0.03] dark:opacity-[0.05]"
+        style={{
           backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
-          backgroundSize: '24px 24px'
+          backgroundSize: "24px 24px",
         }}
       />
 
@@ -117,13 +120,12 @@ export default function Board({ board }: BoardProps) {
                 key={col.id}
                 data-column-name={col.name}
                 data-expanded={isExpanded ? "true" : "false"}
-                 className={`transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) relative self-stretch column-${col.name
-                   .toLowerCase()
-                   .replace(/[^a-z0-9]+/g, "-")
-                   .replace(/^-|-$/g, "")} ${
-                   isExpanded ? "w-[24rem]" : "w-12"
-                 } ${draggedColumnId === col.id ? "shadow-2xl z-50 scale-[1.02] rotate-1" : "z-10"}`}
-
+                className={`transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) relative self-stretch column-${col.name
+                  .toLowerCase()
+                  .replace(/[^a-z0-9]+/g, "-")
+                  .replace(/^-|-$/g, "")} ${
+                  isExpanded ? "w-[24rem]" : "w-12"
+                } ${draggedColumnId === col.id ? "shadow-2xl z-50 scale-[1.02] rotate-1" : "z-10"}`}
                 title={
                   isExpanded
                     ? undefined
@@ -268,6 +270,9 @@ export default function Board({ board }: BoardProps) {
                             }
                           : undefined
                       }
+                      isCardFormActive={activeCardFormColumnId === col.id}
+                      onCardFormOpen={() => setActiveCardFormColumnId(col.id)}
+                      onCardFormClose={() => setActiveCardFormColumnId(null)}
                       onDragStart={(e) => {
                         setDraggedColumnId(col.id);
                         e.dataTransfer!.effectAllowed = "move";
@@ -283,20 +288,19 @@ export default function Board({ board }: BoardProps) {
                   </div>
                 ) : (
                   // Collapsed column - Fizzy-inspired candy pop look
-                   <button
+                  <button
                     onClick={() => handleColumnToggle(col.id)}
                     className="column-collapsed"
                     style={
                       {
                         color: col.color,
-                        width: '48px',
+                        width: "48px",
                         "--collapse-height": `${metricsById.get(col.id)?.collapseHeight}px`,
                         "--text-color": getContrastTextColor(col.color),
                       } as Record<string, unknown>
                     }
                     title={`Click to expand "${col.name}" (${col.items.length} cards)`}
                   >
-
                     {/* Content - badge and name on top of progress bar */}
                     <div
                       className="column-collapsed-content"
@@ -357,11 +361,10 @@ export default function Board({ board }: BoardProps) {
                 <div className="column-mobile-card-icon">
                   <Icon name="chevron-right" />
                 </div>
-
               </Link>
             );
           })}
-          
+
           {/* Add Column button for mobile - styled like a mobile card */}
           <NewColumn
             boardId={board.id}

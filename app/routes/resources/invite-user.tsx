@@ -2,6 +2,7 @@ import { parseWithZod } from "@conform-to/zod/v4";
 import { invariantResponse } from "@epic-web/invariant";
 import { data } from "react-router";
 import { z } from "zod";
+import { optionalString } from "../validation";
 import { requireAuthCookie } from "~/auth/auth";
 import { inviteUserToBoard, getBoardData } from "~/routes/queries";
 import {
@@ -17,14 +18,17 @@ const InviteUserSchema = z.object({
     .min(1, "Email is required")
     .email("Please enter a valid email address"),
   role: z.enum(["owner", "editor"]).default("editor"),
-  redirectTo: z.string().optional(),
+  redirectTo: optionalString(),
 });
 
 export async function action({ request }: { request: Request }) {
   const accountId = await requireAuthCookie(request);
   const formData = await request.formData();
 
-  const submission = parseWithZod(formData, { schema: InviteUserSchema });
+  const submission = parseWithZod(formData, {
+    schema: InviteUserSchema,
+    disableAutoCoercion: true,
+  });
   invariantResponse(
     submission.status === "success",
     "Invalid invitation data",

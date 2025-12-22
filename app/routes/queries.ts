@@ -195,7 +195,7 @@ export async function upsertItem(
     ...rest
   } = mutation;
 
-  const baseData: Omit<Prisma.ItemCreateInput, 'id'> = {
+  const baseData: Omit<Prisma.ItemCreateInput, "id"> = {
     ...rest,
     lastActiveAt: new Date(),
     Board: { connect: { id: boardId } },

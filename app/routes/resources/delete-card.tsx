@@ -2,19 +2,23 @@ import { parseWithZod } from "@conform-to/zod/v4";
 import { invariantResponse } from "@epic-web/invariant";
 import { data, redirect } from "react-router";
 import { z } from "zod";
+import { optionalString } from "../validation";
 import { requireAuthCookie } from "~/auth/auth";
 import { deleteCard, getItem } from "~/routes/queries";
 
 const DeleteCardSchema = z.object({
   itemId: z.string().min(1, "Invalid item ID"),
-  redirectTo: z.string().optional(),
+  redirectTo: optionalString(),
 });
 
 export async function action({ request }: { request: Request }) {
   const accountId = await requireAuthCookie(request);
   const formData = await request.formData();
 
-  const submission = parseWithZod(formData, { schema: DeleteCardSchema });
+  const submission = parseWithZod(formData, {
+    schema: DeleteCardSchema,
+    disableAutoCoercion: true,
+  });
   invariantResponse(submission.status === "success", "Invalid card ID", {
     status: 400,
   });

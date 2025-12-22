@@ -4,6 +4,15 @@ import { z } from "zod";
 const MAX_ASSIGNEE_NAME_LENGTH = 110;
 
 // ============================================================================
+// Helpers for optional fields with disableAutoCoercion
+// ============================================================================
+
+// Helper to convert empty strings to undefined for optional fields
+// This is needed when using disableAutoCoercion: true with Conform
+export const optionalString = () =>
+  z.preprocess((val) => (val === "" ? undefined : val), z.string().optional());
+
+// ============================================================================
 // Authentication
 // ============================================================================
 
@@ -119,7 +128,7 @@ export const moveItemSchema = z.object({
   intent: z.literal("moveItem"),
   id: z.string().min(1, "Invalid item ID"),
   columnId: z.string().min(1, "Invalid column ID"),
-  title: z.string().optional(),
+  title: optionalString(),
   order: z.coerce
     .number("Order must be a number")
     .finite("Order must be a valid number")
@@ -146,7 +155,7 @@ export const createColumnSchema = z.object({
     .string()
     .min(1, "Column name is required")
     .max(255, "Column name is too long"),
-  id: z.string().optional(), // Server generates if not provided
+  id: optionalString(), // Server generates if not provided
 });
 
 export type CreateColumnInput = z.infer<typeof createColumnSchema>;

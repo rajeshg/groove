@@ -2,6 +2,7 @@ import { parseWithZod } from "@conform-to/zod/v4";
 import { invariantResponse } from "@epic-web/invariant";
 import { data } from "react-router";
 import { z } from "zod";
+import { optionalString } from "../validation";
 import { requireAuthCookie } from "~/auth/auth";
 import { prisma } from "../../../prisma/client";
 import { getItem } from "~/routes/queries";
@@ -14,14 +15,17 @@ const MoveCardSchema = z.object({
     .number("Order must be a number")
     .finite("Order must be a valid number")
     .min(0, "Order cannot be negative"),
-  redirectTo: z.string().optional(),
+  redirectTo: optionalString(),
 });
 
 export async function action({ request }: { request: Request }) {
   const accountId = await requireAuthCookie(request);
   const formData = await request.formData();
 
-  const submission = parseWithZod(formData, { schema: MoveCardSchema });
+  const submission = parseWithZod(formData, {
+    schema: MoveCardSchema,
+    disableAutoCoercion: true,
+  });
   invariantResponse(submission.status === "success", "Invalid move data", {
     status: 400,
   });

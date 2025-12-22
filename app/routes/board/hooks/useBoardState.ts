@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useSubmit } from "react-router";
 import { INTENTS } from "../../types";
 import type { Column } from "../../../../prisma/client";
@@ -22,29 +22,40 @@ export function useBoardState({
 }: UseBoardStateOptions): UseBoardStateResult {
   const submit = useSubmit();
   const [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
-  // Initialize expanded columns from database values immediately (prevents visual shift)
-  const [expandedColumnIds, setExpandedColumnIds] = useState<Set<string>>(
-    () =>
-      new Set(
-        columns.filter((col) => col.isExpanded !== false).map((col) => col.id)
-      )
-  );
+
+  // Store optimistic overrides (temporary UI state before server confirms)
+  const [optimisticOverrides, setOptimisticOverrides] = useState<
+    Map<string, boolean>
+  >(new Map());
+
+  // Derive expanded state from server data + optimistic overrides
+  const expandedColumnIds = useMemo(() => {
+    const expanded = new Set<string>();
+    columns.forEach((col) => {
+      // Check if there's an optimistic override for this column
+      const hasOverride = optimisticOverrides.has(col.id);
+      const isExpanded = hasOverride
+        ? optimisticOverrides.get(col.id)!
+        : col.isExpanded !== false;
+
+      if (isExpanded) {
+        expanded.add(col.id);
+      }
+    });
+    return expanded;
+  }, [columns, optimisticOverrides]);
 
   const handleColumnToggle = (columnId: string) => {
     const willBeExpanded = !expandedColumnIds.has(columnId);
 
-    // Update local state immediately for responsive UI
-    setExpandedColumnIds((prev) => {
-      const updated = new Set(prev);
-      if (updated.has(columnId)) {
-        updated.delete(columnId);
-      } else {
-        updated.add(columnId);
-      }
+    // Add optimistic override for instant UI feedback
+    setOptimisticOverrides((prev) => {
+      const updated = new Map(prev);
+      updated.set(columnId, willBeExpanded);
       return updated;
     });
 
-    // Update database
+    // Update database - React Router will revalidate and update server state
     submit(
       {
         intent: INTENTS.updateColumn,

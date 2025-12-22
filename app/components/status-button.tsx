@@ -1,16 +1,28 @@
 import { forwardRef } from "react";
 import { Icon } from "../icons/icons";
 
-export type StatusButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  status?: "idle" | "pending" | "success" | "error";
-  variant?: "primary" | "secondary" | "danger";
-};
+export type StatusButtonProps =
+  React.ButtonHTMLAttributes<HTMLButtonElement> & {
+    status?: "idle" | "pending" | "success" | "error";
+    variant?: "primary" | "secondary" | "danger";
+  };
 
 export let StatusButton = forwardRef<HTMLButtonElement, StatusButtonProps>(
-  ({ status = "idle", variant = "primary", children, className = "", disabled, ...props }, ref) => {
+  (
+    {
+      status = "idle",
+      variant = "primary",
+      children,
+      className = "",
+      disabled,
+      ...props
+    },
+    ref
+  ) => {
     const variantClasses = {
       primary: "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20",
-      secondary: "bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-100",
+      secondary:
+        "bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-100",
       danger: "bg-red-600 hover:bg-red-700 text-white shadow-red-500/20",
     };
 
@@ -27,12 +39,7 @@ export let StatusButton = forwardRef<HTMLButtonElement, StatusButtonProps>(
       >
         <span>{children}</span>
         {isPending && (
-          <Icon 
-            name="spin" 
-            size="sm" 
-            spin 
-            className="text-current" 
-          />
+          <Icon name="spin" size="sm" spin className="text-current" />
         )}
       </button>
     );

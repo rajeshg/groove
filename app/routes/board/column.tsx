@@ -25,6 +25,9 @@ interface ColumnProps {
   shortcut?: string;
   onDragStart?: (e: React.DragEvent) => void;
   onDragEnd?: (e: React.DragEvent) => void;
+  isCardFormActive?: boolean;
+  onCardFormOpen?: () => void;
+  onCardFormClose?: () => void;
 }
 
 export function Column({
@@ -42,11 +45,13 @@ export function Column({
   shortcut,
   onDragStart,
   onDragEnd,
+  isCardFormActive = false,
+  onCardFormOpen,
+  onCardFormClose,
 }: ColumnProps) {
   let submit = useSubmit();
 
   let [acceptDrop, setAcceptDrop] = useState(false);
-  let [edit, setEdit] = useState(false);
   let listRef = useRef<HTMLUListElement>(null);
 
   // Register the add card callback when the column mounts
@@ -54,12 +59,12 @@ export function Column({
     if (onAddCardKeydown && isExpanded) {
       onAddCardKeydown(() => {
         flushSync(() => {
-          setEdit(true);
+          onCardFormOpen?.();
         });
         scrollList();
       });
     }
-  }, [onAddCardKeydown, isExpanded]);
+  }, [onAddCardKeydown, isExpanded, onCardFormOpen]);
 
   function scrollList() {
     invariant(listRef.current, "List ref is required");
@@ -185,18 +190,22 @@ export function Column({
                 title="View column details"
                 aria-label={`View details for ${name}`}
               >
-                <Icon name="chevron-right" size="md" className="group-hover:translate-x-0.5 transition-transform" />
+                <Icon
+                  name="chevron-right"
+                  size="md"
+                  className="group-hover:translate-x-0.5 transition-transform"
+                />
               </Link>
             </div>
           )}
         </div>
       </div>
 
-      {edit ? (
+      {isCardFormActive ? (
         <NewCard
           columnId={columnId}
           nextOrder={items.length === 0 ? 1 : items[items.length - 1].order + 1}
-          onComplete={() => setEdit(false)}
+          onComplete={() => onCardFormClose?.()}
         />
       ) : (
         <div className="p-3 flex items-center justify-between gap-2 group/add">
@@ -204,14 +213,17 @@ export function Column({
             type="button"
             onClick={() => {
               flushSync(() => {
-                setEdit(true);
+                onCardFormOpen?.();
               });
               scrollList();
             }}
             className="flex items-center gap-2 rounded-xl text-left flex-1 p-3 font-black text-slate-400 dark:text-slate-500 hover:bg-white dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 hover:shadow-sm transition-all text-[10px] uppercase tracking-widest leading-4"
             data-add-card-button
           >
-            <Icon name="plus" className="flex-shrink-0 group-hover/add:scale-110 transition-transform" />
+            <Icon
+              name="plus"
+              className="flex-shrink-0 group-hover/add:scale-110 transition-transform"
+            />
             Add a card
           </button>
           {shortcut && (
@@ -262,7 +274,7 @@ export function Column({
           })}
       </ul>
 
-      {items.length === 0 && !edit && (
+      {items.length === 0 && !isCardFormActive && (
         <div
           className={`py-12 text-center transition-all duration-200 bg-slate-100/30 dark:bg-slate-900/30 rounded-b-2xl`}
         >

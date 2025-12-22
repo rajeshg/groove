@@ -93,16 +93,13 @@ export function NewColumn({
         className="border border-slate-300 dark:border-slate-600 w-full rounded px-2 py-1 font-bold text-slate-900 dark:text-slate-50 dark:bg-slate-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
       />
       <div className="flex justify-between gap-2">
-        <StatusButton 
+        <StatusButton
           ref={buttonRef}
           status={isSubmitting ? "pending" : "idle"}
         >
           Save Column
         </StatusButton>
-        <CancelButton 
-          onClick={() => setEditing(false)} 
-          disabled={isSubmitting}
-        >
+        <CancelButton onClick={() => setEditing(false)} disabled={isSubmitting}>
           Cancel
         </CancelButton>
       </div>
@@ -129,9 +126,10 @@ export function NewColumn({
         <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 transition-all">
           <Icon name="plus" size="md" />
         </div>
-        <span className="uppercase tracking-[0.3em] text-[10px] font-black text-slate-400 dark:text-slate-500 group-hover:text-blue-600 transition-colors">Add Column</span>
+        <span className="uppercase tracking-[0.3em] text-[10px] font-black text-slate-400 dark:text-slate-500 group-hover:text-blue-600 transition-colors">
+          Add Column
+        </span>
       </div>
     </button>
-
   );
 }

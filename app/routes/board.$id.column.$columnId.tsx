@@ -53,10 +53,10 @@ export default function ColumnDetail() {
   const { board, column, items } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const [addingCard, setAddingCard] = useState(false);
-  
+
   // Get all active fetchers to track optimistic updates
   const fetchers = useFetchers();
-  
+
   // Find any pending color update for this column
   const colorFetcher = fetchers.find(
     (f) =>
@@ -64,9 +64,11 @@ export default function ColumnDetail() {
       f.formData?.get("columnId") === column.id &&
       f.formData?.get("color")
   );
-  
-  const pendingColorUpdate = colorFetcher?.formData?.get("color") as string | undefined;
-  
+
+  const pendingColorUpdate = colorFetcher?.formData?.get("color") as
+    | string
+    | undefined;
+
   // Use pending color if available, otherwise use current color
   const displayColor = pendingColorUpdate || column.color || "#94a3b8";
 
@@ -108,7 +110,11 @@ export default function ColumnDetail() {
                 className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 group flex-shrink-0 flex items-center justify-center"
                 title="Column Settings"
               >
-                <Icon name="cog" size="md" className="group-hover:rotate-90 transition-transform duration-500" />
+                <Icon
+                  name="cog"
+                  size="md"
+                  className="group-hover:rotate-90 transition-transform duration-500"
+                />
               </Link>
             </div>
 
@@ -122,8 +128,8 @@ export default function ColumnDetail() {
                   {items.length === 1 ? "card" : "cards"}
                 </span>
               </div>
-              
-              <div 
+
+              <div
                 className="w-8 h-8 rounded-lg border-2 border-slate-300 dark:border-slate-700 shadow-sm flex-shrink-0"
                 style={{ backgroundColor: displayColor }}
                 title={`Column color: ${displayColor}`}
@@ -138,7 +144,11 @@ export default function ColumnDetail() {
             {addingCard ? (
               <NewCard
                 columnId={column.id}
-                nextOrder={items.length === 0 ? 1 : Math.max(...items.map(i => i.order)) + 1}
+                nextOrder={
+                  items.length === 0
+                    ? 1
+                    : Math.max(...items.map((i) => i.order)) + 1
+                }
                 onComplete={() => setAddingCard(false)}
               />
             ) : (

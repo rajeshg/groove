@@ -1,6 +1,13 @@
 import { useForm, getFormProps, getInputProps } from "@conform-to/react";
 import { parseWithZod } from "@conform-to/zod/v4";
-import { Form, useActionData, useLoaderData, useNavigation, useFetcher, useNavigate } from "react-router";
+import {
+  Form,
+  useActionData,
+  useLoaderData,
+  useNavigation,
+  useFetcher,
+  useNavigate,
+} from "react-router";
 import { z } from "zod";
 import { Modal } from "~/components/Modal";
 import { Input, Label } from "~/components/input";
@@ -58,7 +65,10 @@ export default function ColumnSettings() {
   const [form, fields] = useForm({
     lastResult: actionData?.result as never,
     onValidate({ formData }) {
-      return parseWithZod(formData, { schema: ColumnSettingsSchema });
+      return parseWithZod(formData, {
+        schema: ColumnSettingsSchema,
+        disableAutoCoercion: true,
+      });
     },
     defaultValue: {
       name: column.name,
@@ -67,7 +77,10 @@ export default function ColumnSettings() {
     shouldRevalidate: "onBlur",
   });
 
-  const isSubmitting = navigation.state === "submitting" || (navigation.state === "loading" && navigation.formData?.get("columnId") === column.id);
+  const isSubmitting =
+    navigation.state === "submitting" ||
+    (navigation.state === "loading" &&
+      navigation.formData?.get("columnId") === column.id);
   const isDeleting = deleteFetcher.state !== "idle";
 
   // Navigate to board after successful deletion
@@ -97,7 +110,10 @@ export default function ColumnSettings() {
 
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label htmlFor={fields.name.id} className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+              <Label
+                htmlFor={fields.name.id}
+                className="text-[10px] font-black uppercase tracking-widest text-slate-400"
+              >
                 Column Name
               </Label>
               <Input
@@ -107,9 +123,9 @@ export default function ColumnSettings() {
                 autoFocus
                 className="h-9 text-sm"
               />
-              {fields.name.errors && (
+              {fields.name.errors && fields.name.errors.length > 0 && (
                 <div className="text-red-600 font-semibold text-[10px]">
-                  {fields.name.errors}
+                  {fields.name.errors[0]}
                 </div>
               )}
             </div>
@@ -118,16 +134,13 @@ export default function ColumnSettings() {
               <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                 Color
               </Label>
-              <ColorPicker
-                value={selectedColor}
-                onChange={setSelectedColor}
-              />
+              <ColorPicker value={selectedColor} onChange={setSelectedColor} />
             </div>
           </div>
 
           <div className="flex justify-end pt-2">
-            <StatusButton 
-              type="submit" 
+            <StatusButton
+              type="submit"
               status={isSubmitting ? "pending" : "idle"}
               className="h-9 text-xs px-5 w-auto py-0 leading-none items-center"
             >
@@ -139,8 +152,10 @@ export default function ColumnSettings() {
         {/* Delete Column Section */}
         {!column.isDefault && (
           <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">Danger Zone</h3>
-            
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">
+              Danger Zone
+            </h3>
+
             {!showDeleteConfirm ? (
               <button
                 type="button"
@@ -154,18 +169,27 @@ export default function ColumnSettings() {
             ) : (
               <div className="space-y-3 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-900/40">
                 <div className="flex items-start gap-2">
-                  <Icon name="alert" size="md" className="text-red-600 dark:text-red-400 mt-0.5" />
+                  <Icon
+                    name="alert"
+                    size="md"
+                    className="text-red-600 dark:text-red-400 mt-0.5"
+                  />
                   <div>
                     <p className="text-xs font-bold text-red-900 dark:text-red-100 mb-1">
                       Are you sure?
                     </p>
                     <p className="text-[10px] text-red-700 dark:text-red-300">
-                      This will permanently delete this column and all its cards.
+                      This will permanently delete this column and all its
+                      cards.
                     </p>
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <deleteFetcher.Form method="post" action="/resources/delete-column" className="flex-1">
+                  <deleteFetcher.Form
+                    method="post"
+                    action="/resources/delete-column"
+                    className="flex-1"
+                  >
                     <input type="hidden" name="columnId" value={column.id} />
                     <input type="hidden" name="boardId" value={board.id} />
                     <StatusButton

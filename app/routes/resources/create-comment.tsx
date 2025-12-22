@@ -2,6 +2,7 @@ import { parseWithZod } from "@conform-to/zod/v4";
 import { invariantResponse } from "@epic-web/invariant";
 import { data } from "react-router";
 import { z } from "zod";
+import { optionalString } from "../validation";
 import { requireAuthCookie } from "~/auth/auth";
 import { createComment } from "~/routes/queries";
 
@@ -11,14 +12,17 @@ const CreateCommentSchema = z.object({
     .string()
     .min(1, "Comment content is required")
     .max(5000, "Comment is too long"),
-  redirectTo: z.string().optional(),
+  redirectTo: optionalString(),
 });
 
 export async function action({ request }: { request: Request }) {
   const accountId = await requireAuthCookie(request);
   const formData = await request.formData();
 
-  const submission = parseWithZod(formData, { schema: CreateCommentSchema });
+  const submission = parseWithZod(formData, {
+    schema: CreateCommentSchema,
+    disableAutoCoercion: true,
+  });
   invariantResponse(submission.status === "success", "Invalid comment data", {
     status: 400,
   });

@@ -15,11 +15,11 @@ import { loginSchema } from "./validation";
 export async function loader({ request }: Route.LoaderArgs) {
   // If user is already logged in, redirect them
   await redirectIfLoggedInLoader({ request });
-  
+
   // Check if there's an invitation
   const url = new URL(request.url);
   const invitationId = url.searchParams.get("invitationId");
-  
+
   if (invitationId) {
     // Fetch invitation details to show context
     const invitation = await prisma.boardInvitation.findUnique({
@@ -29,24 +29,24 @@ export async function loader({ request }: Route.LoaderArgs) {
           select: {
             name: true,
             Account: {
-              select: { firstName: true, lastName: true }
-            }
-          }
+              select: { firstName: true, lastName: true },
+            },
+          },
         },
         status: true,
-      }
+      },
     });
-    
+
     if (invitation && invitation.status === "pending") {
       return {
         boardName: invitation.Board.name,
-        inviterName: invitation.Board.Account.firstName 
+        inviterName: invitation.Board.Account.firstName
           ? `${invitation.Board.Account.firstName} ${invitation.Board.Account.lastName || ""}`.trim()
-          : "A team member"
+          : "A team member",
       };
     }
   }
-  
+
   return { boardName: null, inviterName: null };
 }
 
@@ -59,7 +59,10 @@ export async function action({ request }: Route.ActionArgs) {
   const url = new URL(request.url);
   const invitationId = url.searchParams.get("invitationId");
 
-  const submission = parseWithZod(formData, { schema: loginSchema });
+  const submission = parseWithZod(formData, {
+    schema: loginSchema,
+    disableAutoCoercion: true,
+  });
 
   if (submission.status !== "success") {
     return { result: submission.reply() };
@@ -82,7 +85,10 @@ export async function action({ request }: Route.ActionArgs) {
   return setAuthOnResponse(response, userId);
 }
 
-export default function Login({ actionData, loaderData }: Route.ComponentProps) {
+export default function Login({
+  actionData,
+  loaderData,
+}: Route.ComponentProps) {
   const [searchParams] = useSearchParams();
   const invitationId = searchParams.get("invitationId");
   const hasInvitationContext = !!invitationId;
@@ -92,7 +98,10 @@ export default function Login({ actionData, loaderData }: Route.ComponentProps) 
   const [form, fields] = useForm({
     lastResult: actionData?.result,
     onValidate({ formData }) {
-      return parseWithZod(formData, { schema: loginSchema });
+      return parseWithZod(formData, {
+        schema: loginSchema,
+        disableAutoCoercion: true,
+      });
     },
     shouldValidate: "onBlur",
     shouldRevalidate: "onInput",
@@ -131,12 +140,12 @@ export default function Login({ actionData, loaderData }: Route.ComponentProps) 
                 autoFocus
                 autoComplete="email"
               />
-              {fields.email.errors && (
+              {fields.email.errors && fields.email.errors.length > 0 && (
                 <div
                   id={fields.email.errorId}
                   className="text-red-600 font-semibold text-sm mt-1"
                 >
-                  {fields.email.errors}
+                  {fields.email.errors[0]}
                 </div>
               )}
             </div>
@@ -147,18 +156,18 @@ export default function Login({ actionData, loaderData }: Route.ComponentProps) 
                 {...getInputProps(fields.password, { type: "password" })}
                 autoComplete="current-password"
               />
-              {fields.password.errors && (
+              {fields.password.errors && fields.password.errors.length > 0 && (
                 <div
                   id={fields.password.errorId}
                   className="text-red-600 font-semibold text-sm mt-1"
                 >
-                  {fields.password.errors}
+                  {fields.password.errors[0]}
                 </div>
               )}
             </div>
 
             <div>
-              <StatusButton 
+              <StatusButton
                 type="submit"
                 status={isSubmitting ? "pending" : "idle"}
                 className="w-full"

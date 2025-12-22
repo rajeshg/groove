@@ -1,6 +1,12 @@
 import { useForm, getFormProps, getInputProps } from "@conform-to/react";
 import { parseWithZod } from "@conform-to/zod/v4";
-import { Form, useActionData, useLoaderData, useNavigation, useFetcher } from "react-router";
+import {
+  Form,
+  useActionData,
+  useLoaderData,
+  useNavigation,
+  useFetcher,
+} from "react-router";
 import { z } from "zod";
 import { Modal } from "~/components/Modal";
 import { Input, Label } from "~/components/input";
@@ -48,13 +54,16 @@ export default function BoardSettings() {
   const navigation = useNavigation();
   const removeMemberFetcher = useFetcher();
   const inviteFetcher = useFetcher();
-  
+
   const [selectedColor, setSelectedColor] = useState(board.color || "#e0e0e0");
 
   const [form, fields] = useForm({
     lastResult: actionData?.result as never,
     onValidate({ formData }) {
-      return parseWithZod(formData, { schema: BoardSettingsSchema });
+      return parseWithZod(formData, {
+        schema: BoardSettingsSchema,
+        disableAutoCoercion: true,
+      });
     },
     defaultValue: {
       name: board.name,
@@ -63,7 +72,10 @@ export default function BoardSettings() {
     shouldRevalidate: "onBlur",
   });
 
-  const isSubmitting = navigation.state === "submitting" || (navigation.state === "loading" && navigation.formData?.get("boardId") === board.id);
+  const isSubmitting =
+    navigation.state === "submitting" ||
+    (navigation.state === "loading" &&
+      navigation.formData?.get("boardId") === board.id);
 
   return (
     <Modal title="Board Settings">
@@ -86,7 +98,10 @@ export default function BoardSettings() {
 
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label htmlFor={fields.name.id} className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+              <Label
+                htmlFor={fields.name.id}
+                className="text-[10px] font-black uppercase tracking-widest text-slate-400"
+              >
                 Board Name
               </Label>
               <Input
@@ -95,9 +110,9 @@ export default function BoardSettings() {
                 disabled={isSubmitting || !isOwner}
                 className="h-9 text-sm"
               />
-              {fields.name.errors && (
+              {fields.name.errors && fields.name.errors.length > 0 && (
                 <div className="text-red-600 font-semibold text-[10px]">
-                  {fields.name.errors}
+                  {fields.name.errors[0]}
                 </div>
               )}
             </div>
@@ -106,17 +121,14 @@ export default function BoardSettings() {
               <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                 Color
               </Label>
-              <ColorPicker
-                value={selectedColor}
-                onChange={setSelectedColor}
-              />
+              <ColorPicker value={selectedColor} onChange={setSelectedColor} />
             </div>
           </div>
 
           {isOwner && (
             <div className="flex justify-end pt-2">
-              <StatusButton 
-                type="submit" 
+              <StatusButton
+                type="submit"
                 status={isSubmitting ? "pending" : "idle"}
                 className="h-9 text-xs px-5 w-auto py-0 leading-none items-center"
               >
@@ -128,7 +140,9 @@ export default function BoardSettings() {
 
         {/* Member Management Section */}
         <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-3">
-          <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Team Members</h3>
+          <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+            Team Members
+          </h3>
 
           {/* Invite Form (Owner only) */}
           {isOwner && (
@@ -195,11 +209,18 @@ export default function BoardSettings() {
                       </div>
                     </div>
                   </div>
-                  
+
                   {!isMemberOwner && isOwner && !isCurrentUser && (
-                    <removeMemberFetcher.Form method="post" action="/resources/remove-member">
+                    <removeMemberFetcher.Form
+                      method="post"
+                      action="/resources/remove-member"
+                    >
                       <input type="hidden" name="boardId" value={board.id} />
-                      <input type="hidden" name="memberAccountId" value={member.Account.id} />
+                      <input
+                        type="hidden"
+                        name="memberAccountId"
+                        value={member.Account.id}
+                      />
                       <button
                         type="submit"
                         className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all opacity-0 group-hover:opacity-100 shrink-0"
@@ -215,8 +236,8 @@ export default function BoardSettings() {
 
             {/* Pending Invitations */}
             {board.invitations.map((invite) => (
-              <div 
-                key={invite.id} 
+              <div
+                key={invite.id}
                 className="flex items-center justify-between p-2.5 rounded-lg border-2 border-dashed border-blue-200 dark:border-blue-900/40 bg-blue-50/50 dark:bg-blue-900/10"
               >
                 <div className="min-w-0 flex items-center gap-2.5 flex-1">

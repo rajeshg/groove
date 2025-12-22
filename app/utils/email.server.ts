@@ -8,7 +8,11 @@ import { SMTPClient } from "emailjs";
 
 const getClient = () => {
   // Skip SMTP client creation in test environments
-  if (process.env.NODE_ENV === 'test' || process.env.E2E_TEST === 'true' || process.env.CI === 'true') {
+  if (
+    process.env.NODE_ENV === "test" ||
+    process.env.E2E_TEST === "true" ||
+    process.env.CI === "true"
+  ) {
     return null;
   }
 
@@ -40,9 +44,14 @@ export async function sendEmail({
   html: string;
 }) {
   // Skip email sending in test environments
-  const isTestMode = process.env.NODE_ENV === 'test' || process.env.E2E_TEST === 'true' || process.env.CI === 'true';
+  const isTestMode =
+    process.env.NODE_ENV === "test" ||
+    process.env.E2E_TEST === "true" ||
+    process.env.CI === "true";
   if (isTestMode) {
-    console.log(`📧 [TEST MODE] Skipping email to: ${to} | Subject: ${subject}`);
+    console.log(
+      `📧 [TEST MODE] Skipping email to: ${to} | Subject: ${subject}`
+    );
     return { success: true, testMode: true };
   }
 

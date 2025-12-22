@@ -8,10 +8,10 @@ export default defineConfig({
     maxConcurrency: 4,
     // Include unit tests colocated in app/ and integration tests in tests/
     include: [
-      "app/**/*.test.ts",                    // Unit tests colocated
-      "tests/integration/**/*.test.ts"       // Integration tests
+      "app/**/*.test.ts", // Unit tests colocated
+      "tests/integration/**/*.test.ts", // Integration tests
     ],
-    exclude: ["tests/e2e/**"],               // Exclude E2E tests (run with Playwright)
+    exclude: ["tests/e2e/**"], // Exclude E2E tests (run with Playwright)
     // Set a reasonable timeout for database operations
     testTimeout: 30000,
     hookTimeout: 30000,
@@ -20,8 +20,8 @@ export default defineConfig({
     globalSetup: [path.resolve(__dirname, "tests/setup/vitest.global.ts")],
     // Coverage reports
     coverage: {
-      provider: 'v8',
-      reportsDirectory: './test-output/coverage',
+      provider: "v8",
+      reportsDirectory: "./test-output/coverage",
     },
   },
   resolve: {

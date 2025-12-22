@@ -326,7 +326,10 @@ export default function CardDetail({ loaderData }: Route.ComponentProps) {
                           ? `User ${comment.createdBy.substring(0, 8)}`
                           : "Unknown User";
                       return (
-                        <div key={comment.id} className="flex gap-4 text-sm bg-slate-50/50 dark:bg-slate-900/30 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                        <div
+                          key={comment.id}
+                          className="flex gap-4 text-sm bg-slate-50/50 dark:bg-slate-900/30 p-4 rounded-2xl border border-slate-100 dark:border-slate-800"
+                        >
                           <div
                             className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-white text-xs font-black shadow-sm"
                             style={{
@@ -337,7 +340,9 @@ export default function CardDetail({ loaderData }: Route.ComponentProps) {
                           </div>
                           <div className="flex-1">
                             <div className="flex items-baseline justify-between mb-2">
-                              <span className="font-bold text-slate-900 dark:text-slate-100">{displayName}</span>
+                              <span className="font-bold text-slate-900 dark:text-slate-100">
+                                {displayName}
+                              </span>
                               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                                 {new Date(
                                   comment.createdAt

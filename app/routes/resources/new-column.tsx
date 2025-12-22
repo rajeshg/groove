@@ -2,6 +2,7 @@ import { parseWithZod } from "@conform-to/zod/v4";
 import { invariantResponse } from "@epic-web/invariant";
 import { data } from "react-router";
 import { z } from "zod";
+import { optionalString } from "../validation";
 
 import { requireAuthCookie } from "~/auth/auth";
 import { createColumn } from "~/routes/queries";
@@ -9,12 +10,12 @@ import { createColumn } from "~/routes/queries";
 // Schema for creating a new column (without intent field since it's implicit)
 const NewColumnSchema = z.object({
   boardId: z.string().min(1, "Board ID is required"),
-  id: z.string().optional(), // Optional - server will generate if not provided
+  id: optionalString(), // Optional - server will generate if not provided
   name: z
     .string()
     .min(1, "Column name is required")
     .max(255, "Column name is too long"),
-  redirectTo: z.string().optional(), // For progressive enhancement
+  redirectTo: optionalString(), // For progressive enhancement
 });
 
 export async function action({ request }: { request: Request }) {
@@ -23,6 +24,7 @@ export async function action({ request }: { request: Request }) {
 
   const submission = parseWithZod(formData, {
     schema: NewColumnSchema,
+    disableAutoCoercion: true,
   });
 
   invariantResponse(

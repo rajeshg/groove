@@ -37,12 +37,12 @@ export async function loader({ request }: Route.LoaderArgs) {
     where: { id: invitationId },
     include: {
       Board: {
-        select: { 
-          name: true, 
+        select: {
+          name: true,
           id: true,
           Account: {
-            select: { firstName: true, lastName: true, email: true }
-          }
+            select: { firstName: true, lastName: true, email: true },
+          },
         },
       },
     },
@@ -74,7 +74,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     email: invitation.email,
     boardName: invitation.Board.name,
     boardId: invitation.Board.id,
-    inviterName: invitation.Board.Account.firstName 
+    inviterName: invitation.Board.Account.firstName
       ? `${invitation.Board.Account.firstName} ${invitation.Board.Account.lastName || ""}`.trim()
       : invitation.Board.Account.email,
     hasExistingAccount: !!existingAccount,
@@ -88,7 +88,10 @@ export async function action({ request }: Route.ActionArgs) {
   const userId = await requireAuthCookie(request);
   const formData = await request.formData();
 
-  const submission = parseWithZod(formData, { schema: inviteAcceptSchema });
+  const submission = parseWithZod(formData, {
+    schema: inviteAcceptSchema,
+    disableAutoCoercion: true,
+  });
 
   if (submission.status !== "success") {
     return { result: submission.reply() };
@@ -98,7 +101,7 @@ export async function action({ request }: Route.ActionArgs) {
 
   try {
     await acceptBoardInvitation(invitationId, userId);
-    
+
     // Get board ID to redirect to it
     const invitation = await prisma.boardInvitation.findUnique({
       where: { id: invitationId },
@@ -106,40 +109,47 @@ export async function action({ request }: Route.ActionArgs) {
     });
 
     if (!invitation) {
-      return { 
+      return {
         result: submission.reply({
-          formErrors: ["Invitation not found"]
-        })
+          formErrors: ["Invitation not found"],
+        }),
       };
     }
 
     return redirect(`/board/${invitation.boardId}?invitationAccepted=true`);
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Failed to accept invitation";
-    return { 
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to accept invitation";
+    return {
       result: submission.reply({
-        formErrors: [errorMessage]
-      })
+        formErrors: [errorMessage],
+      }),
     };
   }
 }
 
-export default function InvitationPage({ loaderData, actionData }: Route.ComponentProps) {
-  const { 
-    invitationId, 
-    email, 
-    boardName, 
+export default function InvitationPage({
+  loaderData,
+  actionData,
+}: Route.ComponentProps) {
+  const {
+    invitationId,
+    email,
+    boardName,
     inviterName,
-    hasExistingAccount, 
-    isAuthenticated, 
+    hasExistingAccount,
+    isAuthenticated,
     userEmail,
-    isCorrectUser 
+    isCorrectUser,
   } = loaderData;
 
   const [form, fields] = useForm({
     lastResult: actionData?.result,
     onValidate({ formData }) {
-      return parseWithZod(formData, { schema: inviteAcceptSchema });
+      return parseWithZod(formData, {
+        schema: inviteAcceptSchema,
+        disableAutoCoercion: true,
+      });
     },
   });
 
@@ -159,7 +169,10 @@ export default function InvitationPage({ loaderData, actionData }: Route.Compone
 
         <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4 mb-6">
           <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
-            <strong className="text-slate-900 dark:text-white">{inviterName}</strong> invited you to join
+            <strong className="text-slate-900 dark:text-white">
+              {inviterName}
+            </strong>{" "}
+            invited you to join
           </p>
           <p className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
             {boardName}
@@ -181,7 +194,10 @@ export default function InvitationPage({ loaderData, actionData }: Route.Compone
           // User is not logged in
           <div className="space-y-4">
             <p className="text-sm text-slate-600 dark:text-slate-400 text-center">
-              This invitation was sent to <strong className="text-slate-900 dark:text-white">{email}</strong>
+              This invitation was sent to{" "}
+              <strong className="text-slate-900 dark:text-white">
+                {email}
+              </strong>
             </p>
 
             {hasExistingAccount ? (
@@ -214,10 +230,13 @@ export default function InvitationPage({ loaderData, actionData }: Route.Compone
           // User is logged in with correct email
           <div className="space-y-4">
             <p className="text-sm text-slate-600 dark:text-slate-400 text-center mb-4">
-              You're signed in as <strong className="text-slate-900 dark:text-white">{userEmail}</strong>
+              You're signed in as{" "}
+              <strong className="text-slate-900 dark:text-white">
+                {userEmail}
+              </strong>
             </p>
             <Form method="post" {...getFormProps(form)} className="space-y-4">
-              <input 
+              <input
                 {...getInputProps(fields.invitationId, { type: "hidden" })}
                 value={invitationId}
               />
@@ -237,7 +256,8 @@ export default function InvitationPage({ loaderData, actionData }: Route.Compone
           <div className="space-y-4">
             <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
               <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                This invitation is for <strong>{email}</strong>, but you're signed in as <strong>{userEmail}</strong>.
+                This invitation is for <strong>{email}</strong>, but you're
+                signed in as <strong>{userEmail}</strong>.
               </p>
             </div>
             <Link

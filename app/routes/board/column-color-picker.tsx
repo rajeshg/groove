@@ -73,8 +73,8 @@ export function ColumnColorPicker({
         columnId,
         color,
       },
-      { 
-        method: "post", 
+      {
+        method: "post",
         action: "/resources/update-column",
       }
     );
