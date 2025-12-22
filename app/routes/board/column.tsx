@@ -133,10 +133,7 @@ export function Column({
         setAcceptDrop(false);
       }}
     >
-      <div
-        className="px-4 py-4 border-b-2 bg-slate-100/50 dark:bg-slate-900/50 rounded-t-2xl"
-        style={{ borderColor: color }}
-      >
+      <div className="px-4 py-4 bg-slate-100/50 dark:bg-slate-900/50 rounded-t-2xl">
         <div className="flex items-center justify-between gap-3">
           {/* Drag handle - only this area is draggable */}
           {isExpanded && onDragStart && (
@@ -153,15 +150,25 @@ export function Column({
           )}
 
           {isExpanded ? (
-            <h2 className="flex-1 text-center py-1 px-2 font-black text-slate-900 dark:text-slate-50 text-xs uppercase tracking-widest">
-              {name}
-            </h2>
+            <div className="flex-1 flex items-center justify-center gap-2 py-1 px-2 min-w-0">
+              <div
+                className="w-2.5 h-2.5 rounded-full shadow-sm flex-shrink-0"
+                style={{ backgroundColor: color }}
+              />
+              <h2 className="font-black text-slate-900 dark:text-slate-50 text-xs uppercase tracking-widest truncate">
+                {name}
+              </h2>
+            </div>
           ) : (
             <button
               onClick={onToggle}
-              className="flex items-center justify-center gap-2 flex-1 text-center p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors uppercase"
+              className="flex items-center justify-center gap-2 flex-1 text-center p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors uppercase min-w-0"
               title={`Expand column: ${name} (${items.length} cards)`}
             >
+              <div
+                className="w-2.5 h-2.5 rounded-full shadow-sm flex-shrink-0"
+                style={{ backgroundColor: color }}
+              />
               <Icon name="chevron-right" />
               <span className="font-black text-slate-900 dark:text-slate-50 text-xs truncate">
                 {name}

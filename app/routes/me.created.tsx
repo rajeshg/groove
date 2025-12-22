@@ -25,7 +25,7 @@ export default function CreatedCards({ loaderData }: Route.ComponentProps) {
       <div className="flex-1 overflow-y-auto p-8 flex flex-col items-center">
         {/* Centered context indicator */}
         <div className="mb-8 flex items-center gap-2 text-slate-400 dark:text-slate-500">
-          <Icon name="user" size="md" />
+          <Icon name="clipboard" size="md" />
           <span className="text-xs font-black uppercase tracking-widest">
             Cards Added by Me
           </span>

@@ -102,6 +102,10 @@ export default function ColumnDetail() {
 
             {/* Center: Column name */}
             <div className="flex items-center justify-center gap-2.5 min-w-0">
+              <div
+                className="w-3 h-3 rounded-full shadow-sm flex-shrink-0"
+                style={{ backgroundColor: displayColor }}
+              />
               <h2 className="font-black text-slate-950 dark:text-slate-50 text-lg uppercase truncate flex items-center h-9">
                 {column.name}
               </h2>
@@ -118,7 +122,7 @@ export default function ColumnDetail() {
               </Link>
             </div>
 
-            {/* Right: Card count and color info */}
+            {/* Right: Card count info */}
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-md border border-slate-200 dark:border-slate-700">
                 <span className="text-sm font-bold text-slate-900 dark:text-slate-50">
@@ -128,12 +132,6 @@ export default function ColumnDetail() {
                   {items.length === 1 ? "card" : "cards"}
                 </span>
               </div>
-
-              <div
-                className="w-8 h-8 rounded-lg border-2 border-slate-300 dark:border-slate-700 shadow-sm flex-shrink-0"
-                style={{ backgroundColor: displayColor }}
-                title={`Column color: ${displayColor}`}
-              />
             </div>
           </div>
         </div>

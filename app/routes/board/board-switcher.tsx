@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect, useMemo } from "react";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import { Icon } from "../../icons/icons";
 
 interface Board {
@@ -22,6 +22,12 @@ export function BoardSwitcher({
   const [menuSearchTerm, setMenuSearchTerm] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const location = useLocation();
+
+  // Close menu when location changes
+  useEffect(() => {
+    setIsOpen(false);
+  }, [location.pathname]);
 
   // Global "j" key listener to open menu
   useEffect(() => {
@@ -132,7 +138,7 @@ export function BoardSwitcher({
                 onClick={() => setIsOpen(false)}
               />
               <MenuActionCard
-                icon="pencil"
+                icon="clipboard"
                 label="Added by me"
                 to="/me/created"
                 onClick={() => setIsOpen(false)}
@@ -144,6 +150,7 @@ export function BoardSwitcher({
               <Link
                 to="/new-board"
                 className="flex items-center gap-3 px-5 py-2 text-sm font-semibold text-blue-600 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                onClick={() => setIsOpen(false)}
               >
                 <Icon name="plus" size="md" />
                 <span>Add a board</span>
