@@ -1,8 +1,9 @@
 # Groove
 
+![Groove Board Screenshot](./docs/board.png)
+
 Groove is a refined, high-performance Kanban board application built with React Router v7. It combines the sophisticated aesthetics of [fizzy.do](https://fizzy.do) with the core Kanban principles established in Ryan Florence's Trellix work.
 
-![Groove Board Screenshot](./docs/board.png)
 ![Groove Templates Screenshot](./docs/templates.png)
 
 ## ✨ Features
