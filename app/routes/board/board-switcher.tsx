@@ -132,7 +132,7 @@ export function BoardSwitcher({
                 onClick={() => setIsOpen(false)}
               />
               <MenuActionCard
-                icon="added"
+                icon="pencil"
                 label="Added by me"
                 to="/me/created"
                 onClick={() => setIsOpen(false)}
