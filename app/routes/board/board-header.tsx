@@ -63,9 +63,9 @@ export function BoardHeader({
 
   return (
     <div className="flex-shrink-0 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md h-16">
-      <div className="flex items-center h-full px-4 sm:px-10">
+      <div className="grid grid-cols-3 items-center h-full px-2 sm:px-10">
         {/* Left section: Board Actions */}
-        <div className="flex-1 flex items-center justify-start min-w-0">
+        <div className="flex items-center justify-start min-w-0 pr-2">
           {board && (
             <Link
               to={`/board/${board.id}/settings`}
@@ -83,19 +83,19 @@ export function BoardHeader({
           )}
         </div>
 
-        {/* Center: Context Title (Centered) */}
-        <div className="flex-[2] flex justify-center min-w-0 px-2">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <h1 className="text-base sm:text-lg font-black text-slate-950 dark:text-slate-50 uppercase tracking-tighter sm:tracking-normal truncate">
+        {/* Center: Context Title (Perfectly Centered) */}
+        <div className="flex justify-center min-w-0 px-1">
+          <div className="flex items-center gap-1 sm:gap-2 min-w-0">
+            <h1 className="text-sm sm:text-lg font-black text-slate-950 dark:text-slate-50 uppercase tracking-tighter sm:tracking-normal truncate">
               {displayTitle}
             </h1>
           </div>
         </div>
 
         {/* Right section: Search */}
-        <div className="flex-1 flex items-center justify-end min-w-0">
+        <div className="flex items-center justify-end min-w-0">
           {setSearchTerm !== undefined && (
-            <div className="relative w-full max-w-[120px] sm:max-w-[220px]">
+            <div className="relative w-full max-w-[140px] sm:max-w-[260px]">
               <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
                 <Icon
                   name="search"
@@ -109,7 +109,7 @@ export function BoardHeader({
                 placeholder="SEARCH..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="block w-full pl-8 sm:pl-9 pr-7 sm:pr-8 py-1.5 sm:py-2 text-sm sm:text-base font-bold border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-950 dark:text-slate-50 placeholder:text-sm sm:placeholder:text-base placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-inner"
+                className="block w-full pl-8 sm:pl-9 pr-7 sm:pr-8 py-2.5 sm:py-2 text-sm sm:text-base font-bold border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-950 dark:text-slate-50 placeholder:text-sm sm:placeholder:text-base placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-inner"
               />
               {searchTerm && (
                 <button

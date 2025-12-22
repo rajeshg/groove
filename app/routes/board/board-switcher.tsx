@@ -96,7 +96,7 @@ export function BoardSwitcher({
 
       {/* Popover Menu - Perfectly matching board-menu.png */}
       {isOpen && (
-        <div className="fixed sm:absolute top-16 sm:top-full left-4 right-4 sm:left-1/2 sm:-translate-x-1/2 mt-2 sm:mt-4 w-auto sm:w-[420px] max-h-[85vh] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl shadow-2xl z-[100] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed sm:absolute top-16 sm:top-full left-4 right-4 sm:left-1/2 sm:-translate-x-1/2 mt-2 sm:mt-4 w-auto sm:w-[420px] max-h-[85vh] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl shadow-2xl z-[100] flex flex-col animate-in fade-in zoom-in-95 duration-200">
           {/* Search Header */}
           <div className="p-5">
             <div className="relative">
@@ -104,7 +104,7 @@ export function BoardSwitcher({
                 ref={inputRef}
                 type="text"
                 placeholder="Type to jump to a board, person, place, or tag..."
-                className="w-full px-4 py-2.5 text-sm border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all placeholder-slate-400 shadow-sm"
+                className="w-full px-4 py-2.5 text-base border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all placeholder-slate-400 shadow-sm"
                 value={menuSearchTerm}
                 onChange={(e) => setMenuSearchTerm(e.target.value)}
                 onKeyDown={(e) => {
@@ -117,25 +117,28 @@ export function BoardSwitcher({
           {/* Scrollable Content */}
           <div className="flex-1 overflow-y-auto custom-scrollbar pb-4">
             {/* Top Grid Actions */}
-            <div className="grid grid-cols-3 gap-3 px-5 mb-4">
+            <div className="grid grid-cols-3 gap-3 px-5 pt-2 mb-4">
               <MenuActionCard
                 icon="home"
                 label="Home"
                 count={1}
                 to="/home"
                 active
+                onClick={() => setIsOpen(false)}
               />
               <MenuActionCard
                 icon="assigned"
                 label="Assigned to me"
                 count={2}
                 to="/me/assigned"
+                onClick={() => setIsOpen(false)}
               />
               <MenuActionCard
                 icon="added"
                 label="Added by me"
                 count={3}
                 to="/me/created"
+                onClick={() => setIsOpen(false)}
               />
             </div>
 
@@ -208,16 +211,19 @@ function MenuActionCard({
   count,
   to,
   active = false,
+  onClick,
 }: {
   icon: string;
   label: string;
   count: number;
   to: string;
   active?: boolean;
+  onClick?: () => void;
 }) {
   return (
     <Link
       to={to}
+      onClick={onClick}
       className={`relative flex flex-col items-center justify-center h-24 rounded-3xl border transition-all duration-300 ${
         active
           ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/30 scale-105 z-10"
