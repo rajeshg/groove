@@ -109,7 +109,7 @@ export function BoardHeader({
                 placeholder="SEARCH..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="block w-full pl-8 sm:pl-9 pr-7 sm:pr-8 py-1.5 sm:py-2 text-[10px] sm:text-sm font-bold border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-950 dark:text-slate-50 placeholder:text-[10px] sm:placeholder:text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-inner"
+                className="block w-full pl-8 sm:pl-9 pr-7 sm:pr-8 py-1.5 sm:py-2 text-sm sm:text-base font-bold border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-950 dark:text-slate-50 placeholder:text-sm sm:placeholder:text-base placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-inner"
               />
               {searchTerm && (
                 <button

@@ -1,6 +1,6 @@
 import { parseWithZod } from "@conform-to/zod/v4";
 import { invariantResponse } from "@epic-web/invariant";
-import { data, redirect } from "react-router";
+import { redirect } from "react-router";
 import { z } from "zod";
 import { optionalString } from "../validation";
 import { requireAuthCookie } from "~/auth/auth";
