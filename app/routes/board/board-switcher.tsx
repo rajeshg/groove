@@ -142,7 +142,7 @@ export function BoardSwitcher({
             {/* BOARDS Section */}
             <MenuSection label="BOARDS">
               <Link
-                to="/home"
+                to="/new-board"
                 className="flex items-center gap-3 px-5 py-2 text-sm font-semibold text-blue-600 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
               >
                 <Icon name="plus" size="md" />
