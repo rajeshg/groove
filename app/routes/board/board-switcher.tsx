@@ -121,7 +121,6 @@ export function BoardSwitcher({
               <MenuActionCard
                 icon="home"
                 label="Home"
-                count={1}
                 to="/home"
                 active
                 onClick={() => setIsOpen(false)}
@@ -129,14 +128,12 @@ export function BoardSwitcher({
               <MenuActionCard
                 icon="assigned"
                 label="Assigned to me"
-                count={2}
                 to="/me/assigned"
                 onClick={() => setIsOpen(false)}
               />
               <MenuActionCard
                 icon="added"
                 label="Added by me"
-                count={3}
                 to="/me/created"
                 onClick={() => setIsOpen(false)}
               />
@@ -208,14 +205,12 @@ export function BoardSwitcher({
 function MenuActionCard({
   icon,
   label,
-  count,
   to,
   active = false,
   onClick,
 }: {
   icon: string;
   label: string;
-  count: number;
   to: string;
   active?: boolean;
   onClick?: () => void;
@@ -224,21 +219,12 @@ function MenuActionCard({
     <Link
       to={to}
       onClick={onClick}
-      className={`relative flex flex-col items-center justify-center h-24 rounded-3xl border transition-all duration-300 ${
+      className={`flex flex-col items-center justify-center h-24 rounded-3xl border transition-all duration-300 ${
         active
           ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/30 scale-105 z-10"
           : "bg-slate-50 dark:bg-slate-900/40 border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-blue-500 dark:hover:border-blue-500 hover:bg-white dark:hover:bg-slate-800 hover:-translate-y-1"
       }`}
     >
-      <div
-        className={`absolute top-2.5 right-2.5 min-w-[22px] h-[22px] flex items-center justify-center px-1.5 text-[10px] font-black rounded-lg border shadow-sm ${
-          active
-            ? "bg-white text-blue-600 border-white"
-            : "bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300 border-slate-200 dark:border-slate-600"
-        }`}
-      >
-        {count}
-      </div>
       <Icon
         name={icon}
         size="xl"
