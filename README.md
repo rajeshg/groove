@@ -2,9 +2,12 @@
 
 Groove is a refined, high-performance Kanban board application built with React Router v7. It combines the sophisticated aesthetics of [fizzy.do](https://fizzy.do) with the core Kanban principles established in Ryan Florence's Trellix work.
 
+![Groove Board Screenshot](./docs/board.png)
+![Groove Templates Screenshot](./docs/templates.png)
+
 ## ✨ Features
 
-- **Intuitive Board Management**: Create, customize, and organize multiple boards with distinct color identities.
+- **Unlimited Board Management**: Create, customize, and organize an unlimited number of boards with distinct color identities. Powered by a local-first SQLite database for maximum portability and speed.
 - **Sophisticated Column Interactions**:
   - **Expand/Collapse**: Focus on what matters by collapsing columns into minimalist "guitar strings".
   - **Guitar Strings**: Collapsed columns feature vertical progress indicators inspired by Fizzy's unique design language.
@@ -18,9 +21,16 @@ Groove is a refined, high-performance Kanban board application built with React 
   - **Proportional Gradients**: Mobile cards show proportional gradient fills based on card count.
   - **Optimized Navigation**: Dedicated column detail views for small screens.
 - **Productivity First**:
-  - **Keyboard Shortcuts**: Quickly add cards with the 'c' shortcut and navigate with ease.
-  - **Template System**: Jumpstart projects with pre-defined board templates.
-  - **Optimistic UI**: Instant updates for a zero-latency feel using React Router's fetchers.
+    - **Keyboard Shortcuts**: Work at the speed of thought with handy shortcuts:
+      - `j`: Global **Jump to Board** menu. Quickly switch between boards from anywhere.
+      - `c`: **Quick Add Card** (on the default column). Focus on capturing ideas instantly.
+      - `f`: **Focus Search** in the board header to filter your view.
+    - **Intelligent Templates**: Jumpstart any project with curated board structures:
+      - **Agile/Sprint**: Optimized workflows for software development teams.
+      - **Eisenhower Matrix**: Prioritize tasks by urgency and importance.
+      - **Hiring/Sales Pipelines**: Track candidates or leads through multi-stage funnels.
+      - **Content/Reading Lists**: Manage creative workflows and personal knowledge.
+    - **Optimistic UI**: Instant updates for a zero-latency feel using React Router's fetchers.
 
 ## 🔐 Simplified Permission Model
 
