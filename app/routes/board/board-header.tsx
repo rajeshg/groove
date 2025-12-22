@@ -62,7 +62,13 @@ export function BoardHeader({
     propTitle || (profileMatch ? "MY PROFILE" : board ? board.name : "");
 
   return (
-    <div className="flex-shrink-0 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md h-16">
+    <div className="relative flex-shrink-0 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md h-16">
+      {board && (
+        <div
+          className="absolute top-0 left-0 right-0 h-1 z-10"
+          style={{ backgroundColor: board.color }}
+        />
+      )}
       <div className="grid grid-cols-3 items-center h-full px-2 sm:px-10">
         {/* Left section: Board Actions */}
         <div className="flex items-center justify-start min-w-0 pr-2">

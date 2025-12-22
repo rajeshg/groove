@@ -76,12 +76,6 @@ export default function Board({ board }: BoardProps) {
         }}
       />
 
-      {/* Top color accent stripe - high visibility */}
-      <div
-        className="h-1.5 w-full flex-shrink-0 sticky top-14 z-50 shadow-sm"
-        style={{ background: board.color }}
-      />
-
       <div className="sticky top-[60px] z-40 bg-white dark:bg-slate-900 shadow-sm border-b border-slate-200 dark:border-slate-800">
         <BoardHeader searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
       </div>
