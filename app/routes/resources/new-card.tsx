@@ -5,7 +5,7 @@ import { z } from "zod";
 import { optionalString } from "../validation";
 
 import { requireAuthCookie } from "~/auth/auth";
-import { upsertItem } from "~/routes/queries";
+import { upsertItem } from "~/routes/queries.server";
 
 // Schema for creating a new card (without intent field since it's implicit)
 const NewCardSchema = z.object({

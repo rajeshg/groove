@@ -3,7 +3,7 @@ import { useForm, getFormProps, getInputProps } from "@conform-to/react";
 import { parseWithZod } from "@conform-to/zod/v4";
 import type { Route } from "./+types/invite";
 import { requireAuthCookie } from "../auth/auth";
-import { acceptBoardInvitation } from "./queries";
+import { acceptBoardInvitation } from "./queries.server";
 import { inviteAcceptSchema } from "./validation";
 import { Icon } from "../icons/icons";
 import { prisma } from "../../prisma/client";

@@ -3,43 +3,13 @@ import { Link, useFetcher, useSearchParams, Form } from "react-router";
 import { requireAuthCookie } from "../auth/auth";
 import { badRequest } from "../http/bad-request";
 
-import { getHomeData, deleteBoard, getActivityFeed } from "./queries";
+import { getHomeData, deleteBoard, getActivityFeed } from "./queries.server";
+import type { ActivityItem, HomeData } from "./queries.types";
 import { INTENTS } from "./types";
 import { Icon } from "../icons/icons";
 import type { Route } from "./+types/home";
 
-type ActivityItem = {
-  id: string;
-  type: string;
-  content: string | null;
-  createdAt: Date;
-  boardId: string;
-  itemId: string | null;
-  userId: string | null;
-  board: { id: string; name: string; color: string };
-  item: {
-    id: string;
-    title: string;
-    columnId: string;
-    Column: { name: string };
-  } | null;
-  user: {
-    id: string;
-    firstName: string | null;
-    lastName: string | null;
-  } | null;
-};
-
-type BoardData = {
-  id: string;
-  name: string;
-  color: string;
-  accountId: string;
-  _count: {
-    items: number;
-    members: number;
-  };
-};
+type BoardData = HomeData[number];
 
 export const meta = () => {
   return [{ title: "Dashboard | Trello Clone" }];

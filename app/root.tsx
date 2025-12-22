@@ -34,7 +34,7 @@ export const links = () => [
 export async function loader({ request }: { request: Request }) {
   let userId = await getAuthFromRequest(request);
   if (userId) {
-    const { getHomeData } = await import("./routes/queries");
+    const { getHomeData } = await import("./routes/queries.server");
     const allBoards = await getHomeData(userId);
     return { userId, allBoards };
   }

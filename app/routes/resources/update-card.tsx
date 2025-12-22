@@ -4,7 +4,7 @@ import { data } from "react-router";
 import { z } from "zod";
 import { optionalString } from "../validation";
 import { requireAuthCookie } from "~/auth/auth";
-import { upsertItem } from "~/routes/queries";
+import { upsertItem } from "~/routes/queries.server";
 
 const UpdateCardSchema = z.object({
   id: z.string().min(1, "Invalid item ID"),

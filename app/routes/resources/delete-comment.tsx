@@ -4,7 +4,7 @@ import { data } from "react-router";
 import { z } from "zod";
 import { optionalString } from "../validation";
 import { requireAuthCookie } from "~/auth/auth";
-import { deleteComment } from "~/routes/queries";
+import { deleteComment } from "~/routes/queries.server";
 
 const DeleteCommentSchema = z.object({
   commentId: z.string().min(1, "Invalid comment ID"),

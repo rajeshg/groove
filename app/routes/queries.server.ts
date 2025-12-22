@@ -3,6 +3,7 @@ import { prisma } from "../../prisma/client";
 import { DEFAULT_COLUMN_COLORS } from "../constants/colors";
 import { getBoardTemplate } from "../constants/templates";
 import { ensureAssigneeForUser } from "../utils/assignee";
+import type { HomeData, BoardData, ActivityItem } from "./queries.types";
 
 import type { Prisma } from "../../prisma/client";
 
@@ -30,35 +31,7 @@ export async function isBoardMember(
 export async function getBoardData(
   boardId: string,
   accountId: string
-): Promise<Prisma.BoardGetPayload<{
-  include: {
-    items: {
-      include: {
-        _count: { select: { comments: true } };
-        createdByUser: {
-          select: { id: true; firstName: true; lastName: true };
-        };
-        Assignee: { select: { id: true; name: true; userId: true } };
-      };
-    };
-    columns: { orderBy: { order: "asc" } };
-    members: {
-      include: {
-        Account: {
-          select: { id: true; email: true; firstName: true; lastName: true };
-        };
-      };
-    };
-    invitations: {
-      where: { status: "pending" };
-      include: { Account: { select: { email: true } } };
-    };
-    assignees: {
-      select: { id: true; name: true; userId: true };
-      orderBy: { name: "asc" };
-    };
-  };
-}> | null> {
+): Promise<BoardData | null> {
   // First fetch board to check if user is owner or member
   const board = await prisma.board.findUnique({
     where: { id: boardId },
@@ -659,7 +632,7 @@ export async function getActivityFeed(
     boardId?: string;
     type?: string;
   } = {}
-) {
+): Promise<{ activities: ActivityItem[]; totalCount: number }> {
   const { limit = 20, offset = 0, boardId, type } = options;
   const where = {
     boardId: boardId || undefined,
@@ -710,7 +683,7 @@ export async function getActivityFeed(
 /**
  * Get all boards for a user (owned or member)
  */
-export async function getHomeData(accountId: string) {
+export async function getHomeData(accountId: string): Promise<HomeData> {
   return prisma.board.findMany({
     where: {
       OR: [
@@ -1081,7 +1054,8 @@ export async function acceptBoardInvitation(
     );
   }
 
-  return prisma.$transaction(async (tx) => {
+  // Create board member and update invitation in transaction
+  await prisma.$transaction(async (tx) => {
     // Create board member record
     await tx.boardMember.create({
       data: {
@@ -1091,16 +1065,6 @@ export async function acceptBoardInvitation(
         role: invitation.role,
       },
     });
-
-    // Get or create assignee for the user
-    const account = await tx.account.findUnique({
-      where: { id: userId },
-      select: { email: true },
-    });
-
-    if (account?.email) {
-      await ensureAssigneeForUser(invitation.boardId, userId, account.email);
-    }
 
     // Mark invitation as accepted
     await tx.boardInvitation.update({
@@ -1117,9 +1081,19 @@ export async function acceptBoardInvitation(
         userId: userId,
       },
     });
-
-    return { success: true };
   });
+
+  // Create assignee outside transaction to avoid timeout
+  const account = await prisma.account.findUnique({
+    where: { id: userId },
+    select: { email: true },
+  });
+
+  if (account?.email) {
+    await ensureAssigneeForUser(invitation.boardId, userId, account.email);
+  }
+
+  return { success: true };
 }
 
 /**

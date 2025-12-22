@@ -13,7 +13,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { prisma } from "../../prisma/client";
 import { generateId } from "../utils/id";
-import { upsertItem } from "../routes/queries";
+import { upsertItem } from "../routes/queries.server";
 import type {
   Board,
   Column,
@@ -227,12 +227,11 @@ describe("Column CRUD", { timeout: 30000 }, () => {
       throw new Error("Prerequisites not created");
 
     // Import the function we want to test
-    const { createColumn } = await import("../routes/queries");
+    const { createColumn } = await import("../routes/queries.server");
 
     const column = await createColumn(
       testBoard.id,
       "Test CreateColumn",
-      "dummy-id",
       testAccount.id
     );
 

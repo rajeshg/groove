@@ -5,7 +5,7 @@ import { z } from "zod";
 import { optionalString } from "../validation";
 
 import { requireAuthCookie } from "~/auth/auth";
-import { createColumn } from "~/routes/queries";
+import { createColumn } from "~/routes/queries.server";
 
 // Schema for creating a new column (without intent field since it's implicit)
 const NewColumnSchema = z.object({

@@ -5,7 +5,7 @@ import { z } from "zod";
 import { optionalString } from "../validation";
 import { requireAuthCookie } from "~/auth/auth";
 import { prisma } from "../../../prisma/client";
-import { getItem } from "~/routes/queries";
+import { getItem } from "~/routes/queries.server";
 import { generateId } from "~/utils/id";
 
 const MoveCardSchema = z.object({

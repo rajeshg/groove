@@ -4,7 +4,7 @@ import { data, redirect } from "react-router";
 import { z } from "zod";
 import { optionalString } from "../validation";
 import { requireAuthCookie } from "~/auth/auth";
-import { deleteCard, getItem } from "~/routes/queries";
+import { deleteCard, getItem } from "~/routes/queries.server";
 
 const DeleteCardSchema = z.object({
   itemId: z.string().min(1, "Invalid item ID"),

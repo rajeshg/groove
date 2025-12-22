@@ -4,7 +4,7 @@ import { data } from "react-router";
 import { z } from "zod";
 import { optionalString } from "../validation";
 import { requireAuthCookie } from "~/auth/auth";
-import { updateItemAssignee } from "~/routes/queries";
+import { updateItemAssignee } from "~/routes/queries.server";
 import { createOrGetAssignee } from "~/utils/assignee";
 
 const UpdateItemAssigneeSchema = z.object({

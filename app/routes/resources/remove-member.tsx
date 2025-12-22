@@ -5,7 +5,7 @@ import { z } from "zod";
 
 import { requireAuthCookie } from "~/auth/auth";
 import { prisma } from "../../../prisma/client";
-import { removeBoardMember } from "../queries";
+import { removeBoardMember } from "../queries.server";
 import { getPermissionErrorMessage } from "~/utils/permissions";
 
 const RemoveMemberSchema = z.object({

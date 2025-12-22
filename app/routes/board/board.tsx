@@ -3,7 +3,7 @@ import { invariant } from "@epic-web/invariant";
 import { useSubmit, Link } from "react-router";
 
 import { CONTENT_TYPES } from "../types";
-import type { getBoardData } from "../queries";
+import type { BoardData } from "../queries.types";
 
 import { Icon } from "../../icons/icons";
 import { Column } from "./column";
@@ -17,8 +17,6 @@ import { getContrastTextColor } from "../../utils/color-contrast";
 import "./columns.css";
 
 // Note: BOARD_CONSTANTS are available but not currently used in this component
-
-type BoardData = NonNullable<Awaited<ReturnType<typeof getBoardData>>>;
 
 interface BoardProps {
   board: BoardData;

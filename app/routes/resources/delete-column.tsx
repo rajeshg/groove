@@ -4,7 +4,7 @@ import { redirect } from "react-router";
 import { z } from "zod";
 import { optionalString } from "../validation";
 import { requireAuthCookie } from "~/auth/auth";
-import { deleteColumn } from "~/routes/queries";
+import { deleteColumn } from "~/routes/queries.server";
 
 const DeleteColumnSchema = z.object({
   columnId: z.string().min(1, "Invalid column ID"),

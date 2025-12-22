@@ -2,7 +2,7 @@ import { useLoaderData, useNavigate, useFetchers, Link } from "react-router";
 import { useState } from "react";
 import { requireAuthCookie } from "~/auth/auth";
 import { badRequest, notFound } from "~/http/bad-request";
-import { getBoardData } from "./queries";
+import { getBoardData } from "./queries.server";
 import { Icon } from "~/icons/icons";
 import { Card } from "./board/card";
 import { BoardHeader } from "./board/board-header";

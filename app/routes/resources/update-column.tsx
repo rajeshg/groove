@@ -4,7 +4,7 @@ import { data, redirect } from "react-router";
 import { z } from "zod";
 import { optionalString } from "../validation";
 import { requireAuthCookie } from "~/auth/auth";
-import { updateColumn, getColumn } from "~/routes/queries";
+import { updateColumn, getColumn } from "~/routes/queries.server";
 import {
   canUpdateColumnName,
   canUpdateColumnColor,

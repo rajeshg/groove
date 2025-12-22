@@ -3,7 +3,8 @@ import { invariant, invariantResponse } from "@epic-web/invariant";
 
 import { requireAuthCookie } from "../auth/auth";
 
-import { getBoardData, getHomeData } from "./queries";
+import { getBoardData, getHomeData } from "./queries.server";
+import type { BoardData } from "./queries.types";
 import { assertBoardAccess } from "../utils/permissions";
 import Board from "./board/board";
 import type { Board as BoardType } from "../../prisma/client";

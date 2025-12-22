@@ -4,7 +4,7 @@ import { data } from "react-router";
 import { z } from "zod";
 import { optionalString } from "../validation";
 import { requireAuthCookie } from "~/auth/auth";
-import { inviteUserToBoard, getBoardData } from "~/routes/queries";
+import { inviteUserToBoard, getBoardData } from "~/routes/queries.server";
 import {
   canManageMembers,
   getPermissionErrorMessage,

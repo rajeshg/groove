@@ -4,7 +4,7 @@ import { data } from "react-router";
 import { z } from "zod";
 import { optionalString } from "../validation";
 import { requireAuthCookie } from "~/auth/auth";
-import { createComment } from "~/routes/queries";
+import { createComment } from "~/routes/queries.server";
 
 const CreateCommentSchema = z.object({
   cardId: z.string().min(1, "Invalid card ID"),

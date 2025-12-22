@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import type { Route } from "./+types/profile";
 import { requireAuthCookie } from "../auth/auth";
-import { getProfileData } from "./queries";
+import { getProfileData } from "./queries.server";
 import { Icon } from "../icons/icons";
 import { useTheme } from "../context/theme";
 import { BoardHeader } from "./board/board-header";

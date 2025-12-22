@@ -13,7 +13,7 @@ import { Input, Label } from "~/components/input";
 import { ColorPicker } from "~/components/ColorPicker";
 import { StatusButton } from "~/components/status-button";
 import { requireAuthCookie } from "~/auth/auth";
-import { getBoardData } from "~/routes/queries";
+import { getBoardData } from "~/routes/queries.server";
 import { assertBoardAccess } from "~/utils/permissions";
 import { useState } from "react";
 import { Icon } from "~/icons/icons";

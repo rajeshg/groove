@@ -4,7 +4,7 @@ import { data, redirect } from "react-router";
 import { z } from "zod";
 import { optionalString } from "../validation";
 import { requireAuthCookie } from "~/auth/auth";
-import { updateBoard, getBoardData } from "~/routes/queries";
+import { updateBoard, getBoardData } from "~/routes/queries.server";
 import { canUpdateBoard, getPermissionErrorMessage } from "~/utils/permissions";
 
 const UpdateBoardSchema = z.object({

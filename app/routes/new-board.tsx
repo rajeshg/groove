@@ -8,7 +8,7 @@ import { StatusButton } from "../components/status-button";
 import { Label, LabeledInput } from "../components/input";
 import { badRequest } from "../http/bad-request";
 
-import { getHomeData, createBoard, deleteBoard } from "./queries";
+import { getHomeData, createBoard, deleteBoard } from "./queries.server";
 import { INTENTS } from "./types";
 import { Icon } from "../icons/icons";
 import { ColorPicker } from "../components/ColorPicker";

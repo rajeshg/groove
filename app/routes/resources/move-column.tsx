@@ -4,10 +4,7 @@ import { data } from "react-router";
 import { z } from "zod";
 import { optionalString } from "../validation";
 import { requireAuthCookie } from "~/auth/auth";
-import { updateColumn, getColumn } from "~/routes/queries";
 import { canMoveColumn, getPermissionErrorMessage } from "~/utils/permissions";
-import { prisma } from "../../../prisma/client";
-import { generateId } from "~/utils/id";
 
 const MoveColumnSchema = z.object({
   id: z.string().min(1, "Invalid column ID"),
@@ -33,6 +30,11 @@ export async function action({ request }: { request: Request }) {
   const { id, order } = submission.value;
 
   try {
+    // Import server-only modules dynamically inside action
+    const { getColumn } = await import("~/routes/queries.server");
+    const { prisma } = await import("../../../prisma/client");
+    const { generateId } = await import("~/utils/id");
+
     // Check permissions
     const column = await getColumn(id, accountId);
     invariantResponse(column, "Column not found or unauthorized", {

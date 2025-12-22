@@ -3,10 +3,8 @@ import { useFetchers } from "react-router";
 import { invariant } from "@epic-web/invariant";
 import type { Item } from "../../../../prisma/client";
 import { INTENTS, type RenderedItem, type RenderedAssignee } from "../../types";
-import type { getBoardData } from "../../queries";
+import type { BoardData } from "../../queries.types";
 import type { BoardColumn } from "../types";
-
-type BoardData = NonNullable<Awaited<ReturnType<typeof getBoardData>>>;
 
 interface UseBoardDataResult {
   columnArray: BoardColumn[];

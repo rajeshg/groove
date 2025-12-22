@@ -43,6 +43,12 @@ test.describe("Board Workflows", () => {
 
     // Should be on home page
     await expect(page).toHaveURL("/home");
+
+    // Click "Add a Board" button to navigate to new-board page
+    await page.getByRole("link", { name: /Add a Board/i }).click();
+
+    // Should be on new-board page
+    await expect(page).toHaveURL("/new-board");
     await expect(page.locator("body")).toContainText(/Start a new board/i);
 
     // Fill in board name
@@ -335,8 +341,11 @@ test.describe("Board Workflows", () => {
         await deletePromise;
 
         await page.waitForTimeout(300);
-        // Verify comment was deleted
-        const commentStillExists = await page
+        // Verify comment was deleted - search only within Comments section, not Activity feed
+        const commentsSection = page
+          .locator("h3:has-text('Comments')")
+          .locator("..");
+        const commentStillExists = await commentsSection
           .locator("text=Chrome and Firefox")
           .count();
         expect(commentStillExists).toBe(0);
