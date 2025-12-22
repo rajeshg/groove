@@ -11,18 +11,18 @@ datasource db {
 }
 
 model Account {
-  id        String  @id
-  email     String  @unique
-  firstName String?
-  lastName  String?
-  boards Board[]
-  boardMemberships BoardMember[]
+  id                  String            @id
+  email               String            @unique
+  firstName           String?
+  lastName            String?
+  boards              Board[]
+  boardMemberships    BoardMember[]
   receivedInvitations BoardInvitation[]
-  assignees Assignee[]
-  comments Comment[] @relation("CommentCreatedBy")
-  createdItems Item[] @relation("ItemCreatedBy")
-
-  Password Password?
+  assignees           Assignee[]
+  comments            Comment[]         @relation("CommentCreatedBy")
+  createdItems        Item[]            @relation("ItemCreatedBy")
+  activities          Activity[]
+  Password            Password?
 }
 
 model Password {
@@ -34,86 +34,92 @@ model Password {
 }
 
 model Board {
-  id        String   @id
-  name      String
-  color     String   @default("#e0e0e0")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-  columns   Column[]
-  items     Item[]
-  members   BoardMember[]
+  id          String            @id
+  name        String
+  color       String            @default("#e0e0e0")
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @default(now()) @updatedAt
+  columns     Column[]
+  items       Item[]
+  members     BoardMember[]
   invitations BoardInvitation[]
-  assignees Assignee[]
-  Account   Account  @relation(fields: [accountId], references: [id])
-  accountId String
+  assignees   Assignee[]
+  activities  Activity[]
+  Account     Account           @relation(fields: [accountId], references: [id])
+  accountId   String
 }
 
 model Column {
-  id        String   @id
-  name      String
-  color     String   @default("#94a3b8")
-  order     Float    @default(0)
-  isDefault Boolean  @default(false)
-  isExpanded Boolean @default(true)
-  shortcut  String?  @default("c")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-  items     Item[]
-  Board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
-  boardId   String
+  id         String   @id
+  name       String
+  color      String   @default("#94a3b8")
+  order      Float    @default(0)
+  isDefault  Boolean  @default(false)
+  isExpanded Boolean  @default(true)
+  shortcut   String?  @default("c")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+  items      Item[]
+  Board      Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  boardId    String
 }
 
 model Item {
-    id        String   @id
-    title     String
-    content   String?
+  id            String    @id
+  title         String
+  content       String?
+  order         Float
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
+  lastActiveAt  DateTime  @default(now())
+  createdBy     String?
+  createdByUser Account?  @relation("ItemCreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
+  Column        Column    @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  columnId      String
+  Board         Board     @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  boardId       String
+  Assignee      Assignee? @relation(fields: [assigneeId], references: [id], onDelete: SetNull)
+  assigneeId    String?
+  comments      Comment[]
+  activities    Activity[]
+}
 
-    // we split the difference between the prev/next items. If an item is dropped
-    // between 1.00 and 2.00 it will be 1.50. If dropped between 1.50 and 2.00 it
-    // will be 1.75, etc.
-    order     Float
+model Activity {
+  id        String   @id
+  type      String // 'card_created', 'card_moved', 'card_updated', 'comment_added', 'board_updated', 'column_created', etc.
+  content   String? // Additional info like "from To Do to Done" or comment snippet
+  createdAt DateTime @default(now())
 
-    createdAt    DateTime @default(now())
-    updatedAt    DateTime @default(now()) @updatedAt
-    lastActiveAt DateTime @default(now())
-    createdBy    String?
-    createdByUser Account? @relation("ItemCreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
+  // Relations
+  board   Board   @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  boardId String
 
-    Column   Column @relation(fields: [columnId], references: [id], onDelete: Cascade)
-    columnId String
+  item   Item?  @relation(fields: [itemId], references: [id], onDelete: SetNull)
+  itemId String?
 
-    Board   Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
-    boardId String
-
-    Assignee   Assignee? @relation(fields: [assigneeId], references: [id], onDelete: SetNull)
-    assigneeId String?
-
-    comments Comment[]
+  user   Account? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId String?
 }
 
 model Comment {
-  id        String   @id
-  content   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-  createdBy String?
+  id            String   @id
+  content       String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+  createdBy     String?
   createdByUser Account? @relation("CommentCreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
-
-  Item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  itemId String
+  Item          Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  itemId        String
 }
 
 model Assignee {
   id        String   @id
   name      String
   createdAt DateTime @default(now())
-
-  Board   Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
-  boardId String
-
+  Board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  boardId   String
   Account   Account? @relation(fields: [userId], references: [id], onDelete: SetNull)
   userId    String?
-
   items     Item[]
 
   @@unique([name, boardId])
@@ -123,12 +129,10 @@ model BoardMember {
   id        String   @id
   role      String   @default("editor")
   createdAt DateTime @default(now())
-
-  Account   Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  Account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
   accountId String
-
-  Board   Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
-  boardId String
+  Board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  boardId   String
 
   @@unique([accountId, boardId])
 }
@@ -140,11 +144,9 @@ model BoardInvitation {
   status    String   @default("pending")
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
-
-  Board   Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
-  boardId String
-
-  Account   Account @relation(fields: [invitedBy], references: [id])
+  Board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  boardId   String
+  Account   Account  @relation(fields: [invitedBy], references: [id])
   invitedBy String
 
   @@unique([email, boardId])

@@ -6,6 +6,8 @@ import { optionalString } from "../validation";
 import { requireAuthCookie } from "~/auth/auth";
 import { updateColumn, getColumn } from "~/routes/queries";
 import { canMoveColumn, getPermissionErrorMessage } from "~/utils/permissions";
+import { prisma } from "../../../prisma/client";
+import { generateId } from "~/utils/id";
 
 const MoveColumnSchema = z.object({
   id: z.string().min(1, "Invalid column ID"),
@@ -52,7 +54,23 @@ export async function action({ request }: { request: Request }) {
       });
     }
 
-    await updateColumn(id, { order }, accountId);
+    await prisma.$transaction(async (tx) => {
+      await tx.column.update({
+        where: { id },
+        data: { order },
+      });
+
+      // We only log if order actually changed, but for simplicity we log it as column reordered
+      await tx.activity.create({
+        data: {
+          id: generateId(),
+          type: "column_moved",
+          content: `Reordered column "${column.name}"`,
+          boardId: board.id,
+          userId: accountId,
+        },
+      });
+    });
 
     return data({ result: submission.reply() });
   } catch (error: unknown) {

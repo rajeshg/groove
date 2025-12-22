@@ -196,7 +196,7 @@ test.describe("Card Workflows - Comprehensive", () => {
       `[data-card-id="${cardId}"] button[aria-label="Delete card"]`
     );
     await expect(trashButton).toBeVisible({ timeout: 5000 });
-    
+
     // Use regular click to trigger React event handlers
     await trashButton.click();
 

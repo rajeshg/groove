@@ -1,19 +1,34 @@
 import { redirect } from "react-router";
-import { Form, Link, useFetcher, useNavigation } from "react-router";
-import { useState, useEffect } from "react";
-import type { Board } from "../../prisma/client";
-
+import { Link, useFetcher, useSearchParams, Form } from "react-router";
 import { requireAuthCookie } from "../auth/auth";
-import { StatusButton } from "../components/status-button";
-import { Label, LabeledInput } from "../components/input";
 import { badRequest } from "../http/bad-request";
 
-import { getHomeData, createBoard, deleteBoard } from "./queries";
+import { getHomeData, deleteBoard, getActivityFeed } from "./queries";
 import { INTENTS } from "./types";
 import { Icon } from "../icons/icons";
-import { ColorPicker } from "../components/ColorPicker";
-import { getBoardTemplates } from "../constants/templates";
 import type { Route } from "./+types/home";
+
+type ActivityItem = {
+  id: string;
+  type: string;
+  content: string | null;
+  createdAt: Date;
+  boardId: string;
+  itemId: string | null;
+  userId: string | null;
+  board: { id: string; name: string; color: string };
+  item: {
+    id: string;
+    title: string;
+    columnId: string;
+    Column: { name: string };
+  } | null;
+  user: {
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+  } | null;
+};
 
 type BoardData = {
   id: string;
@@ -32,15 +47,27 @@ export const meta = () => {
 
 export async function loader({ request }: { request: Request }) {
   let userId = await requireAuthCookie(request);
-  let boards = await getHomeData(userId);
+  let url = new URL(request.url);
+  let boardId = url.searchParams.get("boardId") || undefined;
+  let type = url.searchParams.get("type") || undefined;
+  let page = Number(url.searchParams.get("page") || "1");
+  let limit = 20;
+  let offset = (page - 1) * limit;
 
-  // Handle invitation acceptance success message
-  const url = new URL(request.url);
-  const invitationAccepted =
-    url.searchParams.get("invitationAccepted") === "true";
-  const invitationError = null;
+  let [boards, { activities, totalCount }] = await Promise.all([
+    getHomeData(userId),
+    getActivityFeed(userId, { boardId, type, limit, offset }),
+  ]);
 
-  return { boards, accountId: userId, invitationAccepted, invitationError };
+  return {
+    boards,
+    accountId: userId,
+    activity: activities,
+    totalCount,
+    page,
+    limit,
+    filters: { boardId, type },
+  };
 }
 
 export async function action({ request }: { request: Request }) {
@@ -49,14 +76,7 @@ export async function action({ request }: { request: Request }) {
   let intent = String(formData.get("intent"));
   switch (intent) {
     case INTENTS.createBoard: {
-      let name = String(formData.get("name") || "");
-      let color = String(formData.get("color") || "");
-      let templateName = formData.get("template")
-        ? String(formData.get("template"))
-        : undefined;
-      if (!name) throw badRequest("Bad request");
-      let board = await createBoard(accountId, name, color, templateName);
-      return redirect(`/board/${board.id}`);
+      return redirect("/new-board");
     }
     case INTENTS.deleteBoard: {
       let boardId = formData.get("boardId");
@@ -70,96 +90,536 @@ export async function action({ request }: { request: Request }) {
   }
 }
 
-export default function Projects({ loaderData }: Route.ComponentProps) {
-  const { invitationAccepted, invitationError } = loaderData;
-  const [showSuccessMessage, setShowSuccessMessage] = useState(
-    invitationAccepted ?? false
-  );
-
-  useEffect(() => {
-    if (!showSuccessMessage) return;
-
-    const timer = setTimeout(() => {
-      setShowSuccessMessage(false);
-    }, 5000);
-
-    return () => clearTimeout(timer);
-  }, [showSuccessMessage]);
-
+export default function Dashboard({ loaderData }: Route.ComponentProps) {
   return (
     <div className="min-h-full bg-white dark:bg-slate-950 flex flex-col items-center overflow-y-auto">
       <div className="w-full max-w-[1600px] px-0 sm:px-4">
-        <header className="py-6 px-4 border-b border-slate-100 dark:border-slate-900 mb-0 lg:mb-6">
+        <header className="py-6 px-4 border-b border-slate-100 dark:border-slate-900 mb-0 lg:mb-6 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <div className="p-1.5 bg-blue-600 rounded text-white">
-              <Icon name="layout" className="w-5 h-5" />
+              <Icon name="board-icon" className="w-5 h-5" />
             </div>
             <h1 className="text-xl font-bold text-slate-900 dark:text-white">
               Groove Dashboard
             </h1>
           </div>
+          <Link
+            to="/new-board"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20"
+          >
+            <Icon name="plus" className="w-4 h-4" />
+            Add a Board
+          </Link>
         </header>
 
-        {/* Invitation feedback */}
-        {showSuccessMessage && invitationAccepted && (
-          <div className="w-full max-w-4xl mx-4 mb-4 transition-opacity duration-300">
-            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 flex items-start gap-3 justify-between">
-              <div className="flex items-start gap-3 flex-1">
-                <div className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0">
-                  <Icon name="check" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-green-800 dark:text-green-200">
-                    Invitation accepted!
-                  </h3>
-                  <p className="text-sm text-green-700 dark:text-green-300 mt-1">
-                    You've successfully joined the board. You can now start
-                    collaborating!
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowSuccessMessage(false)}
-                className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200 transition-colors p-1 flex-shrink-0"
-                aria-label="Dismiss message"
-              >
-                <Icon name="x" className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {invitationError && (
-          <div className="w-full max-w-4xl mx-4 mb-4">
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-start gap-3">
-              <div className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5">
-                <Icon name="x" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-red-800 dark:text-red-200">
-                  Invitation error
-                </h3>
-                <p className="text-sm text-red-700 dark:text-red-300 mt-1">
-                  {invitationError}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 lg:gap-8 items-start">
-          {/* Sidebar Area: Your Boards (1/3 on desktop, 1st on mobile) */}
           <aside className="lg:col-span-4 xl:col-span-3 order-1 p-4 lg:p-0">
             <Boards loaderData={loaderData} />
           </aside>
 
-          {/* Main Area: Create New Board (2/3 on desktop, 2nd on mobile) */}
           <main className="lg:col-span-8 xl:col-span-9 order-2 p-4 lg:p-0">
-            <NewBoard />
+            <FullActivityFeed
+              activity={loaderData.activity}
+              boards={loaderData.boards}
+              filters={loaderData.filters}
+              totalCount={loaderData.totalCount}
+              page={loaderData.page}
+              limit={loaderData.limit}
+            />
           </main>
         </div>
       </div>
     </div>
+  );
+}
+
+function FullActivityFeed({
+  activity,
+  boards,
+  filters,
+  totalCount,
+  page,
+  limit,
+}: {
+  activity: ActivityItem[];
+  boards: BoardData[];
+  filters: { boardId?: string; type?: string };
+  totalCount: number;
+  page: number;
+  limit: number;
+}) {
+  const [searchParams] = useSearchParams();
+
+  const activityTypes = [
+    { value: "", label: "All Actions" },
+    { value: "card_created", label: "Card Created" },
+    { value: "card_moved", label: "Card Moved" },
+    { value: "card_assigned", label: "Card Assigned" },
+    { value: "comment_added", label: "Comment Added" },
+    { value: "member_joined", label: "Member Joined" },
+    { value: "board_created", label: "Board Created" },
+  ];
+
+  if (
+    !activity ||
+    (activity.length === 0 && !filters.boardId && !filters.type)
+  ) {
+    return (
+      <div className="bg-slate-50 dark:bg-slate-900/40 rounded-3xl border border-slate-200 dark:border-slate-800 p-12 text-center">
+        <Icon
+          name="board-icon"
+          className="w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-4"
+        />
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+          No activity yet
+        </h2>
+        <p className="text-slate-500 dark:text-slate-400 mb-6">
+          Start by creating a board or adding some cards.
+        </p>
+      </div>
+    );
+  }
+
+  // Group by day
+  const groupedByDay: {
+    date: Date;
+    activities: ActivityItem[];
+    gapEnd?: Date;
+  }[] = [];
+
+  const daysWithActivity = new Map<string, ActivityItem[]>();
+  activity.forEach((act) => {
+    const day = new Date(act.createdAt).toISOString().split("T")[0];
+    const existing = daysWithActivity.get(day) || [];
+    daysWithActivity.set(day, [...existing, act]);
+  });
+
+  const sortedDays = Array.from(daysWithActivity.keys()).sort().reverse();
+
+  if (sortedDays.length > 0) {
+    const firstDayWithActivity = new Date(sortedDays[sortedDays.length - 1]);
+    const lastDayWithActivity = new Date(sortedDays[0]);
+
+    let current = new Date(lastDayWithActivity);
+    while (current >= firstDayWithActivity) {
+      const dayStr = current.toISOString().split("T")[0];
+      const acts = daysWithActivity.get(dayStr);
+
+      if (acts) {
+        groupedByDay.push({
+          date: new Date(current),
+          activities: acts,
+        });
+        current.setDate(current.getDate() - 1);
+      } else {
+        // Gap detection
+        const gapStart = new Date(current);
+        let gapEnd = new Date(current);
+        while (
+          current >= firstDayWithActivity &&
+          !daysWithActivity.has(current.toISOString().split("T")[0])
+        ) {
+          gapEnd = new Date(current);
+          current.setDate(current.getDate() - 1);
+        }
+
+        // Only show gap if it's 3+ days
+        const diffDays =
+          Math.ceil(
+            Math.abs(gapStart.getTime() - gapEnd.getTime()) /
+              (1000 * 60 * 60 * 24)
+          ) + 1;
+        if (diffDays >= 3) {
+          groupedByDay.push({
+            date: gapStart,
+            activities: [],
+            gapEnd,
+          });
+        }
+      }
+    }
+  }
+
+  return (
+    <div className="space-y-12">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <h2 className="font-bold text-3xl text-slate-900 dark:text-white flex items-center gap-4 whitespace-nowrap">
+          Activity Feed
+          <span className="h-px bg-slate-200 dark:bg-slate-800 flex-1 min-w-[50px]" />
+        </h2>
+
+        <Form className="flex flex-wrap items-center gap-3">
+          <div className="relative">
+            <select
+              name="boardId"
+              defaultValue={filters.boardId || ""}
+              onChange={(e) => e.currentTarget.form?.requestSubmit()}
+              className="appearance-none pl-3 pr-10 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-base md:text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer"
+            >
+              <option value="">All Boards</option>
+              {boards.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+            <Icon
+              name="chevron-right"
+              className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 rotate-90 pointer-events-none"
+            />
+          </div>
+
+          <div className="relative">
+            <select
+              name="type"
+              defaultValue={filters.type || ""}
+              onChange={(e) => e.currentTarget.form?.requestSubmit()}
+              className="appearance-none pl-3 pr-10 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-base md:text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer"
+            >
+              {activityTypes.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+            <Icon
+              name="chevron-right"
+              className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 rotate-90 pointer-events-none"
+            />
+          </div>
+
+          {(filters.boardId || filters.type) && (
+            <Link
+              to="/home"
+              className="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+              title="Clear filters"
+            >
+              <Icon name="trash" className="w-4 h-4" />
+            </Link>
+          )}
+        </Form>
+      </div>
+
+      {activity.length === 0 ? (
+        <div className="bg-slate-50 dark:bg-slate-900/40 rounded-3xl border border-slate-200 dark:border-slate-800 p-12 text-center">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
+            No matching activity
+          </h3>
+          <p className="text-slate-500 dark:text-slate-400">
+            Try adjusting your filters to see more results.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-12">
+          <div className="flex flex-col">
+            {groupedByDay.map((group, idx) => {
+              if (group.gapEnd) {
+                return (
+                  <div
+                    key={`gap-${idx}`}
+                    className="py-8 border-y border-dashed border-slate-200 dark:border-slate-800 flex justify-center my-4"
+                  >
+                    <div className="px-6 py-2 bg-slate-50 dark:bg-slate-900 rounded-full border border-slate-200 dark:border-slate-800">
+                      <span className="text-sm font-bold text-slate-400 dark:text-slate-500">
+                        No activity from{" "}
+                        {group.gapEnd.toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                        })}
+                        {" to "}
+                        {group.date.toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <section key={group.date.toISOString()} className="mb-8">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="px-4 py-1.5 bg-slate-900 dark:bg-white rounded-full shadow-sm">
+                      <span className="text-xs font-black text-white dark:text-slate-900 uppercase tracking-widest">
+                        {group.date.toLocaleDateString(undefined, {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </span>
+                    </div>
+                    <div className="h-px bg-slate-100 dark:bg-slate-900 flex-1" />
+                  </div>
+
+                  <div className="flex flex-col gap-px bg-slate-100 dark:bg-slate-900 border border-slate-100 dark:border-slate-900 rounded-xl overflow-hidden shadow-sm">
+                    {group.activities.map((act) => (
+                      <ActivityCard key={act.id} act={act} />
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+
+          {totalCount > limit && (
+            <div className="flex justify-center items-center gap-4 py-8 border-t border-slate-100 dark:border-slate-900">
+              <Link
+                to={(() => {
+                  const sp = new URLSearchParams(searchParams);
+                  sp.set("page", String(Math.max(1, page - 1)));
+                  return `/home?${sp.toString()}`;
+                })()}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+                  page <= 1
+                    ? "text-slate-300 pointer-events-none"
+                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900"
+                }`}
+              >
+                <Icon name="chevron-right" className="w-4 h-4 rotate-180" />
+                Previous
+              </Link>
+
+              <div className="flex items-center gap-2">
+                {Array.from({ length: Math.ceil(totalCount / limit) }).map(
+                  (_, i) => {
+                    const p = i + 1;
+                    const isCurrent = p === page;
+                    const sp = new URLSearchParams(searchParams);
+                    sp.set("page", String(p));
+
+                    return (
+                      <Link
+                        key={p}
+                        to={`/home?${sp.toString()}`}
+                        className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-black transition-all ${
+                          isCurrent
+                            ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
+                            : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-900"
+                        }`}
+                      >
+                        {p}
+                      </Link>
+                    );
+                  }
+                )}
+              </div>
+
+              <Link
+                to={(() => {
+                  const sp = new URLSearchParams(searchParams);
+                  sp.set("page", String(page + 1));
+                  return `/home?${sp.toString()}`;
+                })()}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+                  page >= Math.ceil(totalCount / limit)
+                    ? "text-slate-300 pointer-events-none"
+                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900"
+                }`}
+              >
+                Next
+                <Icon name="chevron-right" className="w-4 h-4" />
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ActivityCard({ act }: { act: ActivityItem }) {
+  const getActivityConfig = (type: string) => {
+    switch (type) {
+      case "card_created":
+        return {
+          icon: "plus" as const,
+          label: "Created card",
+          color:
+            "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400",
+        };
+      case "card_moved":
+        return {
+          icon: "board-icon" as const,
+          label: "Moved card",
+          color:
+            "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400",
+        };
+      case "card_updated":
+        return {
+          icon: "clipboard" as const,
+          label: "Updated card",
+          color: "bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400",
+        };
+      case "card_deleted":
+        return {
+          icon: "trash" as const,
+          label: "Deleted card",
+          color:
+            "bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400",
+        };
+      case "card_assigned":
+        return {
+          icon: "user" as const,
+          label: "Updated assignment",
+          color:
+            "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400",
+        };
+      case "comment_added":
+        return {
+          icon: "dots" as const,
+          label: "Added comment",
+          color:
+            "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400",
+        };
+      case "comment_updated":
+        return {
+          icon: "dots" as const,
+          label: "Updated comment",
+          color:
+            "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400",
+        };
+      case "comment_deleted":
+        return {
+          icon: "trash" as const,
+          label: "Removed comment",
+          color:
+            "bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400",
+        };
+      case "member_invited":
+        return {
+          icon: "user" as const,
+          label: "Invited user",
+          color:
+            "bg-pink-100 text-pink-600 dark:bg-pink-900/30 dark:text-pink-400",
+        };
+      case "member_joined":
+        return {
+          icon: "user" as const,
+          label: "Member joined",
+          color:
+            "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400",
+        };
+      case "member_removed":
+        return {
+          icon: "user" as const,
+          label: "Member removed",
+          color:
+            "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+        };
+      case "board_created":
+        return {
+          icon: "board-icon" as const,
+          label: "Created board",
+          color:
+            "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400",
+        };
+      case "board_updated":
+        return {
+          icon: "board-icon" as const,
+          label: "Updated board",
+          color:
+            "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400",
+        };
+      case "column_created":
+        return {
+          icon: "plus" as const,
+          label: "Added column",
+          color:
+            "bg-teal-100 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400",
+        };
+      case "column_updated":
+        return {
+          icon: "clipboard" as const,
+          label: "Updated column",
+          color:
+            "bg-slate-100 text-slate-600 dark:bg-slate-900/30 dark:text-slate-400",
+        };
+      case "column_moved":
+        return {
+          icon: "board-icon" as const,
+          label: "Moved column",
+          color:
+            "bg-blue-50 text-blue-500 dark:bg-blue-900/20 dark:text-blue-300",
+        };
+      case "column_deleted":
+        return {
+          icon: "trash" as const,
+          label: "Removed column",
+          color:
+            "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+        };
+      default:
+        return {
+          icon: "clipboard" as const,
+          label: "Updated card",
+          color:
+            "bg-slate-100 text-slate-600 dark:bg-slate-900/30 dark:text-slate-400",
+        };
+    }
+  };
+
+  const config = getActivityConfig(act.type);
+  const linkTo = act.itemId ? `/card/${act.itemId}` : `/board/${act.boardId}`;
+
+  return (
+    <Link
+      to={linkTo}
+      className="group bg-white dark:bg-slate-950 hover:bg-slate-50 dark:hover:bg-slate-900 border-b border-slate-100 dark:border-slate-900 p-3 transition-colors flex items-center gap-4"
+    >
+      <div
+        className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${config.color}`}
+      >
+        <Icon name={config.icon} className="w-4 h-4" />
+      </div>
+      <div className="flex-1 min-w-0 flex items-center gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            {act.user && (
+              <span className="text-sm font-bold text-slate-900 dark:text-white">
+                {act.user.firstName} {act.user.lastName}
+              </span>
+            )}
+            <span className="text-sm text-slate-500 dark:text-slate-400">
+              {config.label}
+            </span>
+            {act.item && (
+              <span className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors truncate">
+                "{act.item.title}"
+              </span>
+            )}
+          </div>
+          {act.content && (
+            <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-xl">
+              {act.content}
+            </p>
+          )}
+        </div>
+
+        <div className="flex items-center gap-4 flex-shrink-0">
+          <div className="hidden sm:flex items-center gap-2">
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
+              {act.board.name}
+            </span>
+            {act.item && (
+              <>
+                <span className="text-slate-300 dark:text-slate-700">•</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                  {act.item.Column.name}
+                </span>
+              </>
+            )}
+          </div>
+          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tight w-12 text-right">
+            {new Date(act.createdAt).toLocaleTimeString(undefined, {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </div>
+        </div>
+      </div>
+    </Link>
   );
 }
 
@@ -246,7 +706,7 @@ function Board({
 
         <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
           <span className="flex items-center gap-1">
-            <Icon name="layout" className="w-3 h-3" />
+            <Icon name="clipboard" className="w-3 h-3" />
             {board._count.items} cards
           </span>
           <span className="flex items-center gap-1">
@@ -256,127 +716,5 @@ function Board({
         </div>
       </div>
     </Link>
-  );
-}
-
-function NewBoard() {
-  let navigation = useNavigation();
-  let isCreating =
-    navigation.state !== "idle" &&
-    navigation.formData?.get("intent") === INTENTS.createBoard;
-  let templates = getBoardTemplates();
-  let [selectedColor, setSelectedColor] = useState("#2563eb");
-  let [boardTitle, setBoardTitle] = useState("");
-
-  const handleTemplateChange = (templateName: string) => {
-    // Always update the board name to match the selected template
-    // This ensures the name stays in sync with the template selection
-    setBoardTitle(templateName);
-  };
-
-  return (
-    <div className="bg-slate-50 dark:bg-slate-900/20 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 lg:p-8">
-      <div className="flex items-center justify-between mb-8">
-        <h2 className="font-bold text-2xl text-slate-900 dark:text-white flex items-center gap-3">
-          Start a new board
-          <span className="h-px bg-slate-200 dark:bg-slate-800 flex-1 min-w-[50px] lg:min-w-[200px]" />
-        </h2>
-      </div>
-
-      <Form method="post" className="space-y-8">
-        <input type="hidden" name="intent" value={INTENTS.createBoard} />
-
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-          <div className="xl:col-span-4 space-y-6">
-            <LabeledInput
-              label="What's the project name?"
-              name="name"
-              type="text"
-              required
-              placeholder="e.g. Vacation Planning"
-              className="h-12 text-base font-medium rounded-xl border-slate-200 focus:border-blue-500"
-              disabled={isCreating}
-              value={boardTitle}
-              onChange={(e) => setBoardTitle(e.target.value)}
-            />
-
-            <div className="space-y-3">
-              <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                Pick a color
-              </Label>
-              <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                <ColorPicker
-                  value={selectedColor}
-                  onChange={(color) => {
-                    setSelectedColor(color);
-                    const input = document.querySelector(
-                      'input[name="color"]'
-                    ) as HTMLInputElement;
-                    if (input) input.value = color;
-                  }}
-                />
-                <input type="hidden" name="color" value={selectedColor} />
-              </div>
-            </div>
-
-            <StatusButton
-              type="submit"
-              status={isCreating ? "pending" : "idle"}
-              className="w-full h-12 text-base font-bold rounded-xl shadow-lg shadow-blue-500/20"
-            >
-              Create Project
-            </StatusButton>
-          </div>
-
-          <div className="xl:col-span-8 space-y-4">
-            <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">
-              Select a workflow template
-            </Label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-4">
-              {templates.map((template) => (
-                <label
-                  key={template.name}
-                  className="relative group cursor-pointer"
-                >
-                  <input
-                    type="radio"
-                    name="template"
-                    value={template.name}
-                    defaultChecked={template.name === "Default"}
-                    className="sr-only peer"
-                    disabled={isCreating}
-                    onChange={() => handleTemplateChange(template.name)}
-                  />
-
-                  <div className="h-full p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 transition-all peer-checked:ring-2 peer-checked:ring-blue-500 peer-checked:border-transparent group-hover:shadow-md">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm font-bold text-slate-900 dark:text-white">
-                        {template.name}
-                      </span>
-                      <div className="w-4 h-4 rounded-full border border-slate-300 dark:border-slate-700 flex items-center justify-center group-has-[:checked]:bg-blue-500 group-has-[:checked]:border-blue-500 transition-colors">
-                        <div className="w-1.5 h-1.5 rounded-full bg-white opacity-0 group-has-[:checked]:opacity-100 transition-opacity" />
-                      </div>
-                    </div>
-
-                    <div className="flex gap-1 mb-2">
-                      {template.columns.map((col) => (
-                        <div
-                          key={col.name}
-                          className="h-1.5 flex-1 rounded-full opacity-60"
-                          style={{ backgroundColor: col.color }}
-                        />
-                      ))}
-                    </div>
-                    <p className="text-[10px] text-slate-400 font-medium truncate">
-                      {template.columns.map((c) => c.name).join(" • ")}
-                    </p>
-                  </div>
-                </label>
-              ))}
-            </div>
-          </div>
-        </div>
-      </Form>
-    </div>
   );
 }

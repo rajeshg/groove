@@ -48,6 +48,14 @@ export async function loader({
         },
         orderBy: { createdAt: "asc" },
       },
+      activities: {
+        include: {
+          user: {
+            select: { id: true, firstName: true, lastName: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      },
     },
   });
 
@@ -313,157 +321,207 @@ export default function CardDetail({ loaderData }: Route.ComponentProps) {
                 </div>
 
                 <div className="p-4 sm:px-6 border-t border-slate-200 dark:border-slate-700">
-                  <h3 className="text-sm font-semibold mb-4">Comments</h3>
-                  <div className="space-y-4 mb-6">
-                    {card.comments?.map((comment: RenderedComment) => {
-                      const canEdit =
-                        isCommentEditable(comment.createdAt) &&
-                        comment.createdBy === loaderData.accountId;
-                      const isEditing = editingCommentId === comment.id;
-                      const displayName = comment.createdByUser
-                        ? getDisplayName(comment.createdByUser)
-                        : comment.createdBy
-                          ? `User ${comment.createdBy.substring(0, 8)}`
-                          : "Unknown User";
-                      return (
-                        <div
-                          key={comment.id}
-                          className="flex gap-4 text-sm bg-slate-50/50 dark:bg-slate-900/30 p-4 rounded-2xl border border-slate-100 dark:border-slate-800"
-                        >
-                          <div
-                            className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-white text-xs font-black shadow-sm"
-                            style={{
-                              backgroundColor: getAvatarColor(displayName),
-                            }}
-                          >
-                            {getInitials(displayName)}
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-baseline justify-between mb-2">
-                              <span className="font-bold text-slate-900 dark:text-slate-100">
-                                {displayName}
-                              </span>
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                                {new Date(
-                                  comment.createdAt
-                                ).toLocaleDateString()}
-                              </span>
-                            </div>
-                            {isEditing ? (
-                              <EditableComment
-                                value={comment.content}
-                                onSubmit={(newContent) => {
-                                  commentFetcher.submit(
-                                    {
-                                      commentId: comment.id,
-                                      content: newContent,
-                                    },
-                                    {
-                                      method: "post",
-                                      action: "/resources/update-comment",
-                                    }
-                                  );
-                                  setEditingCommentId(null);
+                  <div className="flex flex-col lg:flex-row gap-8">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-semibold mb-4">Comments</h3>
+                      <div className="space-y-4 mb-6">
+                        {card.comments?.map((comment: RenderedComment) => {
+                          const canEdit =
+                            isCommentEditable(comment.createdAt) &&
+                            comment.createdBy === loaderData.accountId;
+                          const isEditing = editingCommentId === comment.id;
+                          const displayName = comment.createdByUser
+                            ? getDisplayName(comment.createdByUser)
+                            : comment.createdBy
+                              ? `User ${comment.createdBy.substring(0, 8)}`
+                              : "Unknown User";
+                          return (
+                            <div
+                              key={comment.id}
+                              className="flex gap-4 text-sm bg-slate-50/50 dark:bg-slate-900/30 p-4 rounded-2xl border border-slate-100 dark:border-slate-800"
+                            >
+                              <div
+                                className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-white text-xs font-black shadow-sm"
+                                style={{
+                                  backgroundColor: getAvatarColor(displayName),
                                 }}
-                                onCancel={() => setEditingCommentId(null)}
-                              />
-                            ) : (
-                              <>
-                                <p className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap break-words mb-3 leading-relaxed">
-                                  {comment.content}
-                                </p>
-                                {canEdit && (
-                                  <div className="flex gap-3">
-                                    <button
-                                      onClick={() => {
-                                        setEditingCommentId(comment.id);
-                                      }}
-                                      className="text-[10px] font-black uppercase tracking-widest text-blue-500 hover:text-blue-700 transition-colors"
-                                    >
-                                      Edit
-                                    </button>
-                                    <button
-                                      onClick={() => {
-                                        commentFetcher.submit(
-                                          {
-                                            commentId: comment.id,
-                                          },
-                                          {
-                                            method: "post",
-                                            action: "/resources/delete-comment",
-                                          }
-                                        );
-                                      }}
-                                      className="text-[10px] font-black uppercase tracking-widest text-red-500 hover:text-red-700 transition-colors"
-                                    >
-                                      Delete
-                                    </button>
-                                  </div>
+                              >
+                                {getInitials(displayName)}
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-baseline justify-between mb-2">
+                                  <span className="font-bold text-slate-900 dark:text-slate-100">
+                                    {displayName}
+                                  </span>
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                    {new Date(
+                                      comment.createdAt
+                                    ).toLocaleDateString()}
+                                  </span>
+                                </div>
+                                {isEditing ? (
+                                  <EditableComment
+                                    value={comment.content}
+                                    onSubmit={(newContent) => {
+                                      commentFetcher.submit(
+                                        {
+                                          commentId: comment.id,
+                                          content: newContent,
+                                        },
+                                        {
+                                          method: "post",
+                                          action: "/resources/update-comment",
+                                        }
+                                      );
+                                      setEditingCommentId(null);
+                                    }}
+                                    onCancel={() => setEditingCommentId(null)}
+                                  />
+                                ) : (
+                                  <>
+                                    <p className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap break-words mb-3 leading-relaxed">
+                                      {comment.content}
+                                    </p>
+                                    {canEdit && (
+                                      <div className="flex gap-3">
+                                        <button
+                                          onClick={() => {
+                                            setEditingCommentId(comment.id);
+                                          }}
+                                          className="text-[10px] font-black uppercase tracking-widest text-blue-500 hover:text-blue-700 transition-colors"
+                                        >
+                                          Edit
+                                        </button>
+                                        <button
+                                          onClick={() => {
+                                            commentFetcher.submit(
+                                              {
+                                                commentId: comment.id,
+                                              },
+                                              {
+                                                method: "post",
+                                                action:
+                                                  "/resources/delete-comment",
+                                              }
+                                            );
+                                          }}
+                                          className="text-[10px] font-black uppercase tracking-widest text-red-500 hover:text-red-700 transition-colors"
+                                        >
+                                          Delete
+                                        </button>
+                                      </div>
+                                    )}
+                                  </>
                                 )}
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <commentFetcher.Form
+                        method="post"
+                        action="/resources/create-comment"
+                        className="flex flex-col sm:flex-row gap-3"
+                      >
+                        <input type="hidden" name="cardId" value={cardId} />
+                        <Input
+                          type="text"
+                          name="content"
+                          placeholder="Add a comment..."
+                          value={commentInput}
+                          onChange={(e) => setCommentInput(e.target.value)}
+                          className="flex-1 text-sm rounded-xl px-4 py-3 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 transition-all"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && commentInput.trim()) {
+                              commentFetcher.submit(
+                                {
+                                  cardId: cardId,
+                                  content: commentInput,
+                                },
+                                {
+                                  method: "post",
+                                  action: "/resources/create-comment",
+                                }
+                              );
+                              setCommentInput("");
+                            }
+                          }}
+                        />
+                        <button
+                          type="submit"
+                          disabled={
+                            !commentInput.trim() ||
+                            commentFetcher.state === "submitting"
+                          }
+                          className="px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-blue-500/20"
+                          onClick={(e) => {
+                            if (commentInput.trim()) {
+                              commentFetcher.submit(
+                                {
+                                  cardId: cardId,
+                                  content: commentInput,
+                                },
+                                {
+                                  method: "post",
+                                  action: "/resources/create-comment",
+                                }
+                              );
+                              setCommentInput("");
+                            } else {
+                              e.preventDefault();
+                            }
+                          }}
+                        >
+                          Post
+                        </button>
+                      </commentFetcher.Form>
+                    </div>
+
+                    <div className="w-full lg:w-72 flex-shrink-0">
+                      <h3 className="text-sm font-semibold mb-4">Activity</h3>
+                      <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                        {card.activities?.length === 0 ? (
+                          <p className="text-xs text-slate-400 italic">
+                            No activity yet
+                          </p>
+                        ) : (
+                          card.activities.map((act) => (
+                            <div key={act.id} className="flex gap-3 text-xs">
+                              <div className="flex-shrink-0 w-6 h-6 rounded bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] font-black uppercase text-slate-500">
+                                {act.user?.firstName?.[0] || "?"}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-slate-700 dark:text-slate-300">
+                                  <span className="font-bold text-slate-900 dark:text-white">
+                                    {act.user?.firstName || "System"}
+                                  </span>{" "}
+                                  {act.type
+                                    .replace("card_", "")
+                                    .replace("_", " ")}
+                                </p>
+                                {act.content && (
+                                  <p className="text-slate-500 dark:text-slate-400 italic text-[10px] truncate">
+                                    {act.content}
+                                  </p>
+                                )}
+                                <span className="text-[10px] text-slate-400">
+                                  {new Date(act.createdAt).toLocaleTimeString(
+                                    undefined,
+                                    {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                      month: "short",
+                                      day: "numeric",
+                                    }
+                                  )}
+                                </span>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <commentFetcher.Form
-                    method="post"
-                    action="/resources/create-comment"
-                    className="flex flex-col sm:flex-row gap-3"
-                  >
-                    <input type="hidden" name="cardId" value={cardId} />
-                    <Input
-                      type="text"
-                      name="content"
-                      placeholder="Add a comment..."
-                      value={commentInput}
-                      onChange={(e) => setCommentInput(e.target.value)}
-                      className="flex-1 text-sm rounded-xl px-4 py-3 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 transition-all"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && commentInput.trim()) {
-                          commentFetcher.submit(
-                            {
-                              cardId: cardId,
-                              content: commentInput,
-                            },
-                            {
-                              method: "post",
-                              action: "/resources/create-comment",
-                            }
-                          );
-                          setCommentInput("");
-                        }
-                      }}
-                    />
-                    <button
-                      type="submit"
-                      disabled={
-                        !commentInput.trim() ||
-                        commentFetcher.state === "submitting"
-                      }
-                      className="px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-blue-500/20"
-                      onClick={(e) => {
-                        if (commentInput.trim()) {
-                          commentFetcher.submit(
-                            {
-                              cardId: cardId,
-                              content: commentInput,
-                            },
-                            {
-                              method: "post",
-                              action: "/resources/create-comment",
-                            }
-                          );
-                          setCommentInput("");
-                        } else {
-                          e.preventDefault();
-                        }
-                      }}
-                    >
-                      Post
-                    </button>
-                  </commentFetcher.Form>
                 </div>
               </article>
             </div>

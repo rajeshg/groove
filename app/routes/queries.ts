@@ -122,9 +122,28 @@ export async function updateBoard(
   data: { name?: string; color?: string },
   accountId: string
 ) {
-  return prisma.board.update({
-    where: { id: boardId, accountId: accountId },
-    data,
+  return prisma.$transaction(async (tx) => {
+    const board = await tx.board.update({
+      where: { id: boardId, accountId: accountId },
+      data,
+    });
+
+    let content = "";
+    if (data.name && data.color) content = `name to "${data.name}" and color`;
+    else if (data.name) content = `name to "${data.name}"`;
+    else if (data.color) content = "color";
+
+    await tx.activity.create({
+      data: {
+        id: generateId(),
+        type: "board_updated",
+        content: content ? `Updated ${content}` : "Updated settings",
+        boardId,
+        userId: accountId,
+      },
+    });
+
+    return board;
   });
 }
 
@@ -207,8 +226,23 @@ export async function upsertItem(
   }
 
   if (!id) {
-    return prisma.item.create({
-      data: { ...baseData, id: generateId() },
+    const newItemId = generateId();
+    return prisma.$transaction(async (tx) => {
+      const item = await tx.item.create({
+        data: { ...baseData, id: newItemId },
+      });
+
+      await tx.activity.create({
+        data: {
+          id: generateId(),
+          type: "card_created",
+          boardId,
+          itemId: newItemId,
+          userId: accountId,
+        },
+      });
+
+      return item;
     });
   }
 
@@ -220,9 +254,38 @@ export async function upsertItem(
   }
 
   // Simple update with just the id
-  return prisma.item.update({
-    where: { id },
-    data: baseData,
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.item.update({
+      where: { id },
+      data: baseData,
+    });
+
+    let content = "";
+    if (
+      existingItem.title !== updated.title &&
+      existingItem.content !== updated.content
+    ) {
+      content = "Updated title and content";
+    } else if (existingItem.title !== updated.title) {
+      content = `Renamed to "${updated.title}"`;
+    } else if (existingItem.content !== updated.content) {
+      content = "Updated content";
+    }
+
+    if (content) {
+      await tx.activity.create({
+        data: {
+          id: generateId(),
+          type: "card_updated",
+          content,
+          boardId,
+          itemId: id,
+          userId: accountId,
+        },
+      });
+    }
+
+    return updated;
   });
 }
 
@@ -262,9 +325,27 @@ export async function updateColumn(
 
   if (!isOwner && !isMember) throw new Error("Unauthorized");
 
-  return prisma.column.update({
-    where: { id },
-    data,
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.column.update({
+      where: { id },
+      data,
+    });
+
+    if (data.name || data.color) {
+      await tx.activity.create({
+        data: {
+          id: generateId(),
+          type: "column_updated",
+          content: data.name
+            ? `Renamed "${column.name}" to "${data.name}"`
+            : `Updated color for "${column.name}"`,
+          boardId: board.id,
+          userId: accountId,
+        },
+      });
+    }
+
+    return updated;
   });
 }
 
@@ -278,21 +359,35 @@ export async function createColumn(
     where: { boardId, Board: { accountId } },
   });
 
-  return prisma.column.create({
-    data: {
-      id: id || generateId(), // Use provided ID or generate new one
-      Board: { connect: { id: boardId } },
-      name,
-      order: columnCount + 1,
-      isExpanded: true,
-    },
+  return prisma.$transaction(async (tx) => {
+    const column = await tx.column.create({
+      data: {
+        id: id || generateId(), // Use provided ID or generate new one
+        Board: { connect: { id: boardId } },
+        name,
+        order: columnCount + 1,
+        isExpanded: true,
+      },
+    });
+
+    await tx.activity.create({
+      data: {
+        id: generateId(),
+        type: "column_created",
+        content: `Created column "${name}"`,
+        boardId,
+        userId: accountId,
+      },
+    });
+
+    return column;
   });
 }
 
 export async function deleteColumn(
   columnId: string,
   boardId: string,
-  _accountId: string
+  accountId: string
 ) {
   // Get the column to check if it's default
   const column = await prisma.column.findUnique({
@@ -319,16 +414,30 @@ export async function deleteColumn(
     throw new Error("Default column not found");
   }
 
-  // Move all items from the deleted column to the May be column
-  // Touch lastActiveAt since cards are being moved
-  await prisma.item.updateMany({
-    where: { columnId },
-    data: { columnId: mayBeColumn.id, lastActiveAt: new Date() },
-  });
+  return prisma.$transaction(async (tx) => {
+    // Move all items from the deleted column to the May be column
+    // Touch lastActiveAt since cards are being moved
+    await tx.item.updateMany({
+      where: { columnId },
+      data: { columnId: mayBeColumn.id, lastActiveAt: new Date() },
+    });
 
-  // Delete the column
-  return prisma.column.delete({
-    where: { id: columnId },
+    // Delete the column
+    const deleted = await tx.column.delete({
+      where: { id: columnId },
+    });
+
+    await tx.activity.create({
+      data: {
+        id: generateId(),
+        type: "column_deleted",
+        content: `Deleted column "${column.name}"`,
+        boardId,
+        userId: accountId,
+      },
+    });
+
+    return deleted;
   });
 }
 
@@ -374,20 +483,35 @@ export async function createComment(
   }
 
   // Create comment and update lastActiveAt
-  const [comment] = await prisma.$transaction([
-    prisma.comment.create({
+  const [comment] = await prisma.$transaction(async (tx) => {
+    const newComment = await tx.comment.create({
       data: {
         id: generateId(),
         content,
         createdBy,
         itemId,
       },
-    }),
-    prisma.item.update({
+    });
+
+    await tx.item.update({
       where: { id: itemId },
       data: { lastActiveAt: new Date() },
-    }),
-  ]);
+    });
+
+    await tx.activity.create({
+      data: {
+        id: generateId(),
+        type: "comment_added",
+        content:
+          content.length > 50 ? content.substring(0, 47) + "..." : content,
+        boardId: item.boardId,
+        itemId,
+        userId: createdBy,
+      },
+    });
+
+    return [newComment];
+  });
 
   return comment;
 }
@@ -408,7 +532,11 @@ export async function updateComment(
         Board: { accountId },
       },
     },
-    include: { Item: true },
+    include: {
+      Item: {
+        select: { id: true, title: true, boardId: true },
+      },
+    },
   });
 
   if (!comment) {
@@ -429,16 +557,30 @@ export async function updateComment(
   }
 
   // Update comment and card's lastActiveAt
-  const [updatedComment] = await prisma.$transaction([
-    prisma.comment.update({
+  const [updatedComment] = await prisma.$transaction(async (tx) => {
+    const updated = await tx.comment.update({
       where: { id: commentId },
       data: { content },
-    }),
-    prisma.item.update({
+    });
+
+    await tx.item.update({
       where: { id: comment.itemId },
       data: { lastActiveAt: new Date() },
-    }),
-  ]);
+    });
+
+    await tx.activity.create({
+      data: {
+        id: generateId(),
+        type: "comment_updated",
+        content: `Updated a comment on "${comment.Item.title}"`,
+        boardId: comment.Item.boardId,
+        itemId: comment.itemId,
+        userId: accountId,
+      },
+    });
+
+    return [updated];
+  });
 
   return updatedComment;
 }
@@ -453,6 +595,11 @@ export async function deleteComment(commentId: string, accountId: string) {
       id: commentId,
       Item: {
         Board: { accountId },
+      },
+    },
+    include: {
+      Item: {
+        select: { id: true, title: true, boardId: true },
       },
     },
   });
@@ -475,17 +622,89 @@ export async function deleteComment(commentId: string, accountId: string) {
   }
 
   // Delete comment and update card's lastActiveAt
-  await prisma.$transaction([
-    prisma.comment.delete({
+  await prisma.$transaction(async (tx) => {
+    await tx.comment.delete({
       where: { id: commentId },
-    }),
-    prisma.item.update({
+    });
+
+    await tx.item.update({
       where: { id: comment.itemId },
       data: { lastActiveAt: new Date() },
-    }),
-  ]);
+    });
+
+    await tx.activity.create({
+      data: {
+        id: generateId(),
+        type: "comment_deleted",
+        content: `Deleted a comment on "${comment.Item.title}"`,
+        boardId: comment.Item.boardId,
+        itemId: comment.itemId,
+        userId: accountId,
+      },
+    });
+  });
 
   return { success: true };
+}
+
+/**
+ * Get activity feed for a user
+ * Returns items across all joined boards, ordered by last activity
+ */
+export async function getActivityFeed(
+  accountId: string,
+  options: {
+    limit?: number;
+    offset?: number;
+    boardId?: string;
+    type?: string;
+  } = {}
+) {
+  const { limit = 20, offset = 0, boardId, type } = options;
+  const where = {
+    boardId: boardId || undefined,
+    type: type || undefined,
+    board: {
+      OR: [
+        { accountId },
+        {
+          members: {
+            some: {
+              accountId,
+            },
+          },
+        },
+      ],
+    },
+  };
+
+  const [activities, totalCount] = await Promise.all([
+    prisma.activity.findMany({
+      where,
+      include: {
+        board: {
+          select: { id: true, name: true, color: true },
+        },
+        item: {
+          select: {
+            id: true,
+            title: true,
+            columnId: true,
+            Column: { select: { name: true } },
+          },
+        },
+        user: {
+          select: { id: true, firstName: true, lastName: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      skip: offset,
+    }),
+    prisma.activity.count({ where }),
+  ]);
+
+  return { activities, totalCount };
 }
 
 /**
@@ -540,13 +759,27 @@ export async function createBoard(
     throw new Error("Unauthorized: Account not found");
   }
 
-  const board = await prisma.board.create({
-    data: {
-      id: generateId(),
-      name,
-      color,
-      accountId,
-    },
+  const board = await prisma.$transaction(async (tx) => {
+    const newBoard = await tx.board.create({
+      data: {
+        id: generateId(),
+        name,
+        color,
+        accountId,
+      },
+    });
+
+    await tx.activity.create({
+      data: {
+        id: generateId(),
+        type: "board_created",
+        content: `Created board "${name}"`,
+        boardId: newBoard.id,
+        userId: accountId,
+      },
+    });
+
+    return newBoard;
   });
 
   // Create owner as a board member with role 'owner'
@@ -638,13 +871,15 @@ export async function deleteBoard(boardId: string, accountId: string) {
   // Check if user is owner
   const board = await prisma.board.findUnique({
     where: { id: boardId },
-    select: { accountId: true },
+    select: { accountId: true, name: true },
   });
 
   if (board?.accountId !== accountId) {
     throw new Error("Unauthorized: Only owner can delete board");
   }
 
+  // We can't log activity for the board AFTER it's deleted because of the Cascade delete on activities.
+  // We'll skip logging board deletion for now as it's a "hard delete" of the context.
   return prisma.board.delete({
     where: { id: boardId },
   });
@@ -654,11 +889,32 @@ export async function deleteBoard(boardId: string, accountId: string) {
  * Delete a card (item) from a board
  */
 export async function deleteCard(itemId: string, accountId: string) {
-  return prisma.item.delete({
-    where: {
-      id: itemId,
-      Board: { accountId },
-    },
+  const item = await prisma.item.findUnique({
+    where: { id: itemId, Board: { accountId } },
+    select: { title: true, boardId: true },
+  });
+
+  if (!item) throw new Error("Item not found");
+
+  return prisma.$transaction(async (tx) => {
+    const deleted = await tx.item.delete({
+      where: {
+        id: itemId,
+        Board: { accountId },
+      },
+    });
+
+    await tx.activity.create({
+      data: {
+        id: generateId(),
+        type: "card_deleted",
+        content: `Deleted card "${item.title}"`,
+        boardId: item.boardId,
+        userId: accountId,
+      },
+    });
+
+    return deleted;
   });
 }
 
@@ -707,10 +963,34 @@ export async function addBoardMember(
  * Remove a board member
  */
 export async function removeBoardMember(boardId: string, accountId: string) {
-  return prisma.boardMember.delete({
-    where: {
-      accountId_boardId: { accountId, boardId },
-    },
+  return prisma.$transaction(async (tx) => {
+    // Get the member account info for the log before deleting
+    const member = await tx.boardMember.findUnique({
+      where: { accountId_boardId: { accountId, boardId } },
+      include: {
+        Account: { select: { firstName: true, lastName: true, email: true } },
+      },
+    });
+
+    const deleted = await tx.boardMember.delete({
+      where: {
+        accountId_boardId: { accountId, boardId },
+      },
+    });
+
+    if (member) {
+      await tx.activity.create({
+        data: {
+          id: generateId(),
+          type: "member_removed",
+          content: `Removed ${member.Account.firstName || member.Account.email} from the board`,
+          boardId,
+          userId: accountId, // This might be the board owner or the person performing the removal
+        },
+      });
+    }
+
+    return deleted;
   });
 }
 
@@ -737,15 +1017,29 @@ export async function inviteUserToBoard(
   invitedBy: string,
   role: string = "editor"
 ) {
-  return prisma.boardInvitation.create({
-    data: {
-      id: generateId(),
-      boardId,
-      email,
-      invitedBy,
-      role,
-      status: "pending",
-    },
+  return prisma.$transaction(async (tx) => {
+    const invitation = await tx.boardInvitation.create({
+      data: {
+        id: generateId(),
+        boardId,
+        email,
+        invitedBy,
+        role,
+        status: "pending",
+      },
+    });
+
+    await tx.activity.create({
+      data: {
+        id: generateId(),
+        type: "member_invited",
+        content: `Invited ${email} to join the board`,
+        boardId,
+        userId: invitedBy,
+      },
+    });
+
+    return invitation;
   });
 }
 
@@ -787,33 +1081,45 @@ export async function acceptBoardInvitation(
     );
   }
 
-  // Create board member record
-  await prisma.boardMember.create({
-    data: {
-      id: generateId(),
-      boardId: invitation.boardId,
-      accountId: userId,
-      role: invitation.role,
-    },
+  return prisma.$transaction(async (tx) => {
+    // Create board member record
+    await tx.boardMember.create({
+      data: {
+        id: generateId(),
+        boardId: invitation.boardId,
+        accountId: userId,
+        role: invitation.role,
+      },
+    });
+
+    // Get or create assignee for the user
+    const account = await tx.account.findUnique({
+      where: { id: userId },
+      select: { email: true },
+    });
+
+    if (account?.email) {
+      await ensureAssigneeForUser(invitation.boardId, userId, account.email);
+    }
+
+    // Mark invitation as accepted
+    await tx.boardInvitation.update({
+      where: { id: invitationId },
+      data: { status: "accepted" },
+    });
+
+    await tx.activity.create({
+      data: {
+        id: generateId(),
+        type: "member_joined",
+        content: `Joined the board`,
+        boardId: invitation.boardId,
+        userId: userId,
+      },
+    });
+
+    return { success: true };
   });
-
-  // Get or create assignee for the user
-  const account = await prisma.account.findUnique({
-    where: { id: userId },
-    select: { email: true },
-  });
-
-  if (account?.email) {
-    await ensureAssigneeForUser(invitation.boardId, userId, account.email);
-  }
-
-  // Mark invitation as accepted
-  await prisma.boardInvitation.update({
-    where: { id: invitationId },
-    data: { status: "accepted" },
-  });
-
-  return { success: true };
 }
 
 /**
@@ -899,7 +1205,7 @@ export async function updateItemAssignee(
   // Verify user has access to this item
   const item = await prisma.item.findUnique({
     where: { id: itemId },
-    include: { Board: true },
+    include: { Board: true, Assignee: true },
   });
 
   if (!item) {
@@ -911,14 +1217,36 @@ export async function updateItemAssignee(
     throw new Error("Unauthorized: Not a board member");
   }
 
-  // Update item with new assignee
-  return prisma.item.update({
-    where: { id: itemId },
-    data: { assigneeId },
-    include: {
-      Assignee: {
-        select: { id: true, name: true, userId: true },
+  return prisma.$transaction(async (tx) => {
+    // Update item with new assignee
+    const updatedItem = await tx.item.update({
+      where: { id: itemId },
+      data: { assigneeId, lastActiveAt: new Date() },
+      include: {
+        Assignee: {
+          select: { id: true, name: true, userId: true },
+        },
       },
-    },
+    });
+
+    let content = "";
+    if (!assigneeId) {
+      content = "Removed assignee";
+    } else if (updatedItem.Assignee) {
+      content = `Assigned to ${updatedItem.Assignee.name}`;
+    }
+
+    await tx.activity.create({
+      data: {
+        id: generateId(),
+        type: "card_assigned",
+        content,
+        boardId: item.boardId,
+        itemId: itemId,
+        userId: accountId,
+      },
+    });
+
+    return updatedItem;
   });
 }

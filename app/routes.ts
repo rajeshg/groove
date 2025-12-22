@@ -17,6 +17,7 @@ export default [
   route("card/:cardId", "routes/card.$cardId.tsx"),
   route("board/:id/column/:columnId", "routes/board.$id.column.$columnId.tsx"),
   route("profile", "routes/profile.tsx"),
+  route("new-board", "routes/new-board.tsx"),
   route("me/assigned", "routes/me.assigned.tsx"),
   route("me/created", "routes/me.created.tsx"),
 
