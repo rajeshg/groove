@@ -1,31 +1,23 @@
+node_modules
+package-lock.json
+yarn.lock
+
 .DS_Store
+.cache
 .env
-.env.production
-/node_modules/
-
-# Databases
-*.db
-*.db-journal
-*.sqlite
-*.sqlite-journal
-/data/
-
-# React Router
-/.react-router/
+.vercel
+.output
+.nitro
 /build/
-/prisma/dev.db*
-/prisma/data/
-/prisma/generated/
-
-# Test outputs (all generated test artifacts)
-test-output/
-test-results/
-playwright-report/
-
-# Test databases
-tests/**/*.db
-prisma/data/test-*.db
-
-# Nginx certificates (generated, not committed)
-/nginx/certs/
+/api/
+/server/build
+/public/build# Sentry Config File
+.env.sentry-build-plugin
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+.tanstack
+dist
+*.db
 

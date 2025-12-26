@@ -1,60 +1,47 @@
-# Multi-stage build for optimized production image
-# Stage 1: Install production dependencies only (can be cached separately)
-FROM node:20-slim AS prod-deps
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+# Multi-stage build for TanStack Start app
+FROM node:20-slim AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
 
-# Stage 2: Install development dependencies (separate for better caching)
-FROM node:20-slim AS dev-deps
+# Stage 1: Install dependencies
+FROM base AS deps
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci && npm cache clean --force
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
-# Stage 3: Build application with Prisma generation
-FROM dev-deps AS builder
+# Stage 2: Build the application
+FROM base AS builder
 WORKDIR /app
-COPY prisma ./prisma
-COPY prisma.config.ts ./
-# Set DATABASE_URL for Prisma generation (points to the fixed path)
-ENV DATABASE_URL=file:./prisma/data/data.db
-# Generate Prisma client
-RUN npx prisma generate
-# Copy source and build
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN npm run build
+# Set environment for build
+ENV NODE_ENV=production
+RUN pnpm build
 
-# Stage 5: Final production image (Debian slim for full glibc support with native bindings)
-FROM node:20-slim
-
-# Install OpenSSL and curl
-RUN apt-get update -y && apt-get install -y openssl curl && rm -rf /var/lib/apt/lists/*
+# Stage 3: Production image
+FROM base AS runner
+WORKDIR /app
 
 LABEL org.opencontainers.image.title="Groove" \
       org.opencontainers.image.description="Simplified Trello-like kanban board"
 
-# Create app directory
-WORKDIR /app
-
-# Add non-root user for security (Debian format)
+# Create a non-root user
 RUN groupadd -g 1001 nodejs && useradd -u 1001 -g nodejs groove
 
-# Copy only necessary files from previous stages
-COPY --chown=groove:nodejs package*.json ./
-COPY --from=prod-deps /app/node_modules ./node_modules
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/build ./build
-COPY --chown=groove:nodejs prisma ./prisma
-COPY --chown=groove:nodejs prisma.config.ts ./
+# Copy necessary files
+COPY --from=builder --chown=groove:nodejs /app/dist ./dist
+COPY --from=builder --chown=groove:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=groove:nodejs /app/drizzle ./drizzle
+COPY --from=builder --chown=groove:nodejs /app/drizzle.config.ts ./drizzle.config.ts
 
-# Create directory for persistent database storage
-RUN mkdir -p /app/prisma/data && chown -R groove:nodejs /app/prisma/data /app/node_modules/@prisma && chmod 755 /app/prisma/data
+# Create directory for SQLite storage
+RUN mkdir -p /app/data && chown -R groove:nodejs /app/data && chmod 755 /app/data
 
 # Set environment
 ENV NODE_ENV=production
-
-# Volume mount point for database persistence
-VOLUME ["/app/prisma/data"]
+ENV PORT=3000
+ENV DATABASE_URL=file:/app/data/groove.db
 
 # Expose port
 EXPOSE 3000
@@ -62,9 +49,9 @@ EXPOSE 3000
 # Switch to non-root user
 USER groove
 
-# Health check - faster startup period since migrations run on first start
+# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
   CMD node -e "const http=require('http');http.get('http://localhost:3000',(r)=>{if(r.statusCode!==200)throw new Error(r.statusCode)}).on('error',()=>process.exit(1))"
 
-# Startup sequence with proper environment variables
-CMD ["sh", "-c", "DATABASE_URL=file:/app/prisma/data/data.db npm run db:migrate:prod && npm run start"]
+# Startup command: Run migrations then start the server
+CMD ["sh", "-c", "pnpm drizzle-kit migrate && node dist/server/server.js"]

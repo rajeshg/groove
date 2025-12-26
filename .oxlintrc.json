@@ -1,15 +1,30 @@
 {
-  "$schema": "https://oxc.rs/schema/oxlint.json",
-  "extends": ["oxc/recommended"],
+  "env": {
+    "node": true,
+    "browser": true,
+    "es2021": true
+  },
+  "extends": ["plugin:react/recommended", "plugin:react-hooks/recommended"],
+  "settings": {
+    "react": {
+      "version": "19.0"
+    }
+  },
   "rules": {
-    "typescript/no-explicit-any": "warn"
+    "no-console": ["warn", { "allow": ["warn", "error", "log"] }],
+    "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+    "react/react-in-jsx-scope": "off",
+    "react/prop-types": "off"
   },
   "ignorePatterns": [
-    "dist",
-    "build",
     "node_modules",
-    ".git",
-    ".vscode",
-    ".idea"
+    "dist",
+    ".next",
+    "build",
+    "coverage",
+    "drizzle",
+    ".output",
+    "*.min.js",
+    "routeTree.gen.ts"
   ]
 }

@@ -1,0 +1,62 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1766495897879,
+      "tag": "0000_spicy_naoko",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1766533637749,
+      "tag": "0001_steady_captain_midlands",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1766594926403,
+      "tag": "0002_mature_magma",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1766619676723,
+      "tag": "0003_watery_vulcan",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1766628032138,
+      "tag": "0004_optimal_talon",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1766629755246,
+      "tag": "0005_mushy_nitro",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1766632143683,
+      "tag": "0006_sticky_lord_hawal",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1766675174785,
+      "tag": "0007_workable_the_initiative",
+      "breakpoints": true
+    }
+  ]
+}

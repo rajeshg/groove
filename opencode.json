@@ -1,0 +1,75 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "anthropic/claude-sonnet-4-5",
+  "small_model": "anthropic/claude-haiku-4-5",
+  "theme": "opencode",
+  "autoupdate": true,
+  "instructions": ["ARCHITECTURE.md", "DATABASE.md"],
+  "formatter": {
+    "oxfmt": {
+      "command": ["pnpm", "format"],
+      "extensions": [".ts", ".tsx", ".js", ".jsx", ".json", ".jsonc"]
+    },
+    "oxlint": {
+      "command": ["pnpm", "lint:fix"],
+      "extensions": [".ts", ".tsx", ".js", ".jsx"]
+    }
+  },
+  "command": {
+    "validate": {
+      "template": "Run full validation: linting, type-checking, and formatting",
+      "description": "Validate code quality",
+      "agent": "build"
+    },
+    "dev": {
+      "template": "Start development server at http://localhost:3000",
+      "description": "Start dev server",
+      "agent": "build"
+    },
+    "build": {
+      "template": "Build the application for production",
+      "description": "Build project",
+      "agent": "build"
+    },
+    "db-migrate": {
+      "template": "Generate and run database migrations using drizzle-kit",
+      "description": "Run database migrations",
+      "agent": "build"
+    },
+    "db-studio": {
+      "template": "Open Drizzle Studio to view and manage the database at the browser",
+      "description": "Open database studio",
+      "agent": "build"
+    }
+  },
+  "tools": {
+    "bash": true,
+    "read": true,
+    "write": true,
+    "edit": true,
+    "glob": true,
+    "grep": true
+  },
+  "permission": {
+    "bash": {
+      "git commit": "ask",
+      "git push": "ask",
+      "git rebase": "ask",
+      "git reset": "ask",
+      "git merge": "ask"
+    },
+    "write": "allow",
+    "edit": "allow"
+  },
+  "agent": {
+    "explore": {
+      "description": "Fast codebase exploration and analysis",
+      "model": "anthropic/claude-haiku-4-5"
+    },
+    "code-reviewer": {
+      "description": "Reviews code for best practices, security, and TypeScript types",
+      "model": "anthropic/claude-sonnet-4-5",
+      "prompt": "You are an expert code reviewer for TypeScript and React projects. Focus on: 1) Type safety and proper TypeScript usage, 2) React best practices and hooks, 3) Security issues (especially in server actions and API routes), 4) Performance implications, 5) Code organization and maintainability. Provide specific, actionable feedback."
+    }
+  }
+}
