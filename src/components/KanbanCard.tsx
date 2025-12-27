@@ -129,7 +129,7 @@ export function KanbanCard({
             className="flex-1 cursor-pointer select-none"
             onClick={handleCardClick}
           >
-            <h4 className="font-medium text-slate-900 dark:text-slate-100 text-sm leading-tight hover:text-blue-600 transition-colors">
+            <h4 className="font-medium text-slate-900 dark:text-slate-100 text-sm leading-tight hover:text-blue-600 transition-colors break-words line-clamp-2">
               {title}
             </h4>
             {content && (

@@ -28,7 +28,6 @@ function ColumnDetailPage() {
   const { user } = useAuth();
   const [showNewCardForm, setShowNewCardForm] = useState(false);
   const [newCardTitle, setNewCardTitle] = useState("");
-  const [newCardContent, setNewCardContent] = useState("");
   const [isSubmittingCard, setIsSubmittingCard] = useState(false);
 
   // Live query for board
@@ -98,7 +97,7 @@ function ColumnDetailPage() {
         boardId,
         columnId,
         title: newCardTitle,
-        content: newCardContent || null,
+        content: null,
         order: nextOrder,
         createdBy: user.id,
         assigneeId: null,
@@ -109,7 +108,6 @@ function ColumnDetailPage() {
 
       toast.success("Card created!");
       setNewCardTitle("");
-      setNewCardContent("");
       setShowNewCardForm(false);
     } catch (err) {
       toast.error("Failed to create card");
@@ -237,18 +235,9 @@ function ColumnDetailPage() {
                   autoFocus
                   disabled={isSubmittingCard}
                 />
-                <textarea
-                  value={newCardContent}
-                  onChange={(e) => setNewCardContent(e.target.value)}
-                  placeholder="Card description (optional)..."
-                  rows={3}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                  disabled={isSubmittingCard}
-                />
                 <div className="flex flex-col sm:flex-row gap-2">
                   <Button
                     type="submit"
-                    size="sm"
                     disabled={isSubmittingCard}
                     className="flex-1 w-full"
                   >
@@ -257,11 +246,9 @@ function ColumnDetailPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    size="sm"
                     onClick={() => {
                       setShowNewCardForm(false);
                       setNewCardTitle("");
-                      setNewCardContent("");
                     }}
                     disabled={isSubmittingCard}
                     className="flex-1 w-full"

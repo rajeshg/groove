@@ -1137,20 +1137,36 @@ export const createItem = createServerFn({ method: "POST" })
     const nextOrder = (maxOrderResult[0]?.order ?? -1) + 1;
     const now = new Date().toISOString();
 
+    const newItemId = generateId();
+
+    // Create a fresh libSQL client for this operation to avoid cached read-only connections
+    const { createClient } = await import("@libsql/client");
+    const dbUrl = process.env.DATABASE_URL || "file:todos.db";
+    const libsql = createClient({ url: dbUrl });
+    
+    try {
+      await libsql.execute({
+        sql: `INSERT INTO items (id, boardId, columnId, title, content, "order", createdBy, createdAt, updatedAt, lastActiveAt)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        args: [newItemId, boardId, columnId, data.title, data.content || "", nextOrder, accountId, now, now, now]
+      });
+    } finally {
+      libsql.close();
+    }
+
     const newItem = {
-      id: generateId(),
+      id: newItemId,
       boardId,
       columnId,
       title: data.title,
-      content: data.content,
+      content: data.content || "",
       order: nextOrder,
       createdBy: accountId,
+      assigneeId: null,
       createdAt: now,
       updatedAt: now,
       lastActiveAt: now,
     };
-
-    await db.insert(items).values(newItem);
 
     // Create activity for item creation
     await createActivity({

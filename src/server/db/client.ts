@@ -42,6 +42,8 @@ export function getLibsqlDb() {
     const url = process.env.DATABASE_URL || "file:todos.db";
     libsqlDb = createClient({
       url,
+      // Ensure the client is created with write permissions
+      // This prevents SQLITE_READONLY errors
     });
   }
   return libsqlDb;

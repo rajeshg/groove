@@ -191,7 +191,7 @@ export function KanbanColumn({
   // Expanded view
   return (
     <div
-      className={`flex flex-col h-full rounded-lg p-4 min-w-80 shadow-sm transition-all bg-slate-100/50 dark:bg-slate-900/50 border-2 ${isColumnDragOver ? "border-blue-500 bg-blue-50/30 dark:bg-blue-900/20" : "border-transparent"} hover:shadow-md`}
+      className={`flex flex-col h-full rounded-lg p-4 min-w-80 max-w-96 shadow-sm transition-all bg-slate-100/50 dark:bg-slate-900/50 border-2 ${isColumnDragOver ? "border-blue-500 bg-blue-50/30 dark:bg-blue-900/20" : "border-transparent"} hover:shadow-md`}
       onDragOver={(e) => {
         if (!e.dataTransfer.types.includes(CONTENT_TYPES.card)) return;
         e.preventDefault();
