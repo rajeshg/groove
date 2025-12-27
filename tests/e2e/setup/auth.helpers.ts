@@ -29,60 +29,16 @@ export async function signupUser(
   page: Page,
   user: { email: string; password: string; firstName: string; lastName: string }
 ) {
-  // Navigate to signup with domcontentloaded (faster than networkidle)
-  // This ensures HTML is parsed but doesn't wait for all network requests
-  await page.goto("/signup", { waitUntil: "domcontentloaded", timeout: 30000 });
+  // Clear any existing state to ensure we're not logged in
+  await page.context().clearCookies();
+  await page.goto("/signup", { waitUntil: "domcontentloaded" });
 
-  // Add extra delay to let React mount and AuthProvider check auth status
-  // This is the key: AuthProvider needs time to run getCurrentUser() and set isLoading=false
-  await page.waitForTimeout(1500);
-
-  // Wait for the form to be visible
-  // Use shorter timeout first, with retry mechanism
+  // Wait for the form to be visible and enabled
   const firstNameSelector = "input#firstName";
-  let formVisible = false;
+  await page.waitForSelector(firstNameSelector, { timeout: 15000 });
 
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      // Check if page is still valid (not closed)
-      if (page.isClosed()) {
-        throw new Error("Page was closed before form could be found");
-      }
-
-      // Use waitForFunction to check if input exists and is visible in DOM
-      await page.waitForFunction(
-        (selector) => {
-          const el = document.querySelector(selector) as HTMLInputElement;
-          return el !== null && el.offsetParent !== null;
-        },
-        firstNameSelector,
-        { timeout: 5000 }
-      );
-      formVisible = true;
-      break;
-    } catch (error) {
-      if (page.isClosed()) {
-        throw new Error("Page was closed during signup form wait");
-      }
-      if (attempt < 2) {
-        console.warn(`Form not visible on attempt ${attempt + 1}, retrying...`);
-        // Use a shorter timeout in retry logic
-        try {
-          await page.waitForTimeout(500);
-        } catch {
-          // Ignore timeout errors during retry waits
-        }
-      } else {
-        console.error("Form visibility check failed:", error);
-      }
-    }
-  }
-
-  if (!formVisible) {
-    throw new Error(
-      `Signup form not visible after 3 attempts on ${page.url()}`
-    );
-  }
+  // Wait a bit for any loading states to clear
+  await page.waitForTimeout(1000);
 
   // Fill the form
   await page.locator(firstNameSelector).fill(user.firstName);
@@ -90,18 +46,21 @@ export async function signupUser(
   await page.locator("input#email").fill(user.email);
   await page.locator("input#password").fill(user.password);
 
+  // Wait for the signup API response
+  const responsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/auth/signup") && response.status() === 201,
+    { timeout: 15000 }
+  );
+
   // Submit
   await page.click('button[type="submit"]');
 
+  // Wait for successful signup response
+  await responsePromise;
+
   // Wait for navigation to complete - page goes to / after signup
-  try {
-    await page.waitForURL("/", { timeout: 15000 });
-  } catch (error) {
-    if (page.isClosed()) {
-      throw new Error("Page closed after signup submission");
-    }
-    console.warn("Navigation to home failed:", error);
-  }
+  await page.waitForURL("/", { timeout: 15000 });
 
   // Add a small delay to let page fully settle
   await page.waitForTimeout(500);

@@ -147,22 +147,22 @@ export const boardsCollection = createCollection(
       const accountId = getAccountId();
 
       if (!accountId) {
-        throw new Error("Account ID is required to create a board");
+        throw new Error("Account ID is required");
       }
 
       try {
-        await createBoard({
+        const result = await createBoard({
           data: {
             accountId,
             data: {
               name: modified.name,
               color: modified.color || "#3b82f6",
-              template: modified.template || "Workflow",
+              template: modified.template,
             },
           },
         });
-        // Invalidate query to refetch boards
         queryClient.invalidateQueries({ queryKey: ["boards"] });
+        return result;
       } catch (error) {
         console.error("Failed to create board:", error);
         throw error;
@@ -173,24 +173,22 @@ export const boardsCollection = createCollection(
       const accountId = getAccountId();
 
       if (!accountId) {
-        console.error("Account ID not available for board update");
-        return;
+        throw new Error("Account ID is required");
       }
 
-      const updateData: any = {};
-      if (changes.name !== undefined) updateData.name = changes.name;
-      if (changes.color !== undefined) updateData.color = changes.color;
-
       try {
-        await updateBoard({
+        const result = await updateBoard({
           data: {
             accountId,
             boardId: key,
-            data: updateData,
+            data: {
+              name: changes.name,
+              color: changes.color,
+            },
           },
         });
-        // Invalidate query to refetch boards
         queryClient.invalidateQueries({ queryKey: ["boards"] });
+        return result;
       } catch (error) {
         console.error("Failed to update board:", error);
         throw error;
@@ -201,8 +199,7 @@ export const boardsCollection = createCollection(
       const accountId = getAccountId();
 
       if (!accountId) {
-        console.error("Account ID not available for board delete");
-        return;
+        throw new Error("Account ID is required");
       }
 
       try {
@@ -212,7 +209,6 @@ export const boardsCollection = createCollection(
             boardId: key,
           },
         });
-        // Invalidate query to refetch boards
         queryClient.invalidateQueries({ queryKey: ["boards"] });
       } catch (error) {
         console.error("Failed to delete board:", error);

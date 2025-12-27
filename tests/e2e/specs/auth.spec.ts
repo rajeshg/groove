@@ -14,17 +14,39 @@ test.describe("Authentication & User Management", () => {
 
       await page.goto("/signup");
 
+      // Wait for form to be ready
+      await page.waitForSelector("input#firstName", { timeout: 15000 });
+      await page.waitForTimeout(1000); // Wait for any loading states
+
       // Fill in signup form
-      await page.fill("input#email", user.email);
-      await page.fill("input#password", user.password);
       await page.fill("input#firstName", user.firstName);
       await page.fill("input#lastName", user.lastName);
+      await page.fill("input#email", user.email);
+      await page.fill("input#password", user.password);
+
+      // Wait for the signup API response
+      const responsePromise = page.waitForResponse(
+        (response) => response.url().includes("/api/auth/signup"),
+        { timeout: 15000 }
+      );
 
       // Submit form
       await page.click('button[type="submit"]');
 
-      // Should redirect to home/boards page
-      await page.waitForURL("/", { timeout: 10000 });
+      // Wait for API response
+      const response = await responsePromise;
+
+      // If response is successful, wait for redirect
+      if (response.status() === 201) {
+        // Should redirect to home/boards page
+        await page.waitForURL("/", { timeout: 10000 });
+      } else {
+        const responseData = await response.json();
+        console.error("Signup failed:", responseData);
+        throw new Error(
+          `Signup failed with status ${response.status()}: ${JSON.stringify(responseData)}`
+        );
+      }
 
       // User should be authenticated - check for user menu or boards page
       const isOnBoardsPage =
@@ -116,9 +138,22 @@ test.describe("Authentication & User Management", () => {
 
       // Now log in manually (not using loginUser helper)
       await page.goto("/login");
+
+      // Wait for form to be ready
+      await page.waitForSelector("input#email", { timeout: 10000 });
+      await page.waitForSelector("input#password", { timeout: 10000 });
+
       await page.fill("input#email", user.email);
       await page.fill("input#password", user.password);
-      await page.click('button[type="submit"]');
+
+      // Set up response listener and click in parallel
+      await Promise.all([
+        page.waitForResponse(
+          (response) => response.url().includes("/api/auth/login"),
+          { timeout: 10000 }
+        ),
+        page.click('button[type="submit"]'),
+      ]);
 
       // Wait for redirect to home page after login
       await page.waitForURL("/", { timeout: 10000 });
@@ -130,21 +165,25 @@ test.describe("Authentication & User Management", () => {
     });
 
     test("should show error for incorrect credentials", async ({ page }) => {
-      await page.goto("/login");
+      await page.goto("/login", { waitUntil: "networkidle" });
+
+      // Wait for form to be ready and fully loaded
+      await page.waitForLoadState("domcontentloaded");
+      await page.waitForSelector("input#email", { timeout: 10000 });
+      await page.waitForSelector("input#password", { timeout: 10000 });
+      await page.waitForSelector('button[type="submit"]', { timeout: 10000 });
 
       await page.fill("input#email", "nonexistent@example.com");
       await page.fill("input#password", "WrongPassword123!");
 
-      // Wait for the login API response
-      const responsePromise = page.waitForResponse(
-        (response) => response.url().includes("/api/auth/login"),
-        { timeout: 5000 }
-      );
-
-      await page.click('button[type="submit"]');
-
-      // Wait for the error response
-      await responsePromise;
+      // Set up response listener and click in parallel
+      await Promise.all([
+        page.waitForResponse(
+          (response) => response.url().includes("/api/auth/login"),
+          { timeout: 10000 }
+        ),
+        page.click('button[type="submit"]'),
+      ]);
 
       // Wait for the error to be rendered
       await page.waitForTimeout(1000);
@@ -154,17 +193,20 @@ test.describe("Authentication & User Management", () => {
         .locator("text=/invalid/i")
         .isVisible()
         .catch(() => false);
+
       const hasToastError = await page
         .locator('[role="status"], .sonner-toast')
         .locator("text=/invalid/i")
         .isVisible()
         .catch(() => false);
-      const hasTestIdError = await page
+
+      const hasDataTestIdError = await page
         .locator('[data-testid="login-error"]')
         .isVisible()
         .catch(() => false);
 
-      expect(hasInlineError || hasToastError || hasTestIdError).toBeTruthy();
+      // At least one error should be visible
+      expect(hasInlineError || hasToastError || hasDataTestIdError).toBe(true);
     });
 
     test("should redirect authenticated user from login page to home", async ({

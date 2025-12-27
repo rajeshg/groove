@@ -13,11 +13,8 @@ import {
 } from "~/server/db/schema";
 import { eq, and, desc, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { getBoardTemplate } from "~/constants/templates";
 import { generateId } from "~/lib/id";
 import {
-  CreateBoardSchema,
-  UpdateBoardSchema,
   CreateColumnSchema,
   UpdateColumnSchema,
   CreateItemSchema,
@@ -32,6 +29,160 @@ import { sendBoardInvitationEmail } from "~/lib/email";
 // ============================================================================
 // Board Server Functions
 // ============================================================================
+
+/**
+ * Create a new board with optional template
+ */
+export const createBoard = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      accountId: z.string(),
+      data: z.object({
+        name: z.string(),
+        color: z.string().optional(),
+        template: z.string().optional(),
+      }),
+    })
+  )
+  .handler(async ({ data: { accountId, data } }) => {
+    const db = getDb();
+    const boardId = generateId();
+    const now = new Date().toISOString();
+
+    // Create board
+    const newBoard = {
+      id: boardId,
+      accountId,
+      name: data.name,
+      color: data.color || "#3b82f6",
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    await db.insert(boards).values(newBoard);
+
+    // Create board member (owner)
+    await db.insert(boardMembers).values({
+      id: generateId(),
+      boardId,
+      accountId,
+      role: "owner",
+      createdAt: now,
+    });
+
+    // Create template columns if specified
+    if (data.template) {
+      const { getBoardTemplate } = await import("~/constants/templates");
+      const template = getBoardTemplate(data.template);
+      if (template) {
+        for (const col of template.columns) {
+          await db.insert(columns).values({
+            id: generateId(),
+            boardId,
+            name: col.name,
+            color: col.color,
+            order: col.order,
+            isDefault: col.isDefault,
+            isExpanded: col.isExpanded ?? true,
+            shortcut: col.shortcut || null,
+            createdAt: now,
+            updatedAt: now,
+          });
+        }
+      }
+    }
+
+    return newBoard;
+  });
+
+/**
+ * Update an existing board
+ */
+export const updateBoard = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      accountId: z.string(),
+      boardId: z.string(),
+      data: z.object({
+        name: z.string().optional(),
+        color: z.string().optional(),
+      }),
+    })
+  )
+  .handler(async ({ data: { accountId, boardId, data } }) => {
+    const db = getDb();
+
+    // Verify access
+    const boardAccess = await db
+      .select({ role: boardMembers.role })
+      .from(boardMembers)
+      .where(
+        and(
+          eq(boardMembers.boardId, boardId),
+          eq(boardMembers.accountId, accountId)
+        )
+      )
+      .limit(1);
+
+    if (!boardAccess[0] || boardAccess[0].role !== "owner") {
+      throw new Error("Only board owners can update boards");
+    }
+
+    const now = new Date().toISOString();
+    await db
+      .update(boards)
+      .set({
+        ...data,
+        updatedAt: now,
+      })
+      .where(eq(boards.id, boardId));
+
+    const updated = await db
+      .select()
+      .from(boards)
+      .where(eq(boards.id, boardId))
+      .limit(1);
+
+    return updated[0];
+  });
+
+/**
+ * Delete a board (owner only)
+ */
+export const deleteBoard = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      accountId: z.string(),
+      boardId: z.string(),
+    })
+  )
+  .handler(async ({ data: { accountId, boardId } }) => {
+    const db = getDb();
+
+    // Verify access
+    const boardAccess = await db
+      .select({ role: boardMembers.role })
+      .from(boardMembers)
+      .where(
+        and(
+          eq(boardMembers.boardId, boardId),
+          eq(boardMembers.accountId, accountId)
+        )
+      )
+      .limit(1);
+
+    if (!boardAccess[0] || boardAccess[0].role !== "owner") {
+      throw new Error("Only board owners can delete boards");
+    }
+
+    // Delete all items, columns and activities
+    await db.delete(items).where(eq(items.boardId, boardId));
+    await db.delete(columns).where(eq(columns.boardId, boardId));
+    await db.delete(activities).where(eq(activities.boardId, boardId));
+    await db.delete(boards).where(eq(boards.id, boardId));
+
+    return { success: true };
+  });
 
 /**
  * Get all boards for the current user
@@ -156,7 +307,7 @@ export const getAllComments = createServerFn({ method: "GET" })
   });
 
 /**
- * Get a single board with all its columns and items
+ * Get a single board with details
  */
 export const getBoard = createServerFn({ method: "GET" })
   .inputValidator(
@@ -168,218 +319,34 @@ export const getBoard = createServerFn({ method: "GET" })
   .handler(async ({ data: { accountId, boardId } }) => {
     const db = getDb();
 
-    // Verify ownership
+    // Verify access
+    const boardAccess = await db
+      .select({ role: boardMembers.role })
+      .from(boardMembers)
+      .where(
+        and(
+          eq(boardMembers.boardId, boardId),
+          eq(boardMembers.accountId, accountId)
+        )
+      )
+      .limit(1);
+
+    if (!boardAccess[0]) {
+      throw new Error("Board not found or unauthorized");
+    }
+
+    // Get board
     const board = await db
       .select()
       .from(boards)
-      .where(and(eq(boards.id, boardId), eq(boards.accountId, accountId)))
+      .where(eq(boards.id, boardId))
       .limit(1);
 
     if (!board[0]) {
       throw new Error("Board not found");
     }
 
-    // Get columns
-    const boardColumns = await db
-      .select()
-      .from(columns)
-      .where(eq(columns.boardId, boardId))
-      .orderBy((c) => c.order);
-
-    // Get items for all columns
-    const boardItems = await db
-      .select()
-      .from(items)
-      .where(eq(items.boardId, boardId))
-      .orderBy((i) => i.order);
-
-    return {
-      board: board[0],
-      columns: boardColumns,
-      items: boardItems,
-    };
-  });
-
-/**
- * Create a new board
- */
-export const createBoard = createServerFn({ method: "POST" })
-  .inputValidator(
-    z.object({
-      accountId: z.string(),
-      data: CreateBoardSchema,
-    })
-  )
-  .handler(async ({ data: { accountId, data } }) => {
-    const db = getDb();
-    const boardId = generateId();
-    const now = new Date().toISOString();
-
-    const newBoard = {
-      id: boardId,
-      accountId,
-      name: data.name,
-      color: data.color,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    await db.insert(boards).values(newBoard);
-
-    // Add board owner as a member with "owner" role
-    await db.insert(boardMembers).values({
-      id: generateId(),
-      boardId,
-      accountId,
-      role: "owner",
-      createdAt: now,
-    });
-
-    // Get template columns or use defaults
-    let columnsToCreate: Array<{
-      name: string;
-      color: string;
-      order: number;
-      isDefault: boolean;
-      isExpanded?: boolean;
-      shortcut?: string | null;
-    }> = [];
-
-    if (data.template) {
-      const template = getBoardTemplate(data.template);
-      if (template) {
-        columnsToCreate = template.columns.map((col) => ({
-          name: col.name,
-          color: col.color,
-          order: col.order,
-          isDefault: col.isDefault,
-          isExpanded: col.isExpanded,
-          shortcut: col.shortcut || null,
-        }));
-      }
-    }
-
-    // Fallback to default columns if no template
-    if (columnsToCreate.length === 0) {
-      columnsToCreate = [
-        {
-          name: "Todo",
-          color: "red",
-          order: 0,
-          isDefault: true,
-          isExpanded: true,
-          shortcut: null,
-        },
-        {
-          name: "In Progress",
-          color: "yellow",
-          order: 1,
-          isDefault: true,
-          isExpanded: true,
-          shortcut: null,
-        },
-        {
-          name: "Done",
-          color: "green",
-          order: 2,
-          isDefault: true,
-          isExpanded: true,
-          shortcut: null,
-        },
-      ];
-    }
-
-    for (const col of columnsToCreate) {
-      await db.insert(columns).values({
-        id: generateId(),
-        boardId,
-        name: col.name,
-        color: col.color,
-        order: col.order,
-        isDefault: col.isDefault,
-        isExpanded: col.isExpanded ?? true,
-        shortcut: col.shortcut,
-        createdAt: now,
-        updatedAt: now,
-      });
-    }
-
-    return newBoard;
-  });
-
-/**
- * Update a board
- */
-export const updateBoard = createServerFn({ method: "POST" })
-  .inputValidator(
-    z.object({
-      accountId: z.string(),
-      boardId: z.string(),
-      data: UpdateBoardSchema,
-    })
-  )
-  .handler(async ({ data: { accountId, boardId, data } }) => {
-    const db = getDb();
-
-    // Verify ownership
-    const existing = await db
-      .select()
-      .from(boards)
-      .where(and(eq(boards.id, boardId), eq(boards.accountId, accountId)))
-      .limit(1);
-
-    if (!existing[0]) {
-      throw new Error("Board not found");
-    }
-
-    const now = new Date().toISOString();
-    await db
-      .update(boards)
-      .set({
-        ...data,
-        updatedAt: now,
-      })
-      .where(eq(boards.id, boardId));
-
-    const updated = await db
-      .select()
-      .from(boards)
-      .where(eq(boards.id, boardId))
-      .limit(1);
-    return updated[0];
-  });
-
-/**
- * Delete a board
- */
-export const deleteBoard = createServerFn({ method: "POST" })
-  .inputValidator(
-    z.object({
-      accountId: z.string(),
-      boardId: z.string(),
-    })
-  )
-  .handler(async ({ data: { accountId, boardId } }) => {
-    const db = getDb();
-
-    // Verify ownership
-    const existing = await db
-      .select()
-      .from(boards)
-      .where(and(eq(boards.id, boardId), eq(boards.accountId, accountId)))
-      .limit(1);
-
-    if (!existing[0]) {
-      throw new Error("Board not found");
-    }
-
-    // Delete all items, columns and activities
-    await db.delete(items).where(eq(items.boardId, boardId));
-    await db.delete(columns).where(eq(columns.boardId, boardId));
-    await db.delete(activities).where(eq(activities.boardId, boardId));
-    await db.delete(boards).where(eq(boards.id, boardId));
-
-    return { success: true };
+    return board[0];
   });
 
 // ============================================================================
@@ -402,15 +369,30 @@ export const inviteUserToBoard = createServerFn({ method: "POST" })
     const db = getDb();
     const { email, role } = data;
 
-    // Verify user owns the board
+    // Verify user has permission (must be board owner)
+    const boardAccess = await db
+      .select({ role: boardMembers.role })
+      .from(boardMembers)
+      .where(
+        and(
+          eq(boardMembers.boardId, boardId),
+          eq(boardMembers.accountId, accountId)
+        )
+      )
+      .limit(1);
+
+    if (!boardAccess[0] || boardAccess[0].role !== "owner") {
+      throw new Error("Only board owners can invite members");
+    }
+
     const board = await db
       .select()
       .from(boards)
-      .where(and(eq(boards.id, boardId), eq(boards.accountId, accountId)))
+      .where(eq(boards.id, boardId))
       .limit(1);
 
     if (!board[0]) {
-      throw new Error("Board not found or access denied");
+      throw new Error("Board not found");
     }
 
     const boardName = board[0].name;
@@ -965,15 +947,20 @@ export const updateColumnOrder = createServerFn({ method: "POST" })
   .handler(async ({ data: { accountId, boardId, columnId, order } }) => {
     const db = getDb();
 
-    // Verify board ownership
-    const board = await db
-      .select()
-      .from(boards)
-      .where(and(eq(boards.id, boardId), eq(boards.accountId, accountId)))
+    // Verify board access
+    const boardAccess = await db
+      .select({ role: boardMembers.role })
+      .from(boardMembers)
+      .where(
+        and(
+          eq(boardMembers.boardId, boardId),
+          eq(boardMembers.accountId, accountId)
+        )
+      )
       .limit(1);
 
-    if (!board[0]) {
-      throw new Error("Board not found");
+    if (!boardAccess[0]) {
+      throw new Error("Board not found or unauthorized");
     }
 
     const now = new Date().toISOString();
@@ -1002,15 +989,20 @@ export const deleteColumn = createServerFn({ method: "POST" })
   .handler(async ({ data: { accountId, boardId, columnId } }) => {
     const db = getDb();
 
-    // Verify board ownership
-    const board = await db
-      .select()
-      .from(boards)
-      .where(and(eq(boards.id, boardId), eq(boards.accountId, accountId)))
+    // Verify board access
+    const boardAccess = await db
+      .select({ role: boardMembers.role })
+      .from(boardMembers)
+      .where(
+        and(
+          eq(boardMembers.boardId, boardId),
+          eq(boardMembers.accountId, accountId)
+        )
+      )
       .limit(1);
 
-    if (!board[0]) {
-      throw new Error("Board not found");
+    if (!boardAccess[0]) {
+      throw new Error("Board not found or unauthorized");
     }
 
     // Get column info before deleting (for activity logging)
@@ -1066,15 +1058,20 @@ export const updateColumn = createServerFn({ method: "POST" })
   .handler(async ({ data: { accountId, boardId, columnId, data } }) => {
     const db = getDb();
 
-    // Verify board ownership
-    const board = await db
-      .select()
-      .from(boards)
-      .where(and(eq(boards.id, boardId), eq(boards.accountId, accountId)))
+    // Verify board access
+    const boardAccess = await db
+      .select({ role: boardMembers.role })
+      .from(boardMembers)
+      .where(
+        and(
+          eq(boardMembers.boardId, boardId),
+          eq(boardMembers.accountId, accountId)
+        )
+      )
       .limit(1);
 
-    if (!board[0]) {
-      throw new Error("Board not found");
+    if (!boardAccess[0]) {
+      throw new Error("Board not found or unauthorized");
     }
 
     const now = new Date().toISOString();
@@ -1113,15 +1110,20 @@ export const createItem = createServerFn({ method: "POST" })
   .handler(async ({ data: { accountId, boardId, columnId, data } }) => {
     const db = getDb();
 
-    // Verify board ownership
-    const board = await db
-      .select()
-      .from(boards)
-      .where(and(eq(boards.id, boardId), eq(boards.accountId, accountId)))
+    // Verify board access
+    const boardAccess = await db
+      .select({ role: boardMembers.role })
+      .from(boardMembers)
+      .where(
+        and(
+          eq(boardMembers.boardId, boardId),
+          eq(boardMembers.accountId, accountId)
+        )
+      )
       .limit(1);
 
-    if (!board[0]) {
-      throw new Error("Board not found");
+    if (!boardAccess[0]) {
+      throw new Error("Board not found or unauthorized");
     }
 
     // Get max order for column
@@ -1175,6 +1177,22 @@ export const updateItem = createServerFn({ method: "POST" })
   )
   .handler(async ({ data: { accountId, boardId, itemId, data } }) => {
     const db = getDb();
+
+    // Verify board access
+    const boardAccess = await db
+      .select({ role: boardMembers.role })
+      .from(boardMembers)
+      .where(
+        and(
+          eq(boardMembers.boardId, boardId),
+          eq(boardMembers.accountId, accountId)
+        )
+      )
+      .limit(1);
+
+    if (!boardAccess[0]) {
+      throw new Error("Board not found or unauthorized");
+    }
 
     // Verify item belongs to user's board
     const item = await db
@@ -1287,6 +1305,22 @@ export const deleteItem = createServerFn({ method: "POST" })
   )
   .handler(async ({ data: { accountId, boardId, itemId } }) => {
     const db = getDb();
+
+    // Verify board access
+    const boardAccess = await db
+      .select({ role: boardMembers.role })
+      .from(boardMembers)
+      .where(
+        and(
+          eq(boardMembers.boardId, boardId),
+          eq(boardMembers.accountId, accountId)
+        )
+      )
+      .limit(1);
+
+    if (!boardAccess[0]) {
+      throw new Error("Board not found or unauthorized");
+    }
 
     // Verify item belongs to user's board
     const item = await db
@@ -1469,21 +1503,37 @@ export const updateComment = createServerFn({ method: "POST" })
   .handler(async ({ data: { accountId, commentId, data } }) => {
     const db = getDb();
 
-    // Verify ownership
+    // Verify access
     const existing = await db
-      .select()
+      .select({ createdAt: comments.createdAt, boardId: items.boardId })
       .from(comments)
-      .where(and(eq(comments.id, commentId), eq(comments.accountId, accountId)))
+      .innerJoin(items, eq(comments.itemId, items.id))
+      .where(eq(comments.id, commentId))
       .limit(1);
 
     if (!existing[0]) {
-      throw new Error("Comment not found or unauthorized");
+      throw new Error("Comment not found");
     }
 
-    // Check if comment is within edit window (15 minutes)
-    const createdAt = new Date(existing[0].createdAt);
+    const boardAccess = await db
+      .select({ role: boardMembers.role })
+      .from(boardMembers)
+      .where(
+        and(
+          eq(boardMembers.boardId, existing[0].boardId),
+          eq(boardMembers.accountId, accountId)
+        )
+      )
+      .limit(1);
+
+    if (!boardAccess[0]) {
+      throw new Error("Board not found or unauthorized");
+    }
+
+    const createdAtValue = new Date(existing[0].createdAt);
     const now = new Date();
-    const diffInMinutes = (now.getTime() - createdAt.getTime()) / (1000 * 60);
+    const diffInMinutes =
+      (now.getTime() - createdAtValue.getTime()) / (1000 * 60);
     const EDIT_WINDOW_MINUTES = 15;
 
     if (diffInMinutes > EDIT_WINDOW_MINUTES) {
@@ -1518,21 +1568,41 @@ export const deleteComment = createServerFn({ method: "POST" })
   .handler(async ({ data: { accountId, commentId } }) => {
     const db = getDb();
 
-    // Verify ownership
+    // Verify access
     const existing = await db
-      .select()
+      .select({
+        createdAt: comments.createdAt,
+        boardId: items.boardId,
+        itemId: comments.itemId,
+      })
       .from(comments)
-      .where(and(eq(comments.id, commentId), eq(comments.accountId, accountId)))
+      .innerJoin(items, eq(comments.itemId, items.id))
+      .where(eq(comments.id, commentId))
       .limit(1);
 
     if (!existing[0]) {
-      throw new Error("Comment not found or unauthorized");
+      throw new Error("Comment not found");
     }
 
-    // Check if comment is within deletion window (15 minutes)
-    const createdAt = new Date(existing[0].createdAt);
+    const boardAccess = await db
+      .select({ role: boardMembers.role })
+      .from(boardMembers)
+      .where(
+        and(
+          eq(boardMembers.boardId, existing[0].boardId),
+          eq(boardMembers.accountId, accountId)
+        )
+      )
+      .limit(1);
+
+    if (!boardAccess[0]) {
+      throw new Error("Board not found or unauthorized");
+    }
+
+    const createdAtValue = new Date(existing[0].createdAt);
     const now = new Date();
-    const diffInMinutes = (now.getTime() - createdAt.getTime()) / (1000 * 60);
+    const diffInMinutes =
+      (now.getTime() - createdAtValue.getTime()) / (1000 * 60);
     const DELETION_WINDOW_MINUTES = 15;
 
     if (diffInMinutes > DELETION_WINDOW_MINUTES) {
@@ -1541,7 +1611,6 @@ export const deleteComment = createServerFn({ method: "POST" })
       );
     }
 
-    // Get item info before deleting (for activity logging)
     const itemInfo = await db
       .select({
         boardId: items.boardId,
@@ -1792,15 +1861,20 @@ export const createOrGetAssignee = createServerFn({ method: "POST" })
   .handler(async ({ data: { accountId, boardId, name, userId } }) => {
     const db = getDb();
 
-    // Verify user owns this board
-    const board = await db
-      .select()
-      .from(boards)
-      .where(and(eq(boards.id, boardId), eq(boards.accountId, accountId)))
+    // Verify user owns this board (via boardMembers)
+    const boardAccess = await db
+      .select({ role: boardMembers.role })
+      .from(boardMembers)
+      .where(
+        and(
+          eq(boardMembers.boardId, boardId),
+          eq(boardMembers.accountId, accountId)
+        )
+      )
       .limit(1);
 
-    if (!board[0]) {
-      throw new Error("Board not found or unauthorized");
+    if (!boardAccess[0] || boardAccess[0].role !== "owner") {
+      throw new Error("Only board owners can create assignees");
     }
 
     const normalizedName = name.trim();
@@ -1848,19 +1922,31 @@ export const updateItemAssignee = createServerFn({ method: "POST" })
   .handler(async ({ data: { accountId, itemId, assigneeId } }) => {
     const db = getDb();
 
-    // Verify user has access to this item
     const item = await db
       .select({
         item: items,
-        board: boards,
       })
       .from(items)
-      .leftJoin(boards, eq(items.boardId, boards.id))
       .where(eq(items.id, itemId))
       .limit(1);
 
-    if (!item[0] || item[0].board?.accountId !== accountId) {
-      throw new Error("Item not found or unauthorized");
+    if (!item[0]) {
+      throw new Error("Item not found");
+    }
+
+    const boardAccess = await db
+      .select({ role: boardMembers.role })
+      .from(boardMembers)
+      .where(
+        and(
+          eq(boardMembers.boardId, item[0].item.boardId),
+          eq(boardMembers.accountId, accountId)
+        )
+      )
+      .limit(1);
+
+    if (!boardAccess[0]) {
+      throw new Error("Unauthorized");
     }
 
     const previousAssigneeId = item[0].item.assigneeId;

@@ -89,6 +89,7 @@ export function KanbanColumn({
   const [isRenaming, setIsRenaming] = useState(false);
   const [editedName, setEditedName] = useState(name);
   const [dragOverItemId, setDragOverItemId] = useState<string | null>(null);
+  const [isColumnDragOver, setIsColumnDragOver] = useState(false);
 
   const titleInputRef = useRef<HTMLInputElement>(null);
 
@@ -190,15 +191,17 @@ export function KanbanColumn({
   // Expanded view
   return (
     <div
-      className={`flex flex-col h-full rounded-lg p-4 min-w-80 shadow-sm transition-all bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 hover:shadow-md`}
+      className={`flex flex-col h-full rounded-lg p-4 min-w-80 shadow-sm transition-all bg-slate-100/50 dark:bg-slate-900/50 border-2 ${isColumnDragOver ? "border-blue-500 bg-blue-50/30 dark:bg-blue-900/20" : "border-transparent"} hover:shadow-md`}
       onDragOver={(e) => {
         if (!e.dataTransfer.types.includes(CONTENT_TYPES.card)) return;
         e.preventDefault();
         e.stopPropagation();
+        setIsColumnDragOver(true);
       }}
       onDragLeave={(e) => {
         if (e.currentTarget === e.target) {
           setDragOverItemId(null);
+          setIsColumnDragOver(false);
         }
       }}
       onDrop={(e) => {
@@ -207,6 +210,7 @@ export function KanbanColumn({
         e.stopPropagation();
 
         setDragOverItemId(null);
+        setIsColumnDragOver(false);
 
         try {
           const cardData = JSON.parse(

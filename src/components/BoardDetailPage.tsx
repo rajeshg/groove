@@ -107,11 +107,23 @@ export function BoardDetailPage({ boardId }: BoardDetailPageProps) {
           return titleMatch || contentMatch || assigneeMatch;
         });
 
+  if (boardData === undefined) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+        <div className="text-slate-500 animate-pulse font-medium text-lg">
+          Loading board...
+        </div>
+      </div>
+    );
+  }
+
   if (!board) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <Card className="max-w-md mx-auto p-8 text-center">
-          <p className="text-gray-600 mb-4">Board not found</p>
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-900 p-8">
+        <Card className="max-w-md mx-auto p-8 text-center bg-white dark:bg-slate-800">
+          <p className="text-gray-600 dark:text-slate-300 mb-4 font-medium">
+            Board not found
+          </p>
           <Button onClick={() => navigate({ to: "/boards" })}>
             Back to Boards
           </Button>

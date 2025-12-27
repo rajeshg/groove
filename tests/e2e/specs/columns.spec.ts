@@ -127,7 +127,7 @@ test.describe("Column Operations", () => {
   });
 
   test.describe("Column Renaming", () => {
-    test("should rename a column via settings", async ({ page }) => {
+    test("should rename a column via menu", async ({ page }) => {
       const originalName = `Original ${Date.now()}`;
       const newName = `Renamed ${Date.now()}`;
 
@@ -145,26 +145,27 @@ test.describe("Column Operations", () => {
         throw new Error(`Column "${originalName}" not found`);
       }
 
-      // Try to find and click a settings button near the column header
-      // Look for a gear icon or settings button in the column header area
+      // Find the column container
       const columnContainer = columnHeader.locator(
         "xpath=/ancestor::div[contains(@class, 'min-w-80')]"
       );
-      const settingsButton = columnContainer.locator(
-        'button[title*="Settings" i], button[title*="settings" i], button[aria-label*="settings" i]'
-      );
 
-      if (
-        await settingsButton.isVisible({ timeout: 2000 }).catch(() => false)
-      ) {
-        await settingsButton.click();
-        // Wait for rename dialog/form
-        await page.waitForTimeout(500);
-      }
+      // Click the more vertical button (DropdownMenuTrigger) to open the menu
+      const menuButton = columnContainer
+        .getByRole("button")
+        .filter({
+          hasText: /^$/,
+        })
+        .first();
+      await menuButton.click();
 
-      // Try to find the rename input by looking for an input with the original name as value
-      const renameInput = page.locator(
-        `input[value="${originalName}"], input[placeholder*="name" i]`
+      // Wait for menu to open and click Rename Column
+      await page.waitForTimeout(300);
+      await page.getByRole("menuitem", { name: /Rename Column/i }).click();
+
+      // Try to find the rename input (it should be auto-focused)
+      const renameInput = columnContainer.locator(
+        'input[value="' + originalName + '"]'
       );
 
       if (await renameInput.isVisible({ timeout: 2000 }).catch(() => false)) {
@@ -173,7 +174,7 @@ test.describe("Column Operations", () => {
         await renameInput.fill(newName);
 
         // Save by clicking Save button or pressing Enter
-        const saveButton = page.locator('button:has-text("Save")');
+        const saveButton = columnContainer.locator('button:has-text("Save")');
         if (await saveButton.isVisible({ timeout: 1000 }).catch(() => false)) {
           await saveButton.click();
         } else {
@@ -232,7 +233,7 @@ test.describe("Column Operations", () => {
   });
 
   test.describe("Column Deletion", () => {
-    test("should delete a column", async ({ page }) => {
+    test("should delete a column via menu", async ({ page }) => {
       const columnName = `Delete Me ${Date.now()}`;
 
       // Add a column
@@ -254,31 +255,18 @@ test.describe("Column Operations", () => {
         "xpath=/ancestor::div[contains(@class, 'min-w-80')]"
       );
 
-      // Look for delete button in the column
-      const deleteButton = columnContainer.locator(
-        'button[title*="Delete" i], button[aria-label*="delete" i]'
-      );
+      // Click the more vertical button (DropdownMenuTrigger) to open the menu
+      const menuButton = columnContainer
+        .getByRole("button")
+        .filter({
+          hasText: /^$/,
+        })
+        .first();
+      await menuButton.click();
 
-      if (await deleteButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await deleteButton.click();
-      } else {
-        // Try right-click context menu
-        await columnContainer.click({ button: "right" });
-        const deleteOption = page.locator("text=/delete|remove/i").first();
-        if (
-          await deleteOption.isVisible({ timeout: 2000 }).catch(() => false)
-        ) {
-          await deleteOption.click();
-        }
-      }
-
-      // Confirm deletion if modal appears
-      const confirmButton = page.locator(
-        'button:has-text("Delete"), button:has-text("Confirm"), button:has-text("Yes")'
-      );
-      if (await confirmButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await confirmButton.click();
-      }
+      // Wait for menu to open and click Delete Column
+      await page.waitForTimeout(300);
+      await page.getByRole("menuitem", { name: /Delete Column/i }).click();
 
       // Column should disappear - wait and verify
       await page.waitForTimeout(500);
@@ -307,60 +295,39 @@ test.describe("Column Operations", () => {
       );
 
       // Add a card to the column
-      const addButton = columnContainer
-        .locator('button:has-text("Add")')
-        .first();
-      if (await addButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await addButton.click();
-        await page.waitForSelector('input[placeholder*="title" i]', {
+      const addCardButton = columnContainer.locator(
+        'button:has-text("Add a card")'
+      );
+      if (await addCardButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await addCardButton.click();
+        await page.waitForSelector('input[placeholder*="Card title" i]', {
           timeout: 5000,
         });
-        await page.fill('input[placeholder*="title" i]', "Test Card");
-        await page.press('input[placeholder*="title" i]', "Enter");
+        await page.fill('input[placeholder*="Card title" i]', "Test Card");
+        await page.press('input[placeholder*="Card title" i]', "Enter");
         await page.waitForTimeout(300);
       }
 
-      // Try to delete column - find the delete button
-      const deleteButton = columnContainer.locator(
-        'button[title*="Delete" i], button[aria-label*="delete" i]'
-      );
-      if (await deleteButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await deleteButton.click();
-        await page.waitForTimeout(500);
+      // Open menu
+      const menuButton = columnContainer
+        .getByRole("button")
+        .filter({
+          hasText: /^$/,
+        })
+        .first();
+      await menuButton.click();
 
-        // Look for confirmation elements - could be a dialog, alert, or confirm button
-        const confirmButton = page.locator(
-          'button:has-text("Delete"), button:has-text("Confirm"), button:has-text("Yes")'
-        );
-        const confirmDialog = page
-          .locator("dialog, [role='dialog'], [role='alertdialog']")
-          .first();
+      // Wait for menu to open and click Delete Column
+      await page.waitForTimeout(300);
+      await page.getByRole("menuitem", { name: /Delete Column/i }).click();
 
-        // Verify delete button was found and clicked
-        expect(deleteButton).toBeDefined();
+      await page.waitForTimeout(500);
 
-        // Try to find and click confirmation if it exists
-        const hasConfirmButton = await confirmButton
-          .isVisible({ timeout: 1000 })
-          .catch(() => false);
-        const hasDialog = await confirmDialog
-          .isVisible({ timeout: 1000 })
-          .catch(() => false);
-
-        if (hasConfirmButton) {
-          await confirmButton.first().click();
-        } else if (hasDialog) {
-          // Dialog might auto-confirm or have buttons inside
-          const dialogConfirm = confirmDialog
-            .locator('button:has-text("Delete"), button:has-text("Confirm")')
-            .first();
-          if (
-            await dialogConfirm.isVisible({ timeout: 500 }).catch(() => false)
-          ) {
-            await dialogConfirm.click();
-          }
-        }
-      }
+      // Verify column is deleted (it currently doesn't have a confirmation modal for column deletion in the code I see, it just deletes)
+      const isVisible = await columnHeader
+        .isVisible({ timeout: 2000 })
+        .catch(() => false);
+      expect(isVisible).toBeFalsy();
     });
   });
 
@@ -488,7 +455,7 @@ test.describe("Column Operations", () => {
   });
 
   test.describe("Column Expand/Collapse", () => {
-    test("should collapse a column", async ({ page }) => {
+    test("should collapse a column via menu", async ({ page }) => {
       const columnName = `Collapsible ${Date.now()}`;
 
       await addColumn(page, columnName);
@@ -510,32 +477,35 @@ test.describe("Column Operations", () => {
         "xpath=/ancestor::div[contains(@class, 'min-w-80')]"
       );
 
-      // Find collapse button (usually a Minimize or ChevronDown icon)
-      const collapseButton = column.locator(
-        'button[title*="Collapse" i], button[aria-label*="collapse" i]'
-      );
+      // Open menu
+      const menuButton = column
+        .getByRole("button")
+        .filter({
+          hasText: /^$/,
+        })
+        .first();
+      await menuButton.click();
 
-      if (
-        await collapseButton.isVisible({ timeout: 2000 }).catch(() => false)
-      ) {
-        await collapseButton.click();
-        await page.waitForTimeout(500);
+      // Wait for menu to open and click Collapse Column
+      await page.waitForTimeout(300);
+      await page.getByRole("menuitem", { name: /Collapse Column/i }).click();
 
-        // Column should be collapsed - the expanded form should be gone
-        // Check if a collapsed column button exists
-        const collapsedButtons = page.locator("button.column-collapsed");
-        const hasCollapsedButton = await collapsedButtons
-          .isVisible({ timeout: 2000 })
-          .catch(() => false);
+      await page.waitForTimeout(500);
 
-        // At minimum, the column should not be visible in the full expanded form
-        const expandedStillVisible = await columnHeader
-          .isVisible({ timeout: 500 })
-          .catch(() => false);
+      // Column should be collapsed - the expanded form should be gone
+      // Check if a collapsed column button exists
+      const collapsedButtons = page.locator("button.column-collapsed");
+      const hasCollapsedButton = await collapsedButtons
+        .isVisible({ timeout: 2000 })
+        .catch(() => false);
 
-        // Either we have a collapsed button or the header is gone
-        expect(hasCollapsedButton || !expandedStillVisible).toBeTruthy();
-      }
+      // At minimum, the column should not be visible in the full expanded form
+      const expandedStillVisible = await columnHeader
+        .isVisible({ timeout: 500 })
+        .catch(() => false);
+
+      // Either we have a collapsed button or the header is gone
+      expect(hasCollapsedButton || !expandedStillVisible).toBeTruthy();
     });
 
     test("should expand a collapsed column", async ({ page }) => {
