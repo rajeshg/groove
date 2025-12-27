@@ -2,7 +2,6 @@
 .react-router
 build
 node_modules
-dist
 
 # Database files
 *.db

@@ -12,24 +12,9 @@ services:
       - "3000:3000"
     restart: unless-stopped
     networks:
-      main_network:
-        aliases:
-          - groove-app
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "node",
-          "-e",
-          "const http=require('http');http.get('http://localhost:3000',(r)=>{if(r.statusCode!==200)throw new Error(r.statusCode)}).on('error',()=>process.exit(1))",
-        ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
+      - main_network
 
 networks:
   main_network:
-    driver: bridge
     external: true
-    name: main_network
+
