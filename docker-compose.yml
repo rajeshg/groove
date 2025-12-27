@@ -3,6 +3,8 @@ services:
     build: .
     image: groove:latest
     container_name: groove-app
+    env_file:
+      - .env
     environment:
       - NODE_ENV=production
       - DATABASE_URL=file:/app/data/groove.db

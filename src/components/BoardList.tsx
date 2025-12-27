@@ -2,7 +2,6 @@
 
 import { useNavigate, Link } from "@tanstack/react-router";
 import { useLiveQuery } from "@tanstack/react-db";
-import { eq } from "@tanstack/db";
 import { boardsCollection } from "~/db/collections";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
@@ -16,11 +15,10 @@ interface BoardListProps {
 export function BoardList({ accountId }: BoardListProps) {
   const navigate = useNavigate();
 
-  // Live query for boards - filter by accountId
+  // Live query for boards - shows all boards user has access to (owned + invited)
+  // Server already filters via boardMembers join, no need to filter by accountId here
   const { data: boards } = useLiveQuery((q) =>
-    q
-      .from({ board: boardsCollection })
-      .where(({ board }) => eq(board.accountId, accountId))
+    q.from({ board: boardsCollection })
   );
 
   const handleDeleteBoard = (boardId: string, boardName: string) => {
