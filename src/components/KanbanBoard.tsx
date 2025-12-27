@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { KanbanColumn } from "~/components/KanbanColumn";
 import { toast } from "sonner";
+import { PlusCircle } from "lucide-react";
 
 const CONTENT_TYPES = {
   card: "application/json+card",
@@ -198,60 +199,77 @@ export function KanbanBoard({
 
   return (
     <div
-      className="flex gap-4 overflow-x-auto py-4 px-2"
+      className="flex gap-4 overflow-x-auto py-4 px-2 h-full min-h-[400px]"
       onDragEnd={handleColumnDragEnd}
     >
-      {sortedColumns.map((column) => (
-        <div
-          key={column.id}
-          className="relative"
-          onDragOver={(e) => handleColumnDragOver(e, column.id)}
-          onDragLeave={handleColumnDragLeave}
-          onDrop={(e) => handleColumnDrop(e, column.id)}
-        >
-          {/* Left visual indicator line */}
-          {dragOverColumnId === column.id && dropPosition === "left" && (
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 z-50 rounded-l pointer-events-none" />
-          )}
-
-          {/* Right visual indicator line */}
-          {dragOverColumnId === column.id && dropPosition === "right" && (
-            <div className="absolute right-0 top-0 bottom-0 w-1 bg-blue-500 z-50 rounded-r pointer-events-none" />
-          )}
-
-          {/* Glow effect when dragging over column */}
-          {dragOverColumnId === column.id && draggedColumnId && (
-            <div className="absolute inset-0 bg-blue-500/5 rounded-lg pointer-events-none transition-opacity" />
-          )}
-
-          <KanbanColumn
-            id={column.id}
-            name={column.name}
-            color={column.color}
-            items={items.filter((item) => item.columnId === column.id)}
-            onAddItem={(title, content) => onAddItem(column.id, title, content)}
-            onDeleteItem={(itemId) => onDeleteItem(itemId)}
-            onDeleteColumn={
-              onDeleteColumn ? () => onDeleteColumn(column.id) : undefined
-            }
-            onRenameColumn={
-              onRenameColumn
-                ? (newName) => onRenameColumn(column.id, newName)
-                : undefined
-            }
-            isDeletingColumn={deletingColumnId === column.id}
-            isRenamingColumn={renamingColumnId === column.id}
-            boardId={boardId}
-            assignees={assignees}
-            isExpanded={column.isExpanded !== false}
-            onToggleExpanded={
-              onToggleExpanded ? () => onToggleExpanded(column.id) : undefined
-            }
-            onColumnDragStart={(e) => handleColumnDragStart(e, column.id)}
-            onMoveItem={onMoveItem}
-          />
+      {sortedColumns.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl mx-4 my-8 bg-slate-50/50 dark:bg-slate-900/20">
+          <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4 text-slate-400">
+            <PlusCircle size={32} />
+          </div>
+          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">
+            This board is empty
+          </h3>
+          <p className="text-slate-500 dark:text-slate-400 max-w-xs mb-6">
+            Get started by adding columns to organize your work. Use the
+            template selector or create custom ones.
+          </p>
         </div>
-      ))}
+      ) : (
+        sortedColumns.map((column) => (
+          <div
+            key={column.id}
+            className="relative"
+            onDragOver={(e) => handleColumnDragOver(e, column.id)}
+            onDragLeave={handleColumnDragLeave}
+            onDrop={(e) => handleColumnDrop(e, column.id)}
+          >
+            {/* Left visual indicator line */}
+            {dragOverColumnId === column.id && dropPosition === "left" && (
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 z-50 rounded-l pointer-events-none" />
+            )}
+
+            {/* Right visual indicator line */}
+            {dragOverColumnId === column.id && dropPosition === "right" && (
+              <div className="absolute right-0 top-0 bottom-0 w-1 bg-blue-500 z-50 rounded-r pointer-events-none" />
+            )}
+
+            {/* Glow effect when dragging over column */}
+            {dragOverColumnId === column.id && draggedColumnId && (
+              <div className="absolute inset-0 bg-blue-500/5 rounded-lg pointer-events-none transition-opacity" />
+            )}
+
+            <KanbanColumn
+              id={column.id}
+              name={column.name}
+              color={column.color}
+              items={items.filter((item) => item.columnId === column.id)}
+              onAddItem={(title, content) =>
+                onAddItem(column.id, title, content)
+              }
+              onDeleteItem={(itemId) => onDeleteItem(itemId)}
+              onDeleteColumn={
+                onDeleteColumn ? () => onDeleteColumn(column.id) : undefined
+              }
+              onRenameColumn={
+                onRenameColumn
+                  ? (newName) => onRenameColumn(column.id, newName)
+                  : undefined
+              }
+              isDeletingColumn={deletingColumnId === column.id}
+              isRenamingColumn={renamingColumnId === column.id}
+              boardId={boardId}
+              assignees={assignees}
+              isExpanded={column.isExpanded !== false}
+              onToggleExpanded={
+                onToggleExpanded ? () => onToggleExpanded(column.id) : undefined
+              }
+              onColumnDragStart={(e) => handleColumnDragStart(e, column.id)}
+              onMoveItem={onMoveItem}
+            />
+          </div>
+        ))
+      )}
     </div>
   );
 }

@@ -1,11 +1,26 @@
-import { useState } from "react";
+import * as React from "react";
+import { useState, useRef } from "react";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { KanbanCard } from "~/components/KanbanCard";
-import { Plus, Trash, Minimize2, GripVertical } from "lucide-react";
+import {
+  Plus,
+  Minimize2,
+  GripVertical,
+  MoreVertical,
+  Edit2,
+  Trash2,
+} from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 
 const CONTENT_TYPES = {
   card: "application/json+card",
@@ -75,6 +90,8 @@ export function KanbanColumn({
   const [editedName, setEditedName] = useState(name);
   const [dragOverItemId, setDragOverItemId] = useState<string | null>(null);
 
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (newItemTitle.trim()) {
@@ -83,14 +100,9 @@ export function KanbanColumn({
       setNewItemContent("");
       // Show success toast
       toast.success("Card added successfully");
-      // Keep form open for quick card addition - auto-focus title field
+      // Keep form open for quick card addition - auto-focus title field using ref
       setTimeout(() => {
-        const titleInput = document.querySelector(
-          `input[placeholder="Card title..."]`
-        ) as HTMLInputElement;
-        if (titleInput) {
-          titleInput.focus();
-        }
+        titleInputRef.current?.focus();
       }, 0);
     }
   };
@@ -183,7 +195,6 @@ export function KanbanColumn({
         if (!e.dataTransfer.types.includes(CONTENT_TYPES.card)) return;
         e.preventDefault();
         e.stopPropagation();
-        // Column wrapper dragover - will be set to specific card in child handlers
       }}
       onDragLeave={(e) => {
         if (e.currentTarget === e.target) {
@@ -205,14 +216,10 @@ export function KanbanColumn({
 
           if (cardId === dragOverItemId) return;
 
-          // Moving to this column
-          // If a specific card was hovered, calculate order based on that
           let newOrder: number;
           if (dragOverItemId) {
-            // Find the item being hovered over
             const targetItem = sortedItems.find((i) => i.id === dragOverItemId);
             if (targetItem) {
-              // Insert after the target item
               const nextItem =
                 sortedItems[
                   sortedItems.findIndex((i) => i.id === dragOverItemId) + 1
@@ -226,12 +233,10 @@ export function KanbanColumn({
               newOrder = items.length;
             }
           } else {
-            // No specific card hovered, append to end
             newOrder = items.length;
           }
           _onMoveItem(cardId, id, newOrder);
 
-          // Show toast if moved from different column
           if (sourceColumnId !== id) {
             toast.success(`Moved to ${name}`, {
               duration: 1500,
@@ -244,7 +249,6 @@ export function KanbanColumn({
       }}
     >
       <div className="flex items-center justify-between gap-2 mb-4">
-        {/* Left: Drag Handle */}
         <div className="flex-shrink-0">
           {isExpanded && (
             <div
@@ -259,7 +263,6 @@ export function KanbanColumn({
           )}
         </div>
 
-        {/* Middle: Color dot, name, and count - centered */}
         <div className="flex-1 flex items-center justify-center gap-2 min-w-0">
           {color && (
             <div
@@ -323,165 +326,171 @@ export function KanbanColumn({
           )}
         </div>
 
-        {/* Right: Action buttons */}
         <div className="flex items-center gap-1 flex-shrink-0">
-          {!isRenaming && onToggleExpanded && (
-            <Button
-              onClick={() => {
-                onToggleExpanded();
-              }}
-              variant="ghost"
-              size="sm"
-              className="h-7 w-7 p-0 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
-              title="Collapse column"
-            >
-              <Minimize2 size={16} />
-            </Button>
-          )}
-          {!isRenaming && onDeleteColumn && (
-            <Button
-              onClick={onDeleteColumn}
-              disabled={isDeletingColumn}
-              variant="ghost"
-              size="sm"
-              className="h-7 w-7 p-0 text-slate-500 hover:text-red-600"
-            >
-              <Trash size={16} />
-            </Button>
+          {!isRenaming && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
+                >
+                  <MoreVertical size={16} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setIsRenaming(true)}>
+                  <Edit2 className="mr-2 h-4 w-4" />
+                  <span>Rename Column</span>
+                </DropdownMenuItem>
+                {onToggleExpanded && (
+                  <DropdownMenuItem onClick={onToggleExpanded}>
+                    <Minimize2 className="mr-2 h-4 w-4" />
+                    <span>Collapse Column</span>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                {onDeleteColumn && (
+                  <DropdownMenuItem
+                    onClick={onDeleteColumn}
+                    disabled={isDeletingColumn}
+                    className="text-red-600 focus:text-red-600"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    <span>Delete Column</span>
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
       </div>
 
-      <div className="flex-1 space-y-3 overflow-y-auto min-h-64">
-        {sortedItems.map((item, index) => {
-          const assignee = item.assigneeId
-            ? assignees.find((a) => a.id === item.assigneeId) || null
-            : null;
+      <div className="flex-1 space-y-3 overflow-y-auto min-h-[300px]">
+        {sortedItems.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full py-8 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl opacity-50">
+            <p className="text-xs font-medium text-slate-400 dark:text-slate-500">
+              No cards here
+            </p>
+          </div>
+        ) : (
+          sortedItems.map((item, index) => {
+            const assignee = item.assigneeId
+              ? assignees.find((a) => a.id === item.assigneeId) || null
+              : null;
 
-          return (
-            <div
-              key={item.id}
-              onDragOver={(e) => {
-                if (!e.dataTransfer.types.includes(CONTENT_TYPES.card)) return;
-                e.preventDefault();
-                e.stopPropagation();
-                setDragOverItemId(item.id);
-              }}
-              onDragLeave={(e) => {
-                if (e.currentTarget === e.target) {
+            return (
+              <div
+                key={item.id}
+                onDragOver={(e) => {
+                  if (!e.dataTransfer.types.includes(CONTENT_TYPES.card))
+                    return;
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setDragOverItemId(item.id);
+                }}
+                onDragLeave={(e) => {
+                  if (e.currentTarget === e.target) {
+                    setDragOverItemId(null);
+                  }
+                }}
+                onDrop={(e) => {
+                  if (!e.dataTransfer.types.includes(CONTENT_TYPES.card))
+                    return;
+                  e.preventDefault();
                   setDragOverItemId(null);
-                }
-              }}
-              onDrop={(e) => {
-                if (!e.dataTransfer.types.includes(CONTENT_TYPES.card)) return;
-                e.preventDefault();
-                setDragOverItemId(null);
 
-                try {
-                  const cardData = JSON.parse(
-                    e.dataTransfer.getData(CONTENT_TYPES.card)
-                  );
-                  const { id: draggedId, columnId: sourceColumnId } = cardData;
+                  try {
+                    const cardData = JSON.parse(
+                      e.dataTransfer.getData(CONTENT_TYPES.card)
+                    );
+                    const { id: draggedId, columnId: sourceColumnId } =
+                      cardData;
 
-                  if (draggedId === item.id) return;
+                    if (draggedId === item.id) return;
 
-                  // Reorder within same column
-                  const draggedItem = sortedItems.find(
-                    (i) => i.id === draggedId
-                  );
-                  if (draggedItem) {
-                    // Same column reorder
-                    e.stopPropagation();
-
-                    const draggedIndex = sortedItems.findIndex(
+                    const draggedItem = sortedItems.find(
                       (i) => i.id === draggedId
                     );
-                    const targetIndex = index;
+                    if (draggedItem) {
+                      e.stopPropagation();
+                      const draggedIndex = sortedItems.findIndex(
+                        (i) => i.id === draggedId
+                      );
+                      const targetIndex = index;
+                      if (draggedIndex === -1) return;
 
-                    if (draggedIndex === -1) return;
-
-                    // Calculate new order based on position
-                    let newOrder: number;
-                    if (draggedIndex < targetIndex) {
-                      // Moving down
-                      const nextItem = sortedItems[targetIndex + 1];
-                      if (nextItem) {
-                        newOrder = (item.order + nextItem.order) / 2;
+                      let newOrder: number;
+                      if (draggedIndex < targetIndex) {
+                        const nextItem = sortedItems[targetIndex + 1];
+                        if (nextItem) {
+                          newOrder = (item.order + nextItem.order) / 2;
+                        } else {
+                          newOrder = item.order + 1;
+                        }
                       } else {
-                        newOrder = item.order + 1;
+                        const prevItem = sortedItems[targetIndex - 1];
+                        if (prevItem) {
+                          newOrder = (prevItem.order + item.order) / 2;
+                        } else {
+                          newOrder = item.order - 1;
+                        }
                       }
-                    } else {
-                      // Moving up
-                      const prevItem = sortedItems[targetIndex - 1];
+                      _onMoveItem(draggedId, id, newOrder);
+                    } else if (sourceColumnId !== id) {
+                      e.stopPropagation();
+                      const prevItem = sortedItems[index - 1];
+                      let newOrder: number;
                       if (prevItem) {
                         newOrder = (prevItem.order + item.order) / 2;
                       } else {
                         newOrder = item.order - 1;
                       }
+                      _onMoveItem(draggedId, id, newOrder);
+                      toast.success(`Moved to ${name}`, {
+                        duration: 1500,
+                        icon: "✓",
+                      });
                     }
-
-                    _onMoveItem(draggedId, id, newOrder);
-                  } else if (sourceColumnId !== id) {
-                    // Cross-column drop - insert before this card
-                    e.stopPropagation();
-
-                    // Insert before the target item
-                    const prevItem = sortedItems[index - 1];
-                    let newOrder: number;
-                    if (prevItem) {
-                      newOrder = (prevItem.order + item.order) / 2;
-                    } else {
-                      newOrder = item.order - 1;
-                    }
-
-                    _onMoveItem(draggedId, id, newOrder);
-
-                    toast.success(`Moved to ${name}`, {
-                      duration: 1500,
-                      icon: "✓",
-                    });
+                  } catch (error) {
+                    console.error("[KanbanColumn] Error handling drop:", error);
                   }
-                } catch (error) {
-                  console.error(
-                    "[KanbanColumn] Error handling card drop:",
-                    error
-                  );
-                }
-              }}
-              className={`relative ${dragOverItemId === item.id ? "border-t-2 border-blue-500" : ""}`}
-            >
-              <KanbanCard
-                id={item.id}
-                title={item.title}
-                content={item.content}
-                order={item.order}
-                onDelete={() => onDeleteItem(item.id)}
-                boardId={boardId}
-                columnId={id}
-                columnName={name}
-                assignee={assignee}
-                createdBy={item.createdBy}
-                createdByUser={item.createdByUser}
-                createdAt={item.createdAt}
-                updatedAt={item.updatedAt}
-                lastActiveAt={item.lastActiveAt}
-                columnColor={color}
-              />
-            </div>
-          );
-        })}
+                }}
+                className={`relative ${dragOverItemId === item.id ? "border-t-2 border-blue-500" : ""}`}
+              >
+                <KanbanCard
+                  id={item.id}
+                  title={item.title}
+                  content={item.content}
+                  order={item.order}
+                  onDelete={() => onDeleteItem(item.id)}
+                  boardId={boardId}
+                  columnId={id}
+                  columnName={name}
+                  assignee={assignee}
+                  createdBy={item.createdBy}
+                  createdByUser={item.createdByUser}
+                  createdAt={item.createdAt}
+                  updatedAt={item.updatedAt}
+                  lastActiveAt={item.lastActiveAt}
+                  columnColor={color}
+                />
+              </div>
+            );
+          })
+        )}
       </div>
 
       {showAddForm ? (
-        <Card className="mt-3 p-3 bg-white">
+        <Card className="mt-3 p-3 bg-white dark:bg-slate-800">
           <form onSubmit={handleSubmit} className="space-y-2">
             <Input
+              ref={titleInputRef}
               type="text"
               placeholder="Card title..."
               value={newItemTitle}
               onChange={(e) => setNewItemTitle(e.target.value)}
               onKeyDown={(e) => {
-                // Close form on Escape key
                 if (e.key === "Escape") {
                   e.preventDefault();
                   setShowAddForm(false);
@@ -491,22 +500,6 @@ export function KanbanColumn({
               }}
               className="text-sm"
               autoFocus
-            />
-            <Input
-              type="text"
-              placeholder="Description (optional)..."
-              value={newItemContent}
-              onChange={(e) => setNewItemContent(e.target.value)}
-              onKeyDown={(e) => {
-                // Close form on Escape key
-                if (e.key === "Escape") {
-                  e.preventDefault();
-                  setShowAddForm(false);
-                  setNewItemTitle("");
-                  setNewItemContent("");
-                }
-              }}
-              className="text-sm"
             />
             <div className="flex gap-2">
               <Button
@@ -537,7 +530,7 @@ export function KanbanColumn({
         <Button
           onClick={() => setShowAddForm(true)}
           variant="outline"
-          className="mt-3 w-full justify-start text-gray-600 hover:bg-gray-200"
+          className="mt-3 w-full justify-start text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800"
         >
           <Plus size={18} className="mr-2" />
           Add a card

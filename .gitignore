@@ -20,4 +20,6 @@ yarn.lock
 .tanstack
 dist
 *.db
+*.db-shm
+*.db-wal
 data

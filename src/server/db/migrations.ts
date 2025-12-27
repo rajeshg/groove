@@ -34,7 +34,7 @@ export async function migrateDb() {
 export async function ensureDbInitialized() {
   if (!dbInitialized) {
     await migrateDb();
-    
+
     // Enable WAL mode for better concurrency and performance
     try {
       const client = getLibsqlDb();
@@ -44,7 +44,7 @@ export async function ensureDbInitialized() {
       console.error("✗ Failed to enable WAL mode:", error);
       // Don't throw - app can still work without WAL mode
     }
-    
+
     dbInitialized = true;
   }
 }

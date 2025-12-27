@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useParams, useNavigate } from "@tanstack/react-router";
 import { useLiveQuery } from "@tanstack/react-db";
 import { eq } from "@tanstack/db";
@@ -58,6 +58,17 @@ export function CardDetailPage({
   const [editCommentContent, setEditCommentContent] = useState("");
   const [isDeletingCard, setIsDeletingCard] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
+  // Focus title field when entering edit mode
+  useEffect(() => {
+    if (isEditing) {
+      setTimeout(() => {
+        titleInputRef.current?.focus();
+      }, 0);
+    }
+  }, [isEditing]);
 
   // Live query for the specific item (card)
   const { data: cardData } = useLiveQuery((q) =>
@@ -427,6 +438,7 @@ export function CardDetailPage({
                       Title
                     </label>
                     <Input
+                      ref={titleInputRef}
                       value={editTitle}
                       onChange={(e) => setEditTitle(e.target.value)}
                       onKeyDown={(e) => {
