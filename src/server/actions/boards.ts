@@ -1143,12 +1143,23 @@ export const createItem = createServerFn({ method: "POST" })
     const { createClient } = await import("@libsql/client");
     const dbUrl = process.env.DATABASE_URL || "file:todos.db";
     const libsql = createClient({ url: dbUrl });
-    
+
     try {
       await libsql.execute({
         sql: `INSERT INTO items (id, boardId, columnId, title, content, "order", createdBy, createdAt, updatedAt, lastActiveAt)
               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        args: [newItemId, boardId, columnId, data.title, data.content || "", nextOrder, accountId, now, now, now]
+        args: [
+          newItemId,
+          boardId,
+          columnId,
+          data.title,
+          data.content || "",
+          nextOrder,
+          accountId,
+          now,
+          now,
+          now,
+        ],
       });
     } finally {
       libsql.close();

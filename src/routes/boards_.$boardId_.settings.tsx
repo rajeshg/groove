@@ -11,45 +11,16 @@ import { ColorPicker } from "~/components/ColorPicker";
 import { StatusButton } from "~/components/ui/status-button";
 import { useAuth } from "~/components/auth/AuthProvider";
 import { boardsCollection } from "~/db/collections";
-import {
-  getBoardWithMembers,
-  inviteUserToBoard,
-  removeBoardMember,
-} from "~/server/actions/boards";
-import { getInitials, getAvatarColor } from "~/utils/avatar";
-import { Trash2 } from "lucide-react";
+import { inviteUserToBoard } from "~/server/actions/boards";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/boards_/$boardId_/settings")({
   component: BoardSettings,
-  loader: async ({ params }) => {
-    // Check if we're on the server (SSR)
-    if (typeof window === "undefined") {
-      // On server, return empty object - we'll fetch on client
-      return {
-        board: null,
-        members: [],
-        invitations: [],
-        currentUserRole: null,
-      };
-    }
-
-    const accountId = localStorage.getItem("accountId");
-    if (!accountId) {
-      throw new Error("Not authenticated");
-    }
-
-    const data = await getBoardWithMembers({
-      data: { accountId, boardId: params.boardId },
-    });
-
-    return data;
-  },
+  ssr: false,
 });
 
 function BoardSettings() {
   const { boardId } = Route.useParams();
-  const loaderData = Route.useLoaderData();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -66,17 +37,12 @@ function BoardSettings() {
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
   const [isInviting, setIsInviting] = useState(false);
-  const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
 
-  const isOwner =
-    loaderData?.currentUserRole === "owner" ||
-    liveBoard?.accountId === user?.id;
+  const isOwner = liveBoard?.accountId === user?.id;
 
   // Derive current values: user edit takes precedence, otherwise use live data
-  const currentBoardName =
-    boardName ?? liveBoard?.name ?? loaderData?.board?.name ?? "Untitled Board";
-  const currentColor =
-    selectedColor ?? liveBoard?.color ?? loaderData?.board?.color ?? "#e0e0e0";
+  const currentBoardName = boardName ?? liveBoard?.name ?? "Untitled Board";
+  const currentColor = selectedColor ?? liveBoard?.color ?? "#e0e0e0";
 
   const handleSaveBoard = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,36 +88,6 @@ function BoardSettings() {
     } finally {
       setIsInviting(false);
     }
-  };
-
-  const handleRemoveMember = async (memberAccountId: string) => {
-    if (!isOwner || !user?.id) return;
-
-    setRemovingMemberId(memberAccountId);
-    try {
-      await removeBoardMember({
-        data: {
-          accountId: user.id,
-          boardId,
-          memberAccountId,
-        },
-      });
-      toast.success("Member removed");
-      // Refresh the page to show updated members
-      navigate({ to: `/boards/${boardId}/settings` });
-    } catch (error: any) {
-      console.error("Failed to remove member:", error);
-      toast.error(error.message || "Failed to remove member");
-    } finally {
-      setRemovingMemberId(null);
-    }
-  };
-
-  const getDisplayName = (account: any) => {
-    if (account.firstName && account.lastName) {
-      return `${account.firstName} ${account.lastName}`.trim();
-    }
-    return account.firstName || account.email;
   };
 
   return (
@@ -236,77 +172,9 @@ function BoardSettings() {
 
           {/* Members List */}
           <div className="max-h-[240px] overflow-y-auto space-y-2">
-            {(loaderData?.members || []).map((member) => {
-              const isCurrentUser = member.accountId === user?.id;
-              const isMemberOwner =
-                member.accountId ===
-                (liveBoard?.accountId || loaderData?.board?.accountId);
-              const displayName = getDisplayName(member.account);
-
-              return (
-                <div
-                  key={member.id}
-                  className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 group border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
-                >
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-black shadow-sm shrink-0"
-                      style={{ backgroundColor: getAvatarColor(displayName) }}
-                    >
-                      {getInitials(displayName)}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                        <span className="truncate">{displayName}</span>
-                        {isCurrentUser && (
-                          <span className="text-[9px] text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded font-black shrink-0">
-                            YOU
-                          </span>
-                        )}
-                        {isMemberOwner && (
-                          <span className="text-[9px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-1.5 py-0.5 rounded font-black shrink-0">
-                            OWNER
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
-                        {member.account.email}
-                      </div>
-                    </div>
-                  </div>
-
-                  {!isMemberOwner && isOwner && !isCurrentUser && (
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveMember(member.accountId)}
-                      disabled={removingMemberId === member.accountId}
-                      className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all opacity-0 group-hover:opacity-100 shrink-0 disabled:opacity-50"
-                      title="Remove member"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-
-            {/* Pending Invitations */}
-            {(loaderData?.invitations || []).map((invite) => (
-              <div
-                key={invite.id}
-                className="flex items-center justify-between p-2.5 rounded-lg border-2 border-dashed border-blue-200 dark:border-blue-900/40 bg-blue-50/50 dark:bg-blue-900/10"
-              >
-                <div className="min-w-0 flex items-center gap-2.5 flex-1">
-                  <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shrink-0" />
-                  <div className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate">
-                    {invite.email}
-                  </div>
-                </div>
-                <span className="text-[9px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded shrink-0">
-                  Pending
-                </span>
-              </div>
-            ))}
+            <div className="text-xs text-slate-500 dark:text-slate-400">
+              Members will be loaded from API
+            </div>
           </div>
         </div>
       </div>

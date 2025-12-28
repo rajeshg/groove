@@ -132,6 +132,10 @@ export const boardsCollection = createCollection(
   queryCollectionOptions({
     queryKey: ["boards"],
     queryFn: async () => {
+      // Skip on server to prevent SSR hydration errors
+      if (typeof window === "undefined") {
+        return [];
+      }
       const accountId = getAccountId();
       if (!accountId) {
         console.warn("No accountId available for boards query");
@@ -226,6 +230,10 @@ export const columnsCollection = createCollection(
   queryCollectionOptions({
     queryKey: ["columns"],
     queryFn: async () => {
+      // Skip on server to prevent SSR hydration errors
+      if (typeof window === "undefined") {
+        return [];
+      }
       const accountId = getAccountId();
       if (!accountId) {
         console.warn("No accountId available for columns query");
@@ -347,6 +355,10 @@ export const itemsCollection = createCollection(
   queryCollectionOptions({
     queryKey: ["items"],
     queryFn: async () => {
+      // Skip on server to prevent SSR hydration errors
+      if (typeof window === "undefined") {
+        return [];
+      }
       const accountId = getAccountId();
       if (!accountId) {
         console.warn("No accountId available for items query");
@@ -484,6 +496,10 @@ export const commentsCollection = createCollection(
   queryCollectionOptions({
     queryKey: ["comments"],
     queryFn: async () => {
+      // Skip on server to prevent SSR hydration errors
+      if (typeof window === "undefined") {
+        return [];
+      }
       const accountId = getAccountId();
       if (!accountId) {
         console.warn("No accountId available for comments query");
@@ -601,6 +617,10 @@ export const assigneesCollection = createCollection(
   queryCollectionOptions({
     queryKey: ["assignees"],
     queryFn: async () => {
+      // Skip on server to prevent SSR hydration errors
+      if (typeof window === "undefined") {
+        return [];
+      }
       const accountId = getAccountId();
       if (!accountId) {
         console.warn("No accountId available for assignees query");
@@ -651,6 +671,10 @@ export const activitiesCollection = createCollection(
   queryCollectionOptions({
     queryKey: ["activities"],
     queryFn: async () => {
+      // Skip on server to prevent SSR hydration errors
+      if (typeof window === "undefined") {
+        return [];
+      }
       const accountId = getAccountId();
       if (!accountId) {
         console.warn("No accountId available for activities query");

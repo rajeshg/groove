@@ -1,15 +1,8 @@
 "use client";
 
-import { useRef, useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
-import {
-  ChevronRight,
-  Plus,
-  Home,
-  User,
-  LayoutDashboard,
-  Search,
-} from "lucide-react";
+import { ChevronRight, Plus, Home, User, LayoutDashboard } from "lucide-react";
 import { Kbd } from "~/components/ui/kbd";
 import { Skeleton } from "~/components/ui/skeleton";
 import {
@@ -38,8 +31,6 @@ export function BoardSwitcher({
   isLoading,
 }: BoardSwitcherProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [menuSearchTerm, setMenuSearchTerm] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
   const location = useLocation();
 
   // Close menu when location changes
@@ -67,21 +58,6 @@ export function BoardSwitcher({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
-
-  useEffect(() => {
-    if (isOpen) {
-      const timeoutId = setTimeout(() => {
-        inputRef.current?.focus();
-      }, 50);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [isOpen]);
-
-  const filteredBoards = useMemo(() => {
-    return allBoards.filter((board) =>
-      board.name.toLowerCase().includes(menuSearchTerm.toLowerCase())
-    );
-  }, [allBoards, menuSearchTerm]);
 
   if (isLoading && !isOpen) {
     return (
@@ -119,26 +95,8 @@ export function BoardSwitcher({
           </DialogHeader>
 
           <div className="flex flex-col h-[80vh] sm:h-auto max-h-[600px]">
-            {/* Search Header */}
-            <div className="p-5 pb-2">
-              <div className="relative group">
-                <Search
-                  size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors"
-                />
-                <input
-                  ref={inputRef}
-                  type="text"
-                  placeholder="Jump to board..."
-                  className="w-full pl-11 pr-4 py-3 text-base border-2 border-slate-100 dark:border-slate-700/50 rounded-2xl bg-slate-50 dark:bg-slate-900/50 focus:outline-none focus:ring-0 focus:border-blue-500 transition-all placeholder-slate-400 dark:placeholder-slate-500 font-medium"
-                  value={menuSearchTerm}
-                  onChange={(e) => setMenuSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
-
             {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto px-5 pb-6 pt-2 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto px-5 pb-6 pt-6 custom-scrollbar">
               {/* Top Grid Actions */}
               <div className="grid grid-cols-3 gap-3 mb-6">
                 <MenuActionCard
@@ -178,8 +136,8 @@ export function BoardSwitcher({
                 </Link>
 
                 <div className="space-y-1 mt-2">
-                  {filteredBoards.length > 0 ? (
-                    filteredBoards.map((board) => (
+                  {allBoards.length > 0 ? (
+                    allBoards.map((board) => (
                       <Link
                         key={board.id}
                         to="/boards/$boardId"

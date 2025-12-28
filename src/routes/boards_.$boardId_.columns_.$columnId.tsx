@@ -1,7 +1,7 @@
 "use client";
 
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useLiveQuery } from "@tanstack/react-db";
 import { eq } from "@tanstack/db";
 import { generateId } from "~/lib/id";
@@ -20,6 +20,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/boards_/$boardId_/columns_/$columnId")({
   component: ColumnDetailPage,
+  ssr: false,
 });
 
 function ColumnDetailPage() {
@@ -29,6 +30,7 @@ function ColumnDetailPage() {
   const [showNewCardForm, setShowNewCardForm] = useState(false);
   const [newCardTitle, setNewCardTitle] = useState("");
   const [isSubmittingCard, setIsSubmittingCard] = useState(false);
+  const titleInputRef = useRef<HTMLInputElement>(null);
 
   // Live query for board
   const { data: boardData } = useLiveQuery((q) =>
@@ -54,22 +56,16 @@ function ColumnDetailPage() {
 
   const board = boardData?.[0];
   const column = columnData?.[0];
-  const items = (itemsData || []).sort((a: any, b: any) => a.order - b.order);
 
   if (!board || !column) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-8">
-        <Card className="max-w-md mx-auto p-8 text-center">
-          <p className="text-slate-600 dark:text-slate-400 mb-4">
-            Column not found
-          </p>
-          <Button onClick={() => navigate({ to: "/boards" })}>
-            Back to Boards
-          </Button>
-        </Card>
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-8 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900 dark:border-slate-50"></div>
       </div>
     );
   }
+
+  const items = (itemsData || []).sort((a: any, b: any) => a.order - b.order);
 
   const handleCreateCard = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,7 +104,11 @@ function ColumnDetailPage() {
 
       toast.success("Card created!");
       setNewCardTitle("");
-      setShowNewCardForm(false);
+
+      // Keep form open for fast entry and refocus
+      setTimeout(() => {
+        titleInputRef.current?.focus();
+      }, 0);
     } catch (err) {
       toast.error("Failed to create card");
       console.error(err);
@@ -227,6 +227,7 @@ function ColumnDetailPage() {
             {showNewCardForm ? (
               <form onSubmit={handleCreateCard} className="p-4 space-y-3">
                 <input
+                  ref={titleInputRef}
                   type="text"
                   value={newCardTitle}
                   onChange={(e) => setNewCardTitle(e.target.value)}

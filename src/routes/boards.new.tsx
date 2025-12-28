@@ -17,6 +17,7 @@ import { createBoard } from "~/server/actions/boards";
 
 export const Route = createFileRoute("/boards/new")({
   component: NewBoardPage,
+  ssr: false,
 });
 
 function NewBoardPage() {

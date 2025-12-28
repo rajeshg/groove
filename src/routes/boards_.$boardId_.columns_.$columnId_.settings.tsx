@@ -18,6 +18,7 @@ export const Route = createFileRoute(
   "/boards_/$boardId_/columns_/$columnId_/settings"
 )({
   component: ColumnSettingsPage,
+  ssr: false,
 });
 
 function ColumnSettingsPage() {
