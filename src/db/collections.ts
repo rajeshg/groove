@@ -154,23 +154,17 @@ export const boardsCollection = createCollection(
         throw new Error("Account ID is required");
       }
 
-      try {
-        const result = await createBoard({
+      const result = await createBoard({
+        data: {
+          accountId,
           data: {
-            accountId,
-            data: {
-              name: modified.name,
-              color: modified.color || "#3b82f6",
-              template: modified.template,
-            },
+            name: modified.name,
+            color: modified.color || "#3b82f6",
+            template: modified.template,
           },
-        });
-        queryClient.invalidateQueries({ queryKey: ["boards"] });
-        return result;
-      } catch (error) {
-        console.error("Failed to create board:", error);
-        throw error;
-      }
+        },
+      });
+      return result;
     },
     onUpdate: async ({ transaction }: any) => {
       const { key, changes } = transaction.mutations[0];
@@ -180,23 +174,17 @@ export const boardsCollection = createCollection(
         throw new Error("Account ID is required");
       }
 
-      try {
-        const result = await updateBoard({
+      const result = await updateBoard({
+        data: {
+          accountId,
+          boardId: key,
           data: {
-            accountId,
-            boardId: key,
-            data: {
-              name: changes.name,
-              color: changes.color,
-            },
+            name: changes.name,
+            color: changes.color,
           },
-        });
-        queryClient.invalidateQueries({ queryKey: ["boards"] });
-        return result;
-      } catch (error) {
-        console.error("Failed to update board:", error);
-        throw error;
-      }
+        },
+      });
+      return result;
     },
     onDelete: async ({ transaction }: any) => {
       const { key } = transaction.mutations[0];
@@ -206,18 +194,12 @@ export const boardsCollection = createCollection(
         throw new Error("Account ID is required");
       }
 
-      try {
-        await deleteBoard({
-          data: {
-            accountId,
-            boardId: key,
-          },
-        });
-        queryClient.invalidateQueries({ queryKey: ["boards"] });
-      } catch (error) {
-        console.error("Failed to delete board:", error);
-        throw error;
-      }
+      await deleteBoard({
+        data: {
+          accountId,
+          boardId: key,
+        },
+      });
     },
   })
 );
@@ -254,25 +236,17 @@ export const columnsCollection = createCollection(
         throw new Error("Account ID and Board ID are required");
       }
 
-      try {
-        const result = await createColumn({
+      const result = await createColumn({
+        data: {
+          accountId,
+          boardId: modified.boardId,
           data: {
-            accountId,
-            boardId: modified.boardId,
-            data: {
-              name: modified.name,
-              color: modified.color || "#94a3b8",
-            },
+            name: modified.name,
+            color: modified.color || "#94a3b8",
           },
-        });
-        queryClient.invalidateQueries({
-          queryKey: ["columns", modified.boardId],
-        });
-        return result;
-      } catch (error) {
-        console.error("Failed to create column:", error);
-        throw error;
-      }
+        },
+      });
+      return result;
     },
     onUpdate: async ({ transaction }: any) => {
       const { key, changes } = transaction.mutations[0];
@@ -285,7 +259,6 @@ export const columnsCollection = createCollection(
 
       if (!accountId || !boardId) {
         const errorMsg = `Account ID (${accountId}) and Board ID (${boardId}) not available for column update`;
-        console.error(errorMsg);
         throw new Error(errorMsg);
       }
 
@@ -296,21 +269,15 @@ export const columnsCollection = createCollection(
       if (changes.isExpanded !== undefined)
         updateData.isExpanded = changes.isExpanded;
 
-      try {
-        const result = await updateColumn({
-          data: {
-            accountId,
-            boardId,
-            columnId: key,
-            data: updateData,
-          },
-        });
-        queryClient.invalidateQueries({ queryKey: ["columns", boardId] });
-        return result;
-      } catch (error) {
-        console.error("Failed to update column:", error);
-        throw error;
-      }
+      const result = await updateColumn({
+        data: {
+          accountId,
+          boardId,
+          columnId: key,
+          data: updateData,
+        },
+      });
+      return result;
     },
     onDelete: async ({ transaction }: any) => {
       const { key } = transaction.mutations[0];
@@ -323,26 +290,16 @@ export const columnsCollection = createCollection(
 
       if (!accountId || !boardId) {
         const errorMsg = `Account ID (${accountId}) and Board ID (${boardId}) not available for column delete`;
-        console.error(errorMsg);
         throw new Error(errorMsg);
       }
 
-      try {
-        const result = await deleteColumn({
-          data: {
-            accountId,
-            boardId,
-            columnId: key,
-          },
-        });
-        queryClient.invalidateQueries({ queryKey: ["columns", boardId] });
-        queryClient.invalidateQueries({ queryKey: ["items", boardId] });
-        queryClient.invalidateQueries({ queryKey: ["activities"] }); // Activities created on delete
-        return result;
-      } catch (error) {
-        console.error("Failed to delete column:", error);
-        throw error;
-      }
+      await deleteColumn({
+        data: {
+          accountId,
+          boardId,
+          columnId: key,
+        },
+      });
     },
   })
 );
@@ -379,28 +336,18 @@ export const itemsCollection = createCollection(
         throw new Error("Account ID, Board ID, and Column ID are required");
       }
 
-      try {
-        const result = await createItem({
+      const result = await createItem({
+        data: {
+          accountId,
+          boardId: modified.boardId,
+          columnId: modified.columnId,
           data: {
-            accountId,
-            boardId: modified.boardId,
-            columnId: modified.columnId,
-            data: {
-              title: modified.title,
-              content: modified.content || "",
-            },
+            title: modified.title,
+            content: modified.content || "",
           },
-        });
-        // Server creates activity for item creation - invalidate activities
-        queryClient.invalidateQueries({ queryKey: ["activities"] });
-        queryClient.invalidateQueries({
-          queryKey: ["items", modified.boardId],
-        });
-        return result;
-      } catch (error) {
-        console.error("Failed to create item:", error);
-        throw error;
-      }
+        },
+      });
+      return result;
     },
     onUpdate: async ({ transaction }: any) => {
       const { key, changes } = transaction.mutations[0];
@@ -413,7 +360,6 @@ export const itemsCollection = createCollection(
 
       if (!accountId || !boardId) {
         const errorMsg = `Account ID (${accountId}) and Board ID (${boardId}) not available for item update`;
-        console.error(errorMsg);
         throw new Error(errorMsg);
       }
 
@@ -426,33 +372,15 @@ export const itemsCollection = createCollection(
       if (changes.assigneeId !== undefined)
         updateData.assigneeId = changes.assigneeId;
 
-      try {
-        const result = await updateItem({
-          data: {
-            accountId,
-            boardId,
-            itemId: key,
-            data: updateData,
-          },
-        });
-
-        // Invalidate activities query if this update might have created an activity
-        // (column changes, title changes, etc. create activities server-side)
-        if (
-          changes.columnId !== undefined ||
-          changes.title !== undefined ||
-          changes.content !== undefined
-        ) {
-          queryClient.invalidateQueries({ queryKey: ["activities"] });
-        }
-
-        // The collection will automatically refetch the query after onUpdate completes
-        // This ensures the UI updates across all components using useLiveQuery
-        return result;
-      } catch (error) {
-        console.error("Failed to update item:", error);
-        throw error;
-      }
+      const result = await updateItem({
+        data: {
+          accountId,
+          boardId,
+          itemId: key,
+          data: updateData,
+        },
+      });
+      return result;
     },
     onDelete: async ({ transaction }: any) => {
       const { key } = transaction.mutations[0];
@@ -465,25 +393,16 @@ export const itemsCollection = createCollection(
 
       if (!accountId || !boardId) {
         const errorMsg = `Account ID (${accountId}) and Board ID (${boardId}) not available for item delete`;
-        console.error(errorMsg);
         throw new Error(errorMsg);
       }
 
-      try {
-        await deleteItem({
-          data: {
-            accountId,
-            boardId,
-            itemId: key,
-          },
-        });
-        queryClient.invalidateQueries({ queryKey: ["items", boardId] });
-        queryClient.invalidateQueries({ queryKey: ["comments"] }); // Comments might be affected
-        queryClient.invalidateQueries({ queryKey: ["activities"] }); // Activities created on delete
-      } catch (error) {
-        console.error("Failed to delete item:", error);
-        throw error;
-      }
+      await deleteItem({
+        data: {
+          accountId,
+          boardId,
+          itemId: key,
+        },
+      });
     },
   })
 );
@@ -520,28 +439,16 @@ export const commentsCollection = createCollection(
         throw new Error("Account ID and Item ID are required");
       }
 
-      try {
-        const result = await createComment({
+      const result = await createComment({
+        data: {
+          accountId,
+          itemId: modified.itemId,
           data: {
-            accountId,
-            itemId: modified.itemId,
-            data: {
-              content: modified.content,
-            },
+            content: modified.content,
           },
-        });
-        // Server creates activity for comment - invalidate activities
-        queryClient.invalidateQueries({ queryKey: ["activities"] });
-        // Force refetch instead of just invalidating
-        await queryClient.refetchQueries({
-          queryKey: ["comments"],
-          type: "active",
-        });
-        return result;
-      } catch (error) {
-        console.error("Failed to create comment:", error);
-        throw error;
-      }
+        },
+      });
+      return result;
     },
     onUpdate: async ({ transaction }: any) => {
       const { key, changes } = transaction.mutations[0];
@@ -554,27 +461,20 @@ export const commentsCollection = createCollection(
 
       if (!accountId || !itemId) {
         const errorMsg = `Account ID (${accountId}) and Item ID (${itemId}) not available for comment update`;
-        console.error(errorMsg);
         throw new Error(errorMsg);
       }
 
       const updateData: any = {};
       if (changes.content !== undefined) updateData.content = changes.content;
 
-      try {
-        const result = await updateComment({
-          data: {
-            accountId,
-            commentId: key,
-            data: updateData,
-          },
-        });
-        queryClient.invalidateQueries({ queryKey: ["comments", itemId] });
-        return result;
-      } catch (error) {
-        console.error("Failed to update comment:", error);
-        throw error;
-      }
+      const result = await updateComment({
+        data: {
+          accountId,
+          commentId: key,
+          data: updateData,
+        },
+      });
+      return result;
     },
     onDelete: async ({ transaction }: any) => {
       const { key } = transaction.mutations[0];
@@ -587,24 +487,15 @@ export const commentsCollection = createCollection(
 
       if (!accountId || !itemId) {
         const errorMsg = `Account ID (${accountId}) and Item ID (${itemId}) not available for comment delete`;
-        console.error(errorMsg);
         throw new Error(errorMsg);
       }
 
-      try {
-        const result = await deleteComment({
-          data: {
-            accountId,
-            commentId: key,
-          },
-        });
-        queryClient.invalidateQueries({ queryKey: ["comments", itemId] });
-        queryClient.invalidateQueries({ queryKey: ["activities"] }); // Activities created on delete
-        return result;
-      } catch (error) {
-        console.error("Failed to delete comment:", error);
-        throw error;
-      }
+      await deleteComment({
+        data: {
+          accountId,
+          commentId: key,
+        },
+      });
     },
   })
 );
@@ -641,22 +532,15 @@ export const assigneesCollection = createCollection(
         throw new Error("Account ID, Board ID, and Name are required");
       }
 
-      try {
-        const result = await createOrGetAssignee({
-          data: {
-            accountId,
-            boardId: modified.boardId,
-            name: modified.name,
-            userId: modified.userId,
-          },
-        });
-        // Invalidate with correct query key - collection uses ["assignees"]
-        queryClient.invalidateQueries({ queryKey: ["assignees"] });
-        return result;
-      } catch (error) {
-        console.error("Failed to create assignee:", error);
-        throw error;
-      }
+      const result = await createOrGetAssignee({
+        data: {
+          accountId,
+          boardId: modified.boardId,
+          name: modified.name,
+          userId: modified.userId,
+        },
+      });
+      return result;
     },
     // Note: Assignees don't have update/delete in the current schema
     // They're created via createOrGetAssignee which handles duplicates

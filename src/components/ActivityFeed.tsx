@@ -11,8 +11,11 @@ import { Card } from "~/components/ui/card";
 import { MessageSquare, Clock } from "lucide-react";
 import { useState } from "react";
 
+const ITEMS_PER_PAGE = 25;
+
 export function ActivityFeed() {
   const [selectedBoardId, setSelectedBoardId] = useState<string | "all">("all");
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Fetch all activities
   const { data: activitiesData } = useLiveQuery((q) =>
@@ -45,8 +48,14 @@ export function ActivityFeed() {
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
-  // Group activities by date
-  const groupedActivities = sortedActivities.reduce(
+  // Calculate pagination
+  const totalPages = Math.ceil(sortedActivities.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedActivities = sortedActivities.slice(startIndex, endIndex);
+
+  // Group paginated activities by date
+  const groupedActivities = paginatedActivities.reduce(
     (groups: any, activity: any) => {
       const date = new Date(activity.createdAt).toLocaleDateString();
       if (!groups[date]) {
@@ -57,6 +66,12 @@ export function ActivityFeed() {
     },
     {}
   );
+
+  // Reset to page 1 when filter changes
+  const handleFilterChange = (boardId: string) => {
+    setSelectedBoardId(boardId);
+    setCurrentPage(1);
+  };
 
   // Helper to get board info
   const getBoardInfo = (boardId: string) => {
@@ -113,7 +128,7 @@ export function ActivityFeed() {
               </label>
               <select
                 value={selectedBoardId}
-                onChange={(e) => setSelectedBoardId(e.target.value)}
+                onChange={(e) => handleFilterChange(e.target.value)}
                 className="px-3 py-1.5 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="all">All Boards</option>
@@ -256,6 +271,38 @@ export function ActivityFeed() {
                   </div>
                 )
               )}
+
+              {/* Pagination Controls */}
+              <div className="flex items-center justify-center gap-4 mt-8 pt-6 border-t border-slate-200 dark:border-slate-800">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 text-sm font-medium border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                  Previous
+                </button>
+
+                <span className="text-sm text-slate-600 dark:text-slate-400">
+                  Page {currentPage} of {totalPages}
+                </span>
+
+                <button
+                  onClick={() =>
+                    setCurrentPage(Math.min(totalPages, currentPage + 1))
+                  }
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 text-sm font-medium border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                  Next
+                </button>
+              </div>
+
+              {/* Activity Summary */}
+              <div className="text-center text-xs text-slate-500 dark:text-slate-400 mt-4">
+                Showing {startIndex + 1} to{" "}
+                {Math.min(endIndex, sortedActivities.length)} of{" "}
+                {sortedActivities.length} activities
+              </div>
             </div>
           )}
         </div>

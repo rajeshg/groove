@@ -929,6 +929,14 @@ export const createColumn = createServerFn({ method: "POST" })
 
     await db.insert(columns).values(newColumn);
 
+    // Create activity for column creation
+    await createActivity({
+      boardId,
+      accountId,
+      type: "column_created",
+      content: data.name,
+    });
+
     return newColumn;
   });
 
@@ -1088,6 +1096,17 @@ export const updateColumn = createServerFn({ method: "POST" })
       .from(columns)
       .where(eq(columns.id, columnId))
       .limit(1);
+
+    // Create activity for column update if name changed
+    if (data.name !== undefined) {
+      await createActivity({
+        boardId,
+        accountId,
+        type: "column_updated",
+        content: data.name,
+      });
+    }
+
     return updated[0];
   });
 

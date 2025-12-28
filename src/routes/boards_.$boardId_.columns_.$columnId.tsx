@@ -1,7 +1,7 @@
 "use client";
 
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLiveQuery } from "@tanstack/react-db";
 import { eq } from "@tanstack/db";
 import { generateId } from "~/lib/id";
@@ -31,6 +31,16 @@ function ColumnDetailPage() {
   const [newCardTitle, setNewCardTitle] = useState("");
   const [isSubmittingCard, setIsSubmittingCard] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus the input when the form becomes visible
+  useEffect(() => {
+    if (showNewCardForm && titleInputRef.current && !isSubmittingCard) {
+      // Use requestAnimationFrame to ensure DOM is updated before focusing
+      requestAnimationFrame(() => {
+        titleInputRef.current?.focus();
+      });
+    }
+  }, [showNewCardForm, isSubmittingCard]);
 
   // Live query for board
   const { data: boardData } = useLiveQuery((q) =>
@@ -106,9 +116,16 @@ function ColumnDetailPage() {
       setNewCardTitle("");
 
       // Keep form open for fast entry and refocus
+      // Use a longer timeout and ensure state updates complete first
       setTimeout(() => {
-        titleInputRef.current?.focus();
-      }, 0);
+        if (titleInputRef.current) {
+          titleInputRef.current.focus();
+          // On mobile, explicitly select all and show keyboard
+          if (titleInputRef.current.type === "text") {
+            titleInputRef.current.select?.();
+          }
+        }
+      }, 100);
     } catch (err) {
       toast.error("Failed to create card");
       console.error(err);
