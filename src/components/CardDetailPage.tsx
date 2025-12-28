@@ -465,25 +465,20 @@ export function CardDetailPage({
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                       Description
                     </label>
-                    <Textarea
-                      value={editContent}
-                      onChange={(e) => setEditContent(e.target.value)}
-                      onKeyDown={(e) => {
-                        // Allow Shift+Enter for newlines, but Enter alone or Ctrl/Cmd+Enter to save
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSave();
-                        } else if (
-                          (e.ctrlKey || e.metaKey) &&
-                          e.key === "Enter"
-                        ) {
-                          e.preventDefault();
-                          handleSave();
-                        }
-                      }}
-                      placeholder="Add a description..."
-                      rows={6}
-                    />
+                      <Textarea
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        onKeyDown={(e) => {
+                          // Only save with Ctrl/Cmd+Enter
+                          // Plain Enter allows adding new lines on mobile/desktop
+                          if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+                            e.preventDefault();
+                            handleSave();
+                          }
+                        }}
+                        placeholder="Add a description..."
+                        rows={6}
+                      />
                   </div>
 
                   {/* Metadata */}
