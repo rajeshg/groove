@@ -16,7 +16,6 @@ import { UserMenu } from "~/components/auth/UserMenu";
 import { BoardSwitcher } from "~/components/BoardSwitcher";
 import { useLiveQuery } from "@tanstack/react-db";
 import { boardsCollection, queryClient } from "~/db/collections";
-import { eq } from "@tanstack/db";
 import appCss from "~/styles/app.css?url";
 import columnsCss from "~/styles/columns.css?url";
 import { seo } from "~/utils/seo";
@@ -161,35 +160,25 @@ function Navbar() {
           {/* BoardSwitcher with J > */}
           {user && isClient && (
             <div className="flex-shrink-0 max-w-[150px] sm:max-w-none">
-              <BoardSwitcherWrapper
-                user={user}
-                currentBoardId={currentBoardId}
-              />
+              <BoardSwitcherWrapper currentBoardId={currentBoardId} />
             </div>
           )}
         </div>
 
         {/* Right: User Menu */}
         <div className="flex items-center flex-shrink-0 ml-2">
-          <UserMenu />
+          {isClient && <UserMenu />}
         </div>
       </div>
     </div>
   );
 }
 
-function BoardSwitcherWrapper({
-  user,
-  currentBoardId,
-}: {
-  user: any;
-  currentBoardId?: string;
-}) {
-  const result = useLiveQuery((q) =>
-    q
-      .from({ board: boardsCollection })
-      .where(({ board }) => eq(board.accountId, user.id))
-  );
+function BoardSwitcherWrapper({ currentBoardId }: { currentBoardId?: string }) {
+  // The boardsCollection already returns all boards the user has access to
+  // (both owned and invited) via the getBoards server function which filters
+  // by boardMembers table. No client-side filtering needed.
+  const result = useLiveQuery((q) => q.from({ board: boardsCollection }));
 
   const boards = result.data || [];
   const isLoading = !result.data && result.status === "loading";

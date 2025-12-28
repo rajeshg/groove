@@ -93,10 +93,7 @@ function ColumnDetailPage() {
     setIsSubmittingCard(true);
 
     try {
-      const nextOrder =
-        items.length === 0
-          ? 1
-          : Math.max(...items.map((i: any) => i.order)) + 1;
+      const nextOrder = items.length;
 
       itemsCol.insert({
         id: generateId(),
@@ -135,9 +132,9 @@ function ColumnDetailPage() {
   };
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-slate-50 dark:bg-slate-950">
+    <div className="flex flex-col bg-slate-50 dark:bg-slate-950 min-h-screen">
       {/* Header */}
-      <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm p-3 md:p-4 z-10">
+      <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm p-3 md:p-4 z-40">
         <div className="max-w-4xl mx-auto">
           {/* Mobile Header */}
           <div className="md:hidden flex items-center justify-between gap-2">
@@ -237,8 +234,50 @@ function ColumnDetailPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-8">
+      <div className="flex-1 p-4 md:p-8">
         <div className="max-w-4xl mx-auto space-y-4">
+          {/* Cards List */}
+          {items.length === 0 ? (
+            <Card className="p-10">
+              <div className="text-center py-12 text-slate-500 dark:text-slate-400">
+                <Inbox className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>No cards in this column yet</p>
+              </div>
+            </Card>
+          ) : (
+            <div className="space-y-2">
+              {items.map((item: any) => (
+                <KanbanCard
+                  key={item.id}
+                  id={item.id}
+                  title={item.title}
+                  content={item.content}
+                  boardId={boardId}
+                  onDelete={() => {
+                    itemsCol.delete(item.id);
+                    toast.success("Card deleted");
+                  }}
+                  assignee={null}
+                  createdBy={item.createdBy}
+                  createdByUser={
+                    item.createdByUser
+                      ? {
+                          id: item.createdByUser.id || null,
+                          firstName: item.createdByUser.firstName || null,
+                          lastName: item.createdByUser.lastName || null,
+                          email: item.createdByUser.email || null,
+                        }
+                      : null
+                  }
+                  createdAt={item.createdAt}
+                  updatedAt={item.updatedAt}
+                  lastActiveAt={item.lastActiveAt}
+                  columnColor={column.color}
+                />
+              ))}
+            </div>
+          )}
+
           {/* Add Card Section */}
           <Card className="border-2 border-slate-200 dark:border-slate-800">
             {showNewCardForm ? (
@@ -286,48 +325,6 @@ function ColumnDetailPage() {
               </button>
             )}
           </Card>
-
-          {/* Cards List */}
-          {items.length === 0 ? (
-            <Card className="p-10">
-              <div className="text-center py-12 text-slate-500 dark:text-slate-400">
-                <Inbox className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>No cards in this column yet</p>
-              </div>
-            </Card>
-          ) : (
-            <div className="space-y-2">
-              {items.map((item: any) => (
-                <KanbanCard
-                  key={item.id}
-                  id={item.id}
-                  title={item.title}
-                  content={item.content}
-                  boardId={boardId}
-                  onDelete={() => {
-                    itemsCol.delete(item.id);
-                    toast.success("Card deleted");
-                  }}
-                  assignee={null}
-                  createdBy={item.createdBy}
-                  createdByUser={
-                    item.createdByUser
-                      ? {
-                          id: item.createdByUser.id || null,
-                          firstName: item.createdByUser.firstName || null,
-                          lastName: item.createdByUser.lastName || null,
-                          email: item.createdByUser.email || null,
-                        }
-                      : null
-                  }
-                  createdAt={item.createdAt}
-                  updatedAt={item.updatedAt}
-                  lastActiveAt={item.lastActiveAt}
-                  columnColor={column.color}
-                />
-              ))}
-            </div>
-          )}
         </div>
       </div>
     </div>

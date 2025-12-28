@@ -367,25 +367,33 @@ export function CardDetailPage({
               <span className="sm:hidden">Back</span>
             </Button>
             {!isEditing && (
-              <div className="flex gap-2">
-                <Button onClick={() => setIsEditing(true)} size="sm">
-                  Edit
+              <div className="flex gap-1">
+                <Button
+                  onClick={() => setIsEditing(true)}
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1.5 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+                >
+                  <Edit2 size={14} />
+                  <span className="hidden sm:inline">Edit</span>
                 </Button>
                 {showDeleteConfirm ? (
-                  <div className="flex gap-2">
+                  <div className="flex gap-1">
                     <Button
                       onClick={handleDeleteCard}
                       disabled={isDeletingCard}
-                      variant="destructive"
+                      variant="ghost"
                       size="sm"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950"
                     >
-                      {isDeletingCard ? "Deleting..." : "Confirm Delete"}
+                      {isDeletingCard ? "Deleting..." : "Confirm"}
                     </Button>
                     <Button
                       onClick={() => setShowDeleteConfirm(false)}
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
                       disabled={isDeletingCard}
+                      className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
                     >
                       Cancel
                     </Button>
@@ -393,11 +401,11 @@ export function CardDetailPage({
                 ) : (
                   <Button
                     onClick={() => setShowDeleteConfirm(true)}
-                    variant="destructive"
+                    variant="ghost"
                     size="sm"
-                    className="gap-1"
+                    className="gap-1.5 text-slate-600 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400"
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={14} />
                     <span className="hidden sm:inline">Delete</span>
                   </Button>
                 )}
@@ -408,27 +416,22 @@ export function CardDetailPage({
           {/* Card Details with Column Selector */}
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Main Card Content */}
-            <Card className="flex-1 p-4 md:p-8">
-              {/* Board & Column Info */}
-              <div className="mb-4 md:mb-6 pb-4 md:pb-6 border-b border-slate-200 dark:border-slate-700">
-                <div className="flex items-center gap-2 mb-4">
-                  {column && (
-                    <>
-                      <span
-                        className="inline-block px-2 md:px-3 py-1 text-[10px] font-bold text-white rounded-lg shadow-sm"
-                        style={{
-                          backgroundColor: getColumnColor(column.color),
-                        }}
-                      >
-                        NO. {card.id.substring(0, 4).toUpperCase()}
-                      </span>
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                        {column.name}
-                      </span>
-                    </>
-                  )}
+            <Card className="flex-1 p-4 md:p-8 pt-8 relative overflow-hidden">
+              {/* Card ID Badge - absolutely positioned at top-left, matching KanbanCard style */}
+              {column && (
+                <div
+                  className="absolute top-0 left-0 inline-flex items-center text-white font-black px-3 py-1 text-[9px] gap-2 font-mono uppercase tracking-widest rounded-br-lg shadow-sm"
+                  style={{
+                    backgroundColor: getColumnColor(column.color),
+                    textShadow: "0 1px 1px rgba(0, 0, 0, 0.2)",
+                  }}
+                >
+                  <span className="opacity-80">#{card.id.substring(0, 4)}</span>
+                  <span className="border-l border-white/20 pl-2">
+                    {column.name}
+                  </span>
                 </div>
-              </div>
+              )}
 
               {isEditing ? (
                 // Edit Mode
@@ -572,205 +575,6 @@ export function CardDetailPage({
                     availableAssignees={assignees as any}
                     isCardDetail={true}
                   />
-
-                  {/* Comments Section */}
-                  <div className="pt-6 md:pt-8 mt-6 md:mt-8 border-t border-slate-200 dark:border-slate-700">
-                    <div className="flex items-center gap-2 mb-4 md:mb-6">
-                      <MessageSquare
-                        size={18}
-                        className="text-slate-500 dark:text-slate-400"
-                      />
-                      <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
-                        Comments
-                      </h2>
-                      <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full text-xs font-medium">
-                        {comments.length}
-                      </span>
-                    </div>
-
-                    {/* Add Comment */}
-                    <div className="flex gap-3 mb-8">
-                      <div className="flex-1">
-                        <Textarea
-                          value={newComment}
-                          onChange={(e) => setNewComment(e.target.value)}
-                          onKeyDown={(e) => {
-                            // Submit on Ctrl/Cmd+Enter
-                            if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-                              e.preventDefault();
-                              if (newComment.trim()) {
-                                handleAddComment();
-                              }
-                            }
-                          }}
-                          placeholder="Write a comment..."
-                          className="min-h-[80px] text-sm"
-                        />
-                      </div>
-                      <div className="flex flex-col justify-end">
-                        <Button
-                          onClick={handleAddComment}
-                          disabled={isSubmittingComment || !newComment.trim()}
-                          size="sm"
-                          className="gap-2"
-                        >
-                          <Send size={14} />
-                          {isSubmittingComment ? "..." : "Send"}
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Comments List */}
-                    <div className="space-y-6">
-                      {comments.length === 0 ? (
-                        <div className="text-center py-8 text-slate-400 dark:text-slate-500 text-sm italic">
-                          No comments yet. Be the first to say something!
-                        </div>
-                      ) : (
-                        comments.map((comment: any) => (
-                          <div key={comment.id} className="group flex gap-3">
-                            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-700 dark:text-blue-300 text-xs font-bold shrink-0">
-                              {comment.accountId?.[0] || "?"}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between mb-1">
-                                <div className="text-sm font-medium text-slate-900 dark:text-slate-50 truncate">
-                                  User {comment.accountId?.substring(0, 8)}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-[10px] text-slate-400 dark:text-slate-500">
-                                    {new Date(
-                                      comment.createdAt
-                                    ).toLocaleString()}
-                                  </span>
-                                  {user?.id === comment.accountId && (
-                                    <div className="flex items-center gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                                      {editingCommentId === comment.id ? (
-                                        <button
-                                          onClick={() =>
-                                            handleSaveEdit(comment.id)
-                                          }
-                                          className="text-green-600 hover:text-green-700 transition-colors"
-                                          title="Save edit"
-                                        >
-                                          <Check size={12} />
-                                        </button>
-                                      ) : (
-                                        canEditComment(comment.createdAt) && (
-                                          <button
-                                            onClick={() =>
-                                              handleEditComment(
-                                                comment.id,
-                                                comment.content
-                                              )
-                                            }
-                                            className="text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                                            title="Edit comment"
-                                          >
-                                            <Edit2 size={12} />
-                                          </button>
-                                        )
-                                      )}
-                                      {editingCommentId === comment.id ? (
-                                        <button
-                                          onClick={handleCancelEdit}
-                                          className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-                                          title="Cancel edit"
-                                        >
-                                          <X size={12} />
-                                        </button>
-                                      ) : (
-                                        canDeleteComment(comment.createdAt) && (
-                                          <button
-                                            onClick={() =>
-                                              handleDeleteComment(comment.id)
-                                            }
-                                            className="text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                                            title="Delete comment"
-                                          >
-                                            <Trash2 size={12} />
-                                          </button>
-                                        )
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                              {editingCommentId === comment.id ? (
-                                <Textarea
-                                  value={editCommentContent}
-                                  onChange={(e) =>
-                                    setEditCommentContent(e.target.value)
-                                  }
-                                  className="text-sm min-h-[60px] mt-1"
-                                  autoFocus
-                                />
-                              ) : (
-                                <div className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap break-words">
-                                  {comment.content}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-
-                    {/* Activity Feed */}
-                    <div className="border-t border-slate-200 dark:border-slate-700 pt-6 mt-6">
-                      <h3 className="text-sm font-bold text-slate-900 dark:text-slate-50 mb-4 flex items-center gap-2">
-                        <MessageSquare size={16} />
-                        Activity
-                      </h3>
-                      <div className="space-y-4 max-h-64 overflow-y-auto">
-                        {!activities || activities.length === 0 ? (
-                          <div className="text-center py-6 text-slate-400 dark:text-slate-500 text-sm italic">
-                            No activity yet
-                          </div>
-                        ) : (
-                          activities.map((activity: any) => (
-                            <div
-                              key={activity.id}
-                              className="flex gap-3 text-xs"
-                            >
-                              <div className="flex-shrink-0 w-6 h-6 rounded bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] font-black uppercase text-slate-500">
-                                {activity.user?.firstName?.[0] ||
-                                  activity.user?.lastName?.[0] ||
-                                  "?"}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-slate-700 dark:text-slate-300">
-                                  <span className="font-bold text-slate-900 dark:text-white">
-                                    {activity.user?.firstName ||
-                                      activity.user?.lastName ||
-                                      "System"}
-                                  </span>{" "}
-                                  {activity.type
-                                    .replace("item_", "")
-                                    .replace("_", " ")}
-                                </p>
-                                {activity.content && (
-                                  <p className="text-slate-500 dark:text-slate-400 italic text-[10px] truncate">
-                                    {activity.content}
-                                  </p>
-                                )}
-                                <span className="text-[10px] text-slate-400">
-                                  {new Date(
-                                    activity.createdAt
-                                  ).toLocaleTimeString(undefined, {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                    month: "short",
-                                    day: "numeric",
-                                  })}
-                                </span>
-                              </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  </div>
                 </div>
               )}
             </Card>
@@ -807,6 +611,206 @@ export function CardDetailPage({
               </Card>
             )}
           </div>
+
+          {/* Comments Section - Moved to bottom */}
+          {!isEditing && (
+            <Card className="mt-4 p-4 md:p-6">
+              <div className="flex items-center gap-2 mb-4 md:mb-6">
+                <MessageSquare
+                  size={18}
+                  className="text-slate-500 dark:text-slate-400"
+                />
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+                  Comments
+                </h2>
+                <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full text-xs font-medium">
+                  {comments.length}
+                </span>
+              </div>
+
+              {/* Add Comment */}
+              <div className="flex gap-3 mb-8">
+                <div className="flex-1">
+                  <Textarea
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    onKeyDown={(e) => {
+                      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+                        e.preventDefault();
+                        if (newComment.trim()) {
+                          handleAddComment();
+                        }
+                      }
+                    }}
+                    placeholder="Write a comment..."
+                    className="min-h-[80px] text-sm"
+                  />
+                </div>
+                <div className="flex flex-col justify-end">
+                  <Button
+                    onClick={handleAddComment}
+                    disabled={isSubmittingComment || !newComment.trim()}
+                    size="sm"
+                    className="gap-2"
+                  >
+                    <Send size={14} />
+                    {isSubmittingComment ? "..." : "Send"}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Comments List */}
+              <div className="space-y-6">
+                {comments.length === 0 ? (
+                  <div className="text-center py-8 text-slate-400 dark:text-slate-500 text-sm italic">
+                    No comments yet. Be the first to say something!
+                  </div>
+                ) : (
+                  comments.map((comment: any) => (
+                    <div key={comment.id} className="group flex gap-3">
+                      <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-700 dark:text-blue-300 text-xs font-bold shrink-0">
+                        {comment.user?.firstName?.[0] ||
+                          comment.user?.lastName?.[0] ||
+                          "?"}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="text-sm font-medium text-slate-900 dark:text-slate-50 truncate">
+                            {comment.user?.firstName && comment.user?.lastName
+                              ? `${comment.user.firstName} ${comment.user.lastName}`
+                              : comment.user?.firstName ||
+                                comment.user?.lastName ||
+                                "System"}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                              {new Date(comment.createdAt).toLocaleString()}
+                            </span>
+                            {user?.id === comment.accountId && (
+                              <div className="flex items-center gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                {editingCommentId === comment.id ? (
+                                  <button
+                                    onClick={() => handleSaveEdit(comment.id)}
+                                    className="text-green-600 hover:text-green-700 transition-colors"
+                                    title="Save edit"
+                                  >
+                                    <Check size={12} />
+                                  </button>
+                                ) : (
+                                  canEditComment(comment.createdAt) && (
+                                    <button
+                                      onClick={() =>
+                                        handleEditComment(
+                                          comment.id,
+                                          comment.content
+                                        )
+                                      }
+                                      className="text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                      title="Edit comment"
+                                    >
+                                      <Edit2 size={12} />
+                                    </button>
+                                  )
+                                )}
+                                {editingCommentId === comment.id ? (
+                                  <button
+                                    onClick={handleCancelEdit}
+                                    className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                                    title="Cancel edit"
+                                  >
+                                    <X size={12} />
+                                  </button>
+                                ) : (
+                                  canDeleteComment(comment.createdAt) && (
+                                    <button
+                                      onClick={() =>
+                                        handleDeleteComment(comment.id)
+                                      }
+                                      className="text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                                      title="Delete comment"
+                                    >
+                                      <Trash2 size={12} />
+                                    </button>
+                                  )
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        {editingCommentId === comment.id ? (
+                          <Textarea
+                            value={editCommentContent}
+                            onChange={(e) =>
+                              setEditCommentContent(e.target.value)
+                            }
+                            className="text-sm min-h-[60px] mt-1"
+                            autoFocus
+                          />
+                        ) : (
+                          <div className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap break-words">
+                            {comment.content}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </Card>
+          )}
+
+          {/* Activity Feed - Moved to bottom */}
+          {!isEditing && (
+            <Card className="mt-4 p-4 md:p-6">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-50 mb-4 flex items-center gap-2">
+                <MessageSquare size={16} />
+                Activity
+              </h3>
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {!activities || activities.length === 0 ? (
+                  <div className="text-center py-6 text-slate-400 dark:text-slate-500 text-sm italic">
+                    No activity yet
+                  </div>
+                ) : (
+                  activities.map((activity: any) => (
+                    <div key={activity.id} className="flex gap-3 text-xs">
+                      <div className="flex-shrink-0 w-6 h-6 rounded bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] font-black uppercase text-slate-500">
+                        {activity.user?.firstName?.[0] ||
+                          activity.user?.lastName?.[0] ||
+                          "?"}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-slate-700 dark:text-slate-300">
+                          <span className="font-bold text-slate-900 dark:text-white">
+                            {activity.user?.firstName ||
+                              activity.user?.lastName ||
+                              "System"}
+                          </span>{" "}
+                          {activity.type.replace("item_", "").replace("_", " ")}
+                        </p>
+                        {activity.content && (
+                          <p className="text-slate-500 dark:text-slate-400 italic text-[10px] truncate">
+                            {activity.content}
+                          </p>
+                        )}
+                        <span className="text-[10px] text-slate-400">
+                          {new Date(activity.createdAt).toLocaleTimeString(
+                            undefined,
+                            {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              month: "short",
+                              day: "numeric",
+                            }
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </Card>
+          )}
         </div>
       </div>
     </div>

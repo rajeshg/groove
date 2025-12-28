@@ -17,6 +17,7 @@ import { Route as PostsRouteImport } from './routes/posts'
 import { Route as LogoutRouteImport } from './routes/logout'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InviteRouteImport } from './routes/invite'
+import { Route as InvitationsRouteImport } from './routes/invitations'
 import { Route as DeferredRouteImport } from './routes/deferred'
 import { Route as CustomScriptDotjsRouteImport } from './routes/customScript[.]js'
 import { Route as PathlessLayoutRouteImport } from './routes/_pathlessLayout'
@@ -91,6 +92,11 @@ const LoginRoute = LoginRouteImport.update({
 const InviteRoute = InviteRouteImport.update({
   id: '/invite',
   path: '/invite',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvitationsRoute = InvitationsRouteImport.update({
+  id: '/invitations',
+  path: '/invitations',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DeferredRoute = DeferredRouteImport.update({
@@ -277,6 +283,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/customScript.js': typeof CustomScriptDotjsRoute
   '/deferred': typeof DeferredRoute
+  '/invitations': typeof InvitationsRoute
   '/invite': typeof InviteRoute
   '/login': typeof LoginRoute
   '/logout': typeof LogoutRoute
@@ -320,6 +327,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/customScript.js': typeof CustomScriptDotjsRoute
   '/deferred': typeof DeferredRoute
+  '/invitations': typeof InvitationsRoute
   '/invite': typeof InviteRoute
   '/login': typeof LoginRoute
   '/logout': typeof LogoutRoute
@@ -363,6 +371,7 @@ export interface FileRoutesById {
   '/_pathlessLayout': typeof PathlessLayoutRouteWithChildren
   '/customScript.js': typeof CustomScriptDotjsRoute
   '/deferred': typeof DeferredRoute
+  '/invitations': typeof InvitationsRoute
   '/invite': typeof InviteRoute
   '/login': typeof LoginRoute
   '/logout': typeof LogoutRoute
@@ -409,6 +418,7 @@ export interface FileRouteTypes {
     | '/'
     | '/customScript.js'
     | '/deferred'
+    | '/invitations'
     | '/invite'
     | '/login'
     | '/logout'
@@ -452,6 +462,7 @@ export interface FileRouteTypes {
     | '/'
     | '/customScript.js'
     | '/deferred'
+    | '/invitations'
     | '/invite'
     | '/login'
     | '/logout'
@@ -494,6 +505,7 @@ export interface FileRouteTypes {
     | '/_pathlessLayout'
     | '/customScript.js'
     | '/deferred'
+    | '/invitations'
     | '/invite'
     | '/login'
     | '/logout'
@@ -540,6 +552,7 @@ export interface RootRouteChildren {
   PathlessLayoutRoute: typeof PathlessLayoutRouteWithChildren
   CustomScriptDotjsRoute: typeof CustomScriptDotjsRoute
   DeferredRoute: typeof DeferredRoute
+  InvitationsRoute: typeof InvitationsRoute
   InviteRoute: typeof InviteRoute
   LoginRoute: typeof LoginRoute
   LogoutRoute: typeof LogoutRoute
@@ -628,6 +641,13 @@ declare module '@tanstack/react-router' {
       path: '/invite'
       fullPath: '/invite'
       preLoaderRoute: typeof InviteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invitations': {
+      id: '/invitations'
+      path: '/invitations'
+      fullPath: '/invitations'
+      preLoaderRoute: typeof InvitationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/deferred': {
@@ -961,6 +981,7 @@ const rootRouteChildren: RootRouteChildren = {
   PathlessLayoutRoute: PathlessLayoutRouteWithChildren,
   CustomScriptDotjsRoute: CustomScriptDotjsRoute,
   DeferredRoute: DeferredRoute,
+  InvitationsRoute: InvitationsRoute,
   InviteRoute: InviteRoute,
   LoginRoute: LoginRoute,
   LogoutRoute: LogoutRoute,

@@ -296,10 +296,17 @@ export const getAllComments = createServerFn({ method: "GET" })
         content: comments.content,
         createdAt: comments.createdAt,
         updatedAt: comments.updatedAt,
+        user: {
+          id: accounts.id,
+          firstName: accounts.firstName,
+          lastName: accounts.lastName,
+          email: accounts.email,
+        },
       })
       .from(comments)
       .innerJoin(items, eq(comments.itemId, items.id))
       .innerJoin(boardMembers, eq(items.boardId, boardMembers.boardId))
+      .leftJoin(accounts, eq(comments.accountId, accounts.id))
       .where(eq(boardMembers.accountId, accountId))
       .orderBy(desc(comments.createdAt));
 
@@ -347,6 +354,77 @@ export const getBoard = createServerFn({ method: "GET" })
     }
 
     return board[0];
+  });
+
+/**
+ * Get all members and pending invitations for a board
+ * Requires board owner permissions
+ */
+export const getBoardMembers = createServerFn({ method: "GET" })
+  .inputValidator(
+    z.object({
+      accountId: z.string(),
+      boardId: z.string(),
+    })
+  )
+  .handler(async ({ data: { accountId, boardId } }) => {
+    const db = getDb();
+
+    // Verify user is board owner
+    const boardAccess = await db
+      .select({ role: boardMembers.role })
+      .from(boardMembers)
+      .where(
+        and(
+          eq(boardMembers.boardId, boardId),
+          eq(boardMembers.accountId, accountId)
+        )
+      )
+      .limit(1);
+
+    if (!boardAccess[0]) {
+      throw new Error("Board not found or unauthorized");
+    }
+
+    if (boardAccess[0].role !== "owner") {
+      throw new Error("Only board owners can view board members");
+    }
+
+    // Get all members
+    const members = await db
+      .select({
+        id: boardMembers.id,
+        accountId: boardMembers.accountId,
+        firstName: accounts.firstName,
+        lastName: accounts.lastName,
+        email: accounts.email,
+        role: boardMembers.role,
+      })
+      .from(boardMembers)
+      .leftJoin(accounts, eq(boardMembers.accountId, accounts.id))
+      .where(eq(boardMembers.boardId, boardId));
+
+    // Get pending invitations
+    const pendingInvitations = await db
+      .select({
+        id: boardInvitations.id,
+        email: boardInvitations.email,
+        status: boardInvitations.status,
+        role: boardInvitations.role,
+        createdAt: boardInvitations.createdAt,
+      })
+      .from(boardInvitations)
+      .where(
+        and(
+          eq(boardInvitations.boardId, boardId),
+          eq(boardInvitations.status, "pending")
+        )
+      );
+
+    return {
+      members,
+      pendingInvitations,
+    };
   });
 
 // ============================================================================
@@ -1150,7 +1228,7 @@ export const createItem = createServerFn({ method: "POST" })
       .select()
       .from(items)
       .where(eq(items.columnId, columnId))
-      .orderBy((i) => i.order)
+      .orderBy(desc(items.order))
       .limit(1);
 
     const nextOrder = (maxOrderResult[0]?.order ?? -1) + 1;
@@ -1551,7 +1629,11 @@ export const updateComment = createServerFn({ method: "POST" })
 
     // Verify access
     const existing = await db
-      .select({ createdAt: comments.createdAt, boardId: items.boardId })
+      .select({
+        createdAt: comments.createdAt,
+        boardId: items.boardId,
+        itemId: comments.itemId,
+      })
       .from(comments)
       .innerJoin(items, eq(comments.itemId, items.id))
       .where(eq(comments.id, commentId))
@@ -1596,6 +1678,18 @@ export const updateComment = createServerFn({ method: "POST" })
         updatedAt: nowIso,
       })
       .where(eq(comments.id, commentId));
+
+    // Create activity for comment edit
+    await createActivity({
+      boardId: existing[0].boardId,
+      itemId: existing[0].itemId,
+      accountId,
+      type: "comment_updated",
+      content:
+        data.content.length > 50
+          ? `${data.content.substring(0, 50)}...`
+          : data.content,
+    });
 
     return { success: true };
   });
@@ -2081,11 +2175,13 @@ export const getAllActivities = createServerFn({ method: "GET" })
   .handler(async ({ data: { accountId } }) => {
     const db = getDb();
 
-    // Get all boards for this account
+    // Get all boards this account has access to (via boardMembers table)
+    // This includes boards they own AND boards they're invited to
     const userBoards = await db
       .select({ id: boards.id })
       .from(boards)
-      .where(eq(boards.accountId, accountId));
+      .innerJoin(boardMembers, eq(boards.id, boardMembers.boardId))
+      .where(eq(boardMembers.accountId, accountId));
 
     const boardIds = userBoards.map((b) => b.id);
 
@@ -2145,4 +2241,209 @@ export const getItemActivities = createServerFn({ method: "GET" })
       .orderBy(desc(activities.createdAt));
 
     return itemActivities;
+  });
+
+/**
+ * Get all pending invitations for a user by their email
+ */
+export const getPendingInvitationsForUser = createServerFn({ method: "GET" })
+  .inputValidator(z.object({ accountId: z.string() }))
+  .handler(async ({ data: { accountId } }) => {
+    const db = getDb();
+
+    // Get user email
+    const user = await db
+      .select({ email: accounts.email })
+      .from(accounts)
+      .where(eq(accounts.id, accountId))
+      .limit(1);
+
+    if (!user[0]) {
+      throw new Error("User not found");
+    }
+
+    // Get all pending invitations for this user's email
+    const pendingInvitations = await db
+      .select({
+        id: boardInvitations.id,
+        boardId: boardInvitations.boardId,
+        email: boardInvitations.email,
+        role: boardInvitations.role,
+        status: boardInvitations.status,
+        createdAt: boardInvitations.createdAt,
+        boardName: boards.name,
+        inviterFirstName: accounts.firstName,
+        inviterLastName: accounts.lastName,
+        inviterEmail: accounts.email,
+      })
+      .from(boardInvitations)
+      .innerJoin(boards, eq(boardInvitations.boardId, boards.id))
+      .leftJoin(accounts, eq(boardInvitations.invitedBy, accounts.id))
+      .where(
+        and(
+          eq(boardInvitations.email, user[0].email),
+          eq(boardInvitations.status, "pending")
+        )
+      )
+      .orderBy(desc(boardInvitations.createdAt));
+
+    return pendingInvitations.map((inv) => ({
+      ...inv,
+      inviterName:
+        inv.inviterFirstName && inv.inviterLastName
+          ? `${inv.inviterFirstName} ${inv.inviterLastName}`.trim()
+          : inv.inviterFirstName || inv.inviterEmail,
+    }));
+  });
+
+/**
+ * Reject a board invitation
+ */
+export const rejectBoardInvitation = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      accountId: z.string(),
+      data: z.object({ invitationId: z.string() }),
+    })
+  )
+  .handler(async ({ data: { accountId, data } }) => {
+    const db = getDb();
+    const { invitationId } = data;
+
+    // Get invitation details
+    const invitation = await db
+      .select()
+      .from(boardInvitations)
+      .where(eq(boardInvitations.id, invitationId))
+      .limit(1);
+
+    if (!invitation[0]) {
+      throw new Error("Invitation not found");
+    }
+
+    if (invitation[0].status !== "pending") {
+      throw new Error("Invitation has already been processed");
+    }
+
+    // Get user's email
+    const user = await db
+      .select({ email: accounts.email })
+      .from(accounts)
+      .where(eq(accounts.id, accountId))
+      .limit(1);
+
+    if (!user[0]) {
+      throw new Error("User not found");
+    }
+
+    // Verify invitation email matches user's email
+    if (user[0].email !== invitation[0].email) {
+      throw new Error("This invitation was sent to a different email address");
+    }
+
+    // Update invitation status to rejected
+    const now = new Date().toISOString();
+    await db
+      .update(boardInvitations)
+      .set({ status: "rejected", updatedAt: now })
+      .where(eq(boardInvitations.id, invitationId));
+
+    return { success: true };
+  });
+
+/**
+ * Resend a board invitation email
+ */
+export const resendInvitationEmail = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      accountId: z.string(),
+      data: z.object({ invitationId: z.string() }),
+    })
+  )
+  .handler(async ({ data: { accountId, data } }) => {
+    const db = getDb();
+    const { invitationId } = data;
+
+    // Get invitation details
+    const invitation = await db
+      .select()
+      .from(boardInvitations)
+      .where(eq(boardInvitations.id, invitationId))
+      .limit(1);
+
+    if (!invitation[0]) {
+      throw new Error("Invitation not found");
+    }
+
+    if (invitation[0].status !== "pending") {
+      throw new Error("Invitation has already been processed");
+    }
+
+    // Check if invitation has expired (7 days)
+    const invitationAge =
+      Date.now() - new Date(invitation[0].createdAt).getTime();
+    const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
+    if (invitationAge > sevenDaysInMs) {
+      throw new Error("Invitation has expired");
+    }
+
+    // Get user's email
+    const user = await db
+      .select({ email: accounts.email })
+      .from(accounts)
+      .where(eq(accounts.id, accountId))
+      .limit(1);
+
+    if (!user[0]) {
+      throw new Error("User not found");
+    }
+
+    // Verify invitation email matches user's email
+    if (user[0].email !== invitation[0].email) {
+      throw new Error("This invitation was sent to a different email address");
+    }
+
+    // Get board details
+    const board = await db
+      .select()
+      .from(boards)
+      .where(eq(boards.id, invitation[0].boardId))
+      .limit(1);
+
+    if (!board[0]) {
+      throw new Error("Board not found");
+    }
+
+    // Get inviter's name
+    const inviter = await db
+      .select({ firstName: accounts.firstName, lastName: accounts.lastName })
+      .from(accounts)
+      .where(eq(accounts.id, invitation[0].invitedBy))
+      .limit(1);
+
+    const inviterName = inviter[0]
+      ? `${inviter[0].firstName} ${inviter[0].lastName}`.trim()
+      : "Unknown";
+
+    // Send invitation email (fire and forget)
+    const baseUrl =
+      process.env.APP_URL?.replace(/\/$/, "") || "http://localhost:3000";
+    const inviteUrl = `${baseUrl}/invite?id=${invitation[0].id}`;
+    try {
+      await sendBoardInvitationEmail(
+        invitation[0].email,
+        board[0].name,
+        inviterName,
+        inviteUrl
+      );
+    } catch (emailError) {
+      console.error(
+        "[resendInvitationEmail] Failed to send email:",
+        emailError
+      );
+      throw new Error("Failed to send invitation email");
+    }
+
+    return { success: true };
   });

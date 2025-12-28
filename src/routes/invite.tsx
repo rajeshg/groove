@@ -82,15 +82,11 @@ function InvitePage() {
       });
 
       if (result.success) {
-        toast.success("Invitation accepted! Redirecting to board...");
-        if (result.boardId) {
-          navigate({
-            to: "/boards/$boardId",
-            params: { boardId: result.boardId },
-          });
-        } else {
+        toast.success("Invitation accepted!");
+        // Redirect to boards page to avoid state issues
+        setTimeout(() => {
           navigate({ to: "/boards" });
-        }
+        }, 500);
       }
     } catch (err: any) {
       console.error("[InvitePage] Failed to accept invitation:", err);

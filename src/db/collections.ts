@@ -27,6 +27,8 @@ import {
   getAllAssignees,
   createOrGetAssignee,
   getAllActivities,
+  getPendingInvitationsForUser,
+  acceptBoardInvitation as acceptInvitation,
 } from "~/server/actions/boards";
 
 export const queryClient = new QueryClient({
@@ -448,6 +450,10 @@ export const commentsCollection = createCollection(
           },
         },
       });
+
+      // Refetch activities collection since new comment activity was created server-side
+      await activitiesCollection.utils.refetch();
+
       return result;
     },
     onUpdate: async ({ transaction }: any) => {
@@ -474,6 +480,10 @@ export const commentsCollection = createCollection(
           data: updateData,
         },
       });
+
+      // Refetch activities collection since comment updated activity was created server-side
+      await activitiesCollection.utils.refetch();
+
       return result;
     },
     onDelete: async ({ transaction }: any) => {
@@ -496,6 +506,9 @@ export const commentsCollection = createCollection(
           commentId: key,
         },
       });
+
+      // Refetch activities collection since comment deleted activity was created server-side
+      await activitiesCollection.utils.refetch();
     },
   })
 );
@@ -571,5 +584,51 @@ export const activitiesCollection = createCollection(
     queryClient,
     getKey: (item: any) => item.id,
     // Activities are read-only in the UI, created server-side via mutations
+  })
+);
+
+// ============================================================================
+// Invitations Collection
+// ============================================================================
+
+export const invitationsCollection = createCollection(
+  queryCollectionOptions({
+    queryKey: ["invitations"],
+    queryFn: async () => {
+      // Skip on server to prevent SSR hydration errors
+      if (typeof window === "undefined") {
+        return [];
+      }
+      const accountId = getAccountId();
+      if (!accountId) {
+        console.warn("No accountId available for invitations query");
+        return [];
+      }
+      // Fetch ALL pending invitations for this account
+      return await getPendingInvitationsForUser({ data: { accountId } });
+    },
+    queryClient,
+    getKey: (item: any) => item.id,
+    onUpdate: async ({ transaction }: any) => {
+      const { key, changes } = transaction.mutations[0];
+      const accountId = getAccountId();
+
+      if (!accountId) {
+        throw new Error("Account ID is required");
+      }
+
+      // For now, only support accepting invitations
+      if (changes.status === "accepted") {
+        const result = await acceptInvitation({
+          data: {
+            accountId,
+            data: { invitationId: key },
+          },
+        });
+        return result;
+      }
+
+      throw new Error("Unsupported invitation update");
+    },
   })
 );
